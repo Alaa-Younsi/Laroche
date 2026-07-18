@@ -150,13 +150,57 @@ input[type="number"].no-spin::-webkit-inner-spin-button {
 
 .fx-card-glow {
   transition:
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.4s ease,
-    border-color 0.4s ease;
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.5s ease;
 }
 
 .fx-card-glow:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   border-color: rgb(var(--c-brand) / 0.55);
-  box-shadow: 0 24px 60px -24px rgb(var(--c-brand) / 0.4);
+}
+
+/* thin gold rule used under editorial eyebrows */
+.fx-rule {
+  display: inline-block;
+  width: 2.5rem;
+  height: 1px;
+  background-color: rgb(var(--c-brand));
+  vertical-align: middle;
+}
+
+/* offset hairline gold frame behind editorial imagery */
+.fx-frame {
+  position: relative;
+}
+.fx-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(var(--c-brand) / 0.55);
+  transform: translate(14px, 14px);
+  pointer-events: none;
+  z-index: -1;
+}
+html[dir="rtl"] .fx-frame::after {
+  transform: translate(-14px, 14px);
+}
+
+/* slow ken-burns zoom for still imagery */
+@keyframes kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+.fx-kenburns {
+  animation: kenburns 14s ease-in-out infinite alternate;
+}
+
+/* soft gold vignette behind hero content */
+.fx-hero-veil {
+  background:
+    radial-gradient(50% 55% at 72% 42%, rgb(var(--c-brand) / 0.14), transparent 70%),
+    radial-gradient(40% 45% at 20% 80%, rgb(var(--c-brand) / 0.07), transparent 70%);
 }

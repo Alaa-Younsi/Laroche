@@ -56,7 +56,12 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
+    <motion.header
+      initial={{ y: -16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md"
+    >
       <div className="hidden items-center justify-center gap-8 border-b border-line bg-panel-2/60 px-4 py-2 text-[0.7rem] tracking-wide2 uppercase text-muted md:flex">
         <span>{t("topbarShipping")}</span>
         <span className="text-brand">•</span>
@@ -79,9 +84,10 @@ export function Header() {
         <nav className="hidden min-w-0 items-center gap-4 xl:flex xl:gap-6">
           <Link
             to="/"
-            className="shrink-0 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-ink transition-colors hover:text-brand"
+            className="group relative shrink-0 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-ink transition-colors hover:text-brand"
           >
             {t("navHome")}
+            <span className="absolute -bottom-1.5 start-0 h-px w-0 bg-brand transition-all duration-300 group-hover:w-full" />
           </Link>
           {groups.map((group) => (
             <div
@@ -92,14 +98,20 @@ export function Header() {
             >
               <Link
                 to={`/boutique?categorie=${group.slug}`}
-                className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-ink transition-colors hover:text-brand"
+                className="group relative flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-ink transition-colors hover:text-brand"
               >
                 {(() => {
                   const override = NAV_LABEL_OVERRIDES[group.slug];
                   if (override) return lang === "ar" ? override.ar : override.fr;
                   return lang === "ar" ? group.name_ar : group.name_fr;
                 })()}
-                {group.children.length > 0 && <ChevronDown size={12} />}
+                {group.children.length > 0 && (
+                  <ChevronDown
+                    size={12}
+                    className="transition-transform duration-300 group-hover:rotate-180"
+                  />
+                )}
+                <span className="absolute -bottom-1.5 start-0 h-px w-0 bg-brand transition-all duration-300 group-hover:w-full" />
               </Link>
               <AnimatePresence>
                 {openMenu === group.id && group.children.length > 0 && (
@@ -108,16 +120,23 @@ export function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute start-0 top-full z-40 min-w-52 rounded-xl border border-line bg-panel p-2 shadow-panel"
+                    className="absolute start-0 top-full z-40 min-w-52 border border-line bg-panel p-2 shadow-panel"
                   >
-                    {group.children.map((child) => (
-                      <Link
+                    {group.children.map((child, ci) => (
+                      <motion.div
                         key={child.id}
-                        to={`/boutique?categorie=${child.slug}`}
-                        className="block rounded-lg px-4 py-2.5 text-sm text-ink transition-colors hover:bg-panel-2 hover:text-brand"
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: ci * 0.045 }}
                       >
-                        {lang === "ar" ? child.name_ar : child.name_fr}
-                      </Link>
+                        <Link
+                          to={`/boutique?categorie=${child.slug}`}
+                          className="group/item flex items-center px-4 py-2.5 text-sm text-ink transition-colors hover:bg-panel-2 hover:text-brand"
+                        >
+                          <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover/item:me-2 group-hover/item:w-3" />
+                          {lang === "ar" ? child.name_ar : child.name_fr}
+                        </Link>
+                      </motion.div>
                     ))}
                   </motion.div>
                 )}
@@ -126,9 +145,10 @@ export function Header() {
           ))}
           <Link
             to="/boutique?collection=promotions"
-            className="shrink-0 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-brand transition-colors hover:brightness-110"
+            className="group relative shrink-0 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-brand transition-colors hover:brightness-110"
           >
             {t("navPromotions")}
+            <span className="absolute -bottom-1.5 start-0 h-px w-0 bg-brand transition-all duration-300 group-hover:w-full" />
           </Link>
         </nav>
 
@@ -162,9 +182,15 @@ export function Header() {
           >
             <Heart size={19} />
             {wishlistCount > 0 && (
-              <span className="absolute -top-0.5 end-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[0.6rem] font-semibold text-brand-ink">
+              <motion.span
+                key={wishlistCount}
+                initial={{ scale: 0.4 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                className="absolute -top-0.5 end-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[0.6rem] font-semibold text-brand-ink"
+              >
                 {wishlistCount}
-              </span>
+              </motion.span>
             )}
           </Link>
           <button
@@ -174,9 +200,15 @@ export function Header() {
           >
             <ShoppingBag size={19} />
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 end-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[0.6rem] font-semibold text-brand-ink">
+              <motion.span
+                key={cartCount}
+                initial={{ scale: 0.4 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                className="absolute -top-0.5 end-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[0.6rem] font-semibold text-brand-ink"
+              >
                 {cartCount}
-              </span>
+              </motion.span>
             )}
           </button>
         </div>
@@ -269,6 +301,6 @@ export function Header() {
           </div>
         </nav>
       </Drawer>
-    </header>
+    </motion.header>
   );
 }

@@ -66,6 +66,12 @@ export default {
       letterSpacing: {
         wide2: "0.12em",
         wide3: "0.22em",
+        wide4: "0.3em",
+        wide5: "0.42em",
+      },
+      borderRadius: {
+        none: "0",
+        editorial: "2px",
       },
     },
   },

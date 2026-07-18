@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategories } from "@/hooks/useCategories";
@@ -45,25 +46,34 @@ export default function Shop() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl text-ink md:text-4xl">
+    <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col gap-3"
+        >
+          <span className="flex items-center gap-3 text-[0.6rem] uppercase tracking-wide5 text-brand">
+            <span className="fx-rule" />
+            {t("shopTitle")}
+          </span>
+          <h1 className="font-display text-4xl font-light text-ink md:text-5xl">
             {activeCategory
               ? lang === "ar"
                 ? activeCategory.name_ar
                 : activeCategory.name_fr
               : t("shopTitle")}
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-xs uppercase tracking-wide2 text-muted">
             {products.length} {t("resultsCount")}
           </p>
-        </div>
+        </motion.div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setFiltersOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-xs uppercase tracking-wide2 text-ink md:hidden"
+            className="flex items-center gap-2 border border-line px-5 py-2.5 text-[0.62rem] uppercase tracking-wide4 text-ink md:hidden"
           >
             <SlidersHorizontal size={14} /> {t("filterCategory")}
           </button>
@@ -96,10 +106,11 @@ export default function Shop() {
               <li>
                 <button
                   onClick={() => setParam("categorie", null)}
-                  className={`block w-full rounded-lg px-3 py-2 text-start text-sm ${
+                  className={`group flex w-full items-center px-3 py-2 text-start text-sm transition-colors ${
                     !categorySlug ? "bg-panel-2 text-brand" : "text-muted hover:text-ink"
                   }`}
                 >
+                  <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover:me-2 group-hover:w-3" />
                   {t("viewAll")}
                 </button>
               </li>
@@ -107,10 +118,11 @@ export default function Shop() {
                 <li key={parent.id}>
                   <button
                     onClick={() => setParam("categorie", parent.slug)}
-                    className={`block w-full rounded-lg px-3 py-2 text-start text-sm ${
+                    className={`group flex w-full items-center px-3 py-2 text-start text-sm transition-colors ${
                       categorySlug === parent.slug ? "bg-panel-2 text-brand" : "text-muted hover:text-ink"
                     }`}
                   >
+                    <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover:me-2 group-hover:w-3" />
                     {lang === "ar" ? parent.name_ar : parent.name_fr}
                   </button>
                   <ul className="ms-3 border-s border-line ps-2">
@@ -120,7 +132,7 @@ export default function Shop() {
                         <li key={child.id}>
                           <button
                             onClick={() => setParam("categorie", child.slug)}
-                            className={`block w-full rounded-lg px-3 py-1.5 text-start text-xs ${
+                            className={`block w-full px-3 py-1.5 text-start text-xs ${
                               categorySlug === child.slug
                                 ? "text-brand"
                                 : "text-muted hover:text-ink"
@@ -152,9 +164,17 @@ export default function Shop() {
           ) : products.length === 0 ? (
             <p className="py-20 text-center text-muted">{t("noResults")}</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+              {products.map((product, i) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, delay: (i % 3) * 0.07 }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
               ))}
             </div>
           )}

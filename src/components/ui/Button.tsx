@@ -21,15 +21,15 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
-  sm: "h-9 px-4 text-sm",
-  md: "h-11 px-6 text-sm",
-  lg: "h-14 px-8 text-base",
+  sm: "h-9 px-5 text-[0.65rem]",
+  md: "h-11 px-7 text-[0.7rem]",
+  lg: "h-14 px-10 text-xs",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", asChild, children, ...props }, ref) => {
     const classes = cn(
-      "relative inline-flex items-center justify-center gap-2 rounded-full font-sans font-medium tracking-wide2 uppercase text-xs transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none",
+      "relative inline-flex items-center justify-center gap-2 rounded-none font-sans font-medium tracking-wide4 uppercase transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none",
       VARIANT_CLASSES[variant],
       SIZE_CLASSES[size],
       className,

@@ -4,6 +4,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useWishlistStore } from "@/store/wishlist";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { TiltCard } from "@/components/effects/TiltCard";
 import type { Product } from "@/types/db";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -17,13 +18,14 @@ export function ProductCard({ product }: { product: Product }) {
   const outOfStock = product.stock <= 0;
 
   return (
-    <div className="group fx-card-glow relative rounded-2xl border border-line bg-panel p-3">
+    <TiltCard className="h-full">
+      <div className="group fx-card-glow relative h-full border border-line bg-bg">
       <button
         onClick={(e) => {
           e.preventDefault();
           toggleWishlist(product.id);
         }}
-        className="absolute end-5 top-5 z-10 rounded-full bg-bg/70 p-2 backdrop-blur-sm transition-colors hover:bg-bg"
+        className="absolute end-3 top-3 z-10 flex h-9 w-9 items-center justify-center bg-bg/70 backdrop-blur-sm transition-colors hover:bg-bg"
         aria-label={t("navWishlist")}
       >
         <Heart
@@ -33,7 +35,7 @@ export function ProductCard({ product }: { product: Product }) {
       </button>
 
       <Link to={`/produit/${product.slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-panel-2">
+        <div className="fx-gold-sweep relative aspect-square overflow-hidden bg-panel-2">
           {image && (
             <img
               src={image}
@@ -48,12 +50,12 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="absolute inset-x-0 top-0 flex justify-between p-3">
             <div className="flex flex-col gap-1.5">
               {product.featured && (
-                <span className="rounded-full bg-brand px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-wide text-brand-ink">
+                <span className="bg-brand px-2.5 py-1 text-[0.55rem] font-semibold uppercase tracking-wide2 text-brand-ink">
                   {t("productBestSeller")}
                 </span>
               )}
               {onSale && (
-                <span className="rounded-full bg-panel px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-wide text-brand">
+                <span className="bg-bg px-2.5 py-1 text-[0.55rem] font-semibold uppercase tracking-wide2 text-brand">
                   {t("productOnSale")}
                 </span>
               )}
@@ -61,17 +63,17 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           {outOfStock && (
             <div className="absolute inset-0 flex items-center justify-center bg-bg/70 backdrop-blur-[2px]">
-              <span className="rounded-full border border-line bg-panel px-3 py-1.5 text-xs uppercase tracking-wide text-muted">
+              <span className="border border-line bg-panel px-3 py-1.5 text-[0.6rem] uppercase tracking-wide2 text-muted">
                 {t("productOutOfStock")}
               </span>
             </div>
           )}
         </div>
 
-        <div className="mt-3 space-y-1 px-1 pb-1">
+        <div className="space-y-1.5 border-t border-line p-4">
           <h3 className="truncate font-display text-lg text-ink">{name}</h3>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-brand">{formatPrice(product.price)}</span>
+            <span className="text-sm text-brand">{formatPrice(product.price)}</span>
             {onSale && (
               <span className="text-xs text-muted line-through">
                 {formatPrice(product.compare_at_price as number)}
@@ -80,6 +82,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </Link>
-    </div>
+      </div>
+    </TiltCard>
   );
 }
