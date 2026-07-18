@@ -100,6 +100,23 @@ input[type="number"].no-spin::-webkit-inner-spin-button {
   }
 }
 
+/* --- image loading: blur-up fade-in (SmartImage) --- */
+/* transform is included so hover zooms (group-hover:scale-*) keep animating —
+   SmartImage call sites drop their transition-transform utility for this. */
+.fx-img {
+  opacity: 0;
+  filter: blur(10px);
+  transition:
+    opacity 0.45s ease,
+    filter 0.65s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fx-img.is-loaded {
+  opacity: 1;
+  filter: blur(0);
+}
+
 /* --- jewelry shimmer/sparkle motif utilities --- */
 
 .fx-shimmer-text {

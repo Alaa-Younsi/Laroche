@@ -8,7 +8,6 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 const Landing = lazy(() => import("@/pages/Landing"));
 const Shop = lazy(() => import("@/pages/Shop"));
 const Product = lazy(() => import("@/pages/Product"));
-const Wishlist = lazy(() => import("@/pages/Wishlist"));
 const Checkout = lazy(() => import("@/pages/Checkout"));
 const OrderConfirmation = lazy(() => import("@/pages/OrderConfirmation"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -28,7 +27,12 @@ const AdminReviews = lazy(() => import("@/pages/admin/Reviews"));
 
 function RouteFallback() {
   const { t } = useLanguage();
-  return <div className="py-32 text-center text-muted">{t("loading")}</div>;
+  return (
+    <div className="flex flex-col items-center gap-3 py-32 text-center">
+      <span className="animate-sparkle text-2xl text-brand">✦</span>
+      <span className="text-xs uppercase tracking-wide3 text-muted">{t("loading")}</span>
+    </div>
+  );
 }
 
 function App() {
@@ -42,7 +46,6 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/boutique" element={<Shop />} />
             <Route path="/produit/:slug" element={<Product />} />
-            <Route path="/favoris" element={<Wishlist />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/commande/:orderNumber" element={<OrderConfirmation />} />
             <Route path="*" element={<NotFound />} />

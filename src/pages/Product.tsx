@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Heart, Truck, ShieldCheck, ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Truck, ShieldCheck, ChevronDown } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 import { useSeo } from "@/hooks/useSeo";
 import { useCartStore } from "@/store/cart";
-import { useWishlistStore } from "@/store/wishlist";
 import { Button } from "@/components/ui/Button";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { InlineCheckout } from "@/components/product/InlineCheckout";
@@ -21,8 +21,6 @@ export default function Product() {
   const { data: product, isLoading } = useProduct(slug);
   const { data: related = [] } = useRelatedProducts(product?.category_id, product?.id);
   const addItem = useCartStore((s) => s.addItem);
-  const toggleWishlist = useWishlistStore((s) => s.toggle);
-  const inWishlist = useWishlistStore((s) => s.has(product?.id ?? ""));
 
   const [color, setColor] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
@@ -85,7 +83,12 @@ export default function Product() {
   });
 
   if (isLoading) {
-    return <div className="py-32 text-center text-muted">{t("loading")}</div>;
+    return (
+      <div className="flex flex-col items-center gap-3 py-32 text-center">
+        <span className="animate-sparkle text-2xl text-brand">✦</span>
+        <span className="text-xs uppercase tracking-wide3 text-muted">{t("loading")}</span>
+      </div>
+    );
   }
 
   if (!product) {
@@ -134,9 +137,19 @@ export default function Product() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
       <div className="grid gap-10 md:grid-cols-2">
-        <ProductGallery images={product.product_images ?? []} alt={name} />
+        <motion.div
+          initial={{ opacity: 0, x: -24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <ProductGallery images={product.product_images ?? []} alt={name} />
+        </motion.div>
 
-        <div>
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        >
           {product.style_code && (
             <p className="mb-2 text-xs uppercase tracking-wide2 text-muted">
               {t("productStyleCode")} {product.style_code}
@@ -262,13 +275,6 @@ export default function Product() {
                 +
               </button>
             </div>
-            <button
-              onClick={() => toggleWishlist(product.id)}
-              className="rounded-full border border-line p-3 text-ink transition-colors hover:border-brand hover:text-brand"
-              aria-label={t("navWishlist")}
-            >
-              <Heart size={18} className={cn(inWishlist && "fill-brand text-brand")} />
-            </button>
           </div>
 
           {missingVariant && (
@@ -337,25 +343,49 @@ export default function Product() {
                     )}
                   />
                 </button>
-                {openSection === section.key && (
-                  <p className="whitespace-pre-line pb-4 text-sm text-muted">
-                    {section.content}
-                  </p>
-                )}
+                <AnimatePresence initial={false}>
+                  {openSection === section.key && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <p className="whitespace-pre-line pb-4 text-sm text-muted">
+                        {section.content}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {related.length > 0 && (
         <section className="mt-20">
-          <h2 className="mb-8 font-display text-2xl text-ink md:text-3xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 font-display text-2xl text-ink md:text-3xl"
+          >
             {t("productRelated")}
-          </h2>
+          </motion.h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {related.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 22 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.5, delay: (i % 4) * 0.07 }}
+              >
+                <ProductCard product={p} />
+              </motion.div>
             ))}
           </div>
         </section>

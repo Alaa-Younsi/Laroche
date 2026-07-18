@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import { HERO_ACCENT, HERO_MAIN, HERO_SECONDARY } from "@/lib/editorialImages";
+import { SmartImage } from "@/components/ui/SmartImage";
 
 /**
  * Layered editorial photo composition with depth: three jewelry photographs
@@ -68,13 +69,14 @@ export function HeroShowcase() {
         className="fx-frame relative z-10 h-[82%] w-[64%] max-w-sm"
       >
         <div className="h-full w-full overflow-hidden border border-line bg-panel">
-          <img
+          <SmartImage
             src={HERO_MAIN}
             alt=""
             width={900}
             height={1125}
-            decoding="async"
+            loading="eager"
             fetchPriority="high"
+            sizes="(max-width: 768px) 64vw, 24rem"
             className={`h-full w-full object-cover ${reducedMotion ? "" : "fx-kenburns"}`}
           />
         </div>
@@ -97,13 +99,12 @@ export function HeroShowcase() {
         style={parallax ? { x: frontX, y: frontY } : undefined}
         className="absolute bottom-[8%] start-[2%] z-20 w-[36%] max-w-[11rem] border border-brand/50 bg-bg p-1.5 shadow-panel sm:start-[6%]"
       >
-        <img
+        <SmartImage
           src={HERO_ACCENT}
           alt=""
           width={440}
           height={440}
-          loading="lazy"
-          decoding="async"
+          sizes="176px"
           className="aspect-square w-full object-cover"
         />
       </motion.div>
@@ -125,13 +126,12 @@ export function HeroShowcase() {
         style={parallax ? { x: backX, y: backY } : undefined}
         className="absolute end-[0%] top-[6%] z-0 w-[30%] max-w-[9.5rem] border border-line bg-bg p-1.5 shadow-panel sm:end-[4%]"
       >
-        <img
+        <SmartImage
           src={HERO_SECONDARY}
           alt=""
           width={380}
           height={475}
-          loading="lazy"
-          decoding="async"
+          sizes="152px"
           className="aspect-[4/5] w-full object-cover"
         />
       </motion.div>

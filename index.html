@@ -11,6 +11,24 @@
       rel="stylesheet"
     />
 
+    <!-- editorial imagery lives on Unsplash; warm the connection before React asks -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <!-- landing hero = LCP; start it during HTML parse instead of after the JS bundle.
+         imagesrcset/imagesizes must stay identical to what SmartImage renders for
+         HERO_MAIN or the browser fetches the image twice. -->
+    <link
+      rel="preload"
+      as="image"
+      fetchpriority="high"
+      imagesrcset="
+        https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop 400w,
+        https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=700&auto=format&fit=crop 700w,
+        https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=900&auto=format&fit=crop 900w,
+        https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop 1000w,
+        https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1400&auto=format&fit=crop 1400w"
+      imagesizes="(max-width: 768px) 64vw, 24rem"
+    />
+
     <title>Laroche Bijoux — Bijouterie & Horlogerie de Luxe en Algérie</title>
     <meta
       name="description"

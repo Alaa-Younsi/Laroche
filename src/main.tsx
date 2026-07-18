@@ -6,6 +6,12 @@ import "./index.css";
 import App from "./App.tsx";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
+import { initAnalytics } from "@/lib/analytics";
+
+// the wishlist feature was removed — drop the persisted state of returning visitors
+localStorage.removeItem("laroche-wishlist");
+
+initAnalytics();
 
 const queryClient = new QueryClient({
   defaultOptions: {

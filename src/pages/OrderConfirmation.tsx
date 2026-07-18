@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useSeo } from "@/hooks/useSeo";
@@ -54,19 +55,47 @@ export default function OrderConfirmation() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center md:px-8">
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10">
+      <motion.div
+        initial={{ scale: 0, rotate: -30 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
+        className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10"
+      >
         <CheckCircle2 size={32} className="text-brand" />
-      </div>
-      <h1 className="font-display text-3xl text-ink md:text-4xl">{t("orderConfirmedTitle")}</h1>
-      <p className="mt-3 text-muted">{t("orderConfirmedText")}</p>
+      </motion.div>
+      <motion.h1
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.25 }}
+        className="font-display text-3xl text-ink md:text-4xl"
+      >
+        {t("orderConfirmedTitle")}
+      </motion.h1>
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="mt-3 text-muted"
+      >
+        {t("orderConfirmedText")}
+      </motion.p>
 
-      <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-panel px-5 py-2.5">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.45, delay: 0.55 }}
+        className="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-panel px-5 py-2.5"
+      >
         <span className="text-xs uppercase tracking-wide2 text-muted">{t("orderNumber")}</span>
         <span className="font-medium text-brand">{orderNumber}</span>
-      </div>
+      </motion.div>
 
       {!isLoading && order && (
-        <div className="mt-10 rounded-2xl border border-line bg-panel p-6 text-start">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-10 rounded-2xl border border-line bg-panel p-6 text-start">
           <h3 className="mb-4 font-display text-xl text-ink">{t("checkoutOrderRecap")}</h3>
           <div className="space-y-3">
             {order.items.map((item, i) => {
@@ -112,7 +141,7 @@ export default function OrderConfirmation() {
               <span className="text-brand">{formatPrice(order.total)}</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       <Button className="mt-10" size="lg" asChild>

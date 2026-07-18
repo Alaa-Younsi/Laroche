@@ -32,7 +32,6 @@ export const translations = {
     navCollections: "Collections",
     navBrands: "Marques",
     navPromotions: "Promotions",
-    navWishlist: "Favoris",
     navCart: "Panier",
     navAccount: "Compte",
 
@@ -86,7 +85,6 @@ export const translations = {
     productRelated: "Vous aimerez aussi",
     productStyleCode: "Référence",
     productShare: "Partager",
-    productAddedToWishlist: "Ajouté aux favoris",
     productSelectVariant: "Veuillez sélectionner une option",
 
     // Shop / filters
@@ -100,10 +98,6 @@ export const translations = {
     filterClear: "Réinitialiser",
     noResults: "Aucun produit trouvé",
     resultsCount: "produits",
-
-    // Wishlist
-    wishlistTitle: "Mes favoris",
-    wishlistEmpty: "Votre liste de favoris est vide",
 
     // Cart
     cartTitle: "Panier",
@@ -219,7 +213,6 @@ export const translations = {
     navCollections: "التشكيلات",
     navBrands: "العلامات التجارية",
     navPromotions: "العروض",
-    navWishlist: "المفضلة",
     navCart: "السلة",
     navAccount: "الحساب",
 
@@ -269,7 +262,6 @@ export const translations = {
     productRelated: "قد يعجبك أيضاً",
     productStyleCode: "المرجع",
     productShare: "مشاركة",
-    productAddedToWishlist: "أضيف إلى المفضلة",
     productSelectVariant: "الرجاء اختيار خيار",
 
     shopTitle: "المتجر",
@@ -282,9 +274,6 @@ export const translations = {
     filterClear: "إعادة تعيين",
     noResults: "لم يتم العثور على منتجات",
     resultsCount: "منتج",
-
-    wishlistTitle: "مفضلتي",
-    wishlistEmpty: "قائمة المفضلة فارغة",
 
     cartTitle: "السلة",
     cartEmpty: "سلتك فارغة",

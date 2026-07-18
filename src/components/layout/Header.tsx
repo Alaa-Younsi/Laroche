@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  Heart,
   ShoppingBag,
   Menu,
   Sun,
@@ -15,7 +14,6 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCartStore } from "@/store/cart";
-import { useWishlistStore } from "@/store/wishlist";
 import { Drawer } from "@/components/ui/Drawer";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { cn } from "@/lib/utils";
@@ -36,7 +34,6 @@ export function Header() {
   const { data: groups = [] } = useCategoryGroups();
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const openCart = useCartStore((s) => s.openCart);
-  const wishlistCount = useWishlistStore((s) => s.productIds.length);
   const navigate = useNavigate();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -175,24 +172,6 @@ export function Header() {
             <Languages size={17} />
             {t("toggleLang")}
           </button>
-          <Link
-            to="/favoris"
-            className="relative rounded-full p-2 text-ink hover:bg-panel-2"
-            aria-label={t("navWishlist")}
-          >
-            <Heart size={19} />
-            {wishlistCount > 0 && (
-              <motion.span
-                key={wishlistCount}
-                initial={{ scale: 0.4 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                className="absolute -top-0.5 end-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[0.6rem] font-semibold text-brand-ink"
-              >
-                {wishlistCount}
-              </motion.span>
-            )}
-          </Link>
           <button
             className="relative rounded-full p-2 text-ink hover:bg-panel-2"
             onClick={openCart}

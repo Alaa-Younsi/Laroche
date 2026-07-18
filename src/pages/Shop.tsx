@@ -160,7 +160,10 @@ export default function Shop() {
 
         <div>
           {isLoading ? (
-            <p className="py-20 text-center text-muted">{t("loading")}</p>
+            <div className="flex flex-col items-center gap-3 py-20 text-center">
+              <span className="animate-sparkle text-2xl text-brand">✦</span>
+              <span className="text-xs uppercase tracking-wide3 text-muted">{t("loading")}</span>
+            </div>
           ) : products.length === 0 ? (
             <p className="py-20 text-center text-muted">{t("noResults")}</p>
           ) : (

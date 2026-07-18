@@ -1,16 +1,12 @@
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useWishlistStore } from "@/store/wishlist";
 import { formatPrice } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { TiltCard } from "@/components/effects/TiltCard";
+import { SmartImage } from "@/components/ui/SmartImage";
 import type { Product } from "@/types/db";
 
 export function ProductCard({ product }: { product: Product }) {
   const { t, lang } = useLanguage();
-  const toggleWishlist = useWishlistStore((s) => s.toggle);
-  const inWishlist = useWishlistStore((s) => s.has(product.id));
 
   const image = product.product_images?.[0]?.url;
   const name = lang === "ar" ? product.name_ar : product.name_fr;
@@ -20,31 +16,16 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <TiltCard className="h-full">
       <div className="group fx-card-glow relative h-full border border-line bg-bg">
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          toggleWishlist(product.id);
-        }}
-        className="absolute end-3 top-3 z-10 flex h-9 w-9 items-center justify-center bg-bg/70 backdrop-blur-sm transition-colors hover:bg-bg"
-        aria-label={t("navWishlist")}
-      >
-        <Heart
-          size={16}
-          className={cn(inWishlist ? "fill-brand text-brand" : "text-ink")}
-        />
-      </button>
-
       <Link to={`/produit/${product.slug}`} className="block">
         <div className="fx-gold-sweep relative aspect-square overflow-hidden bg-panel-2">
           {image && (
-            <img
+            <SmartImage
               src={image}
               alt={product.product_images?.[0]?.alt ?? name}
               width={480}
               height={480}
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 300px"
+              className="h-full w-full object-cover group-hover:scale-105"
             />
           )}
           <div className="absolute inset-x-0 top-0 flex justify-between p-3">

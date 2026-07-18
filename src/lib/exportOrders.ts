@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import type { Order } from "@/types/db";
 import { formatPrice } from "@/lib/format";
 
@@ -15,7 +14,9 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Annulée",
 };
 
-export function exportOrdersToExcel(orders: Order[]): void {
+// xlsx is ~1 MB minified — imported on demand so it never weighs down a route chunk
+export async function exportOrdersToExcel(orders: Order[]): Promise<void> {
+  const XLSX = await import("xlsx");
   const rows = orders.map((order) => ({
     "N° Commande": excelSafe(order.order_number),
     Client: excelSafe(order.customer_name),

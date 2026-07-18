@@ -29,6 +29,7 @@ import { Marquee } from "@/components/effects/Marquee";
 import { CountUp } from "@/components/effects/CountUp";
 import { ParallaxImage } from "@/components/effects/ParallaxImage";
 import { TiltCard } from "@/components/effects/TiltCard";
+import { SmartImage } from "@/components/ui/SmartImage";
 import {
   CATEGORY_FALLBACKS,
   COLLECTION_IMAGES,
@@ -342,14 +343,13 @@ export default function Landing() {
                   to={`/boutique?categorie=${group.slug}`}
                   className="group relative block aspect-[3/4] overflow-hidden bg-bg"
                 >
-                  <img
+                  <SmartImage
                     src={photo}
                     alt=""
                     width={700}
                     height={933}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="absolute inset-0 h-full w-full object-cover group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 transition-opacity duration-500 group-hover:from-black/70" />
                   <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 p-5 text-center sm:p-6">
@@ -464,6 +464,7 @@ export default function Landing() {
                 className="fx-frame aspect-[4/5] border border-line"
                 width={1000}
                 height={1250}
+                sizes="(max-width: 768px) 100vw, 50vw"
                 drift={50}
               />
             </motion.div>
@@ -472,13 +473,12 @@ export default function Landing() {
               transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
               className="absolute -start-4 bottom-10 w-36 border border-brand/50 bg-bg p-1.5 shadow-panel sm:w-44 md:-start-10"
             >
-              <img
+              <SmartImage
                 src={EDITORIAL_ACCENT}
                 alt=""
                 width={560}
                 height={560}
-                loading="lazy"
-                decoding="async"
+                sizes="176px"
                 className="aspect-square w-full object-cover"
               />
             </motion.div>
@@ -508,14 +508,13 @@ export default function Landing() {
                 to={`/boutique?collection=${card.slug}`}
                 className="group relative flex h-80 flex-col justify-end overflow-hidden border border-line p-8 sm:h-96"
               >
-                <img
+                <SmartImage
                   src={COLLECTION_IMAGES[card.slug]}
                   alt=""
                   width={900}
                   height={1200}
-                  loading="lazy"
-                  decoding="async"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="absolute inset-0 h-full w-full object-cover group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
                 <card.icon
@@ -594,14 +593,13 @@ export default function Landing() {
                 to="/boutique"
                 className="group relative block h-full w-full overflow-hidden border border-line"
               >
-                <img
+                <SmartImage
                   src={item.src}
                   alt=""
                   width={700}
                   height={item.tall ? 1000 : 500}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="h-full w-full object-cover group-hover:scale-110"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-500 group-hover:bg-black/45">
                   <span className="translate-y-2 text-2xl text-brand opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">

@@ -29,7 +29,7 @@ const SIZE_CLASSES: Record<Size, string> = {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", asChild, children, ...props }, ref) => {
     const classes = cn(
-      "relative inline-flex items-center justify-center gap-2 rounded-none font-sans font-medium tracking-wide4 uppercase transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none",
+      "relative inline-flex items-center justify-center gap-2 rounded-none font-sans font-medium tracking-wide4 uppercase transition-all duration-300 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none",
       VARIANT_CLASSES[variant],
       SIZE_CLASSES[size],
       className,

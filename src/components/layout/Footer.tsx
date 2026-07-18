@@ -50,7 +50,6 @@ export function Footer() {
             <li><Link to="/boutique" className={linkClass}>{t("shopTitle")}</Link></li>
             <li><Link to="/boutique?collection=nouveautes" className={linkClass}>{t("sectionNewArrivals")}</Link></li>
             <li><Link to="/boutique?collection=promotions" className={linkClass}>{t("navPromotions")}</Link></li>
-            <li><Link to="/favoris" className={linkClass}>{t("navWishlist")}</Link></li>
           </ul>
         </motion.div>
 
