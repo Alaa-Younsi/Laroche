@@ -37,6 +37,9 @@ export function SmartImage({
       loading={loading}
       decoding={decoding}
       onLoad={() => setLoaded(true)}
+      // a failed image must still clear the fade — otherwise `.fx-img`'s
+      // opacity:0 leaves a silent hole in the layout instead of a visible gap
+      onError={() => setLoaded(true)}
       className={cn("fx-img", loaded && "is-loaded", className)}
       {...rest}
     />

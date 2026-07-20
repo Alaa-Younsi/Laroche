@@ -25,6 +25,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product/ProductCard";
 import { HeroShowcase } from "@/components/effects/HeroShowcase";
+import { Reveal } from "@/components/effects/Reveal";
 import { Marquee } from "@/components/effects/Marquee";
 import { CountUp } from "@/components/effects/CountUp";
 import { ParallaxImage } from "@/components/effects/ParallaxImage";
@@ -94,19 +95,6 @@ const GALLERY_HEADING = {
   titleAr: "عالم لاروش",
 };
 
-const fadeUp = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-60px" },
-};
-
-/** Editorial curtain reveal — the image is unveiled top-to-bottom on scroll. */
-const curtain = {
-  initial: { clipPath: "inset(0 0 100% 0)", opacity: 0.4 },
-  whileInView: { clipPath: "inset(0 0 0% 0)", opacity: 1 },
-  viewport: { once: true, margin: "-60px" },
-};
-
 /** Spaced uppercase label with a thin gold rule — the editorial signature. */
 function Eyebrow({ children, centered }: { children: ReactNode; centered?: boolean }) {
   return (
@@ -153,8 +141,8 @@ function WordsReveal({ text, className }: { text: string; className?: string }) 
 /** Rotating circular "Argent 925" badge stamped over editorial imagery. */
 function RotatingBadge() {
   return (
-    <div className="flex h-24 w-24 items-center justify-center rounded-full border border-brand/40 bg-bg/80 backdrop-blur-sm">
-      <svg viewBox="0 0 100 100" className="h-20 w-20 animate-spin-slow">
+    <div className="flex h-20 w-20 items-center justify-center rounded-full border border-brand/40 bg-bg/80 backdrop-blur-sm md:h-24 md:w-24">
+      <svg viewBox="0 0 100 100" className="h-16 w-16 animate-spin-slow md:h-20 md:w-20">
         <defs>
           <path id="badge-circle" d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0" />
         </defs>
@@ -271,7 +259,7 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          <div className="relative order-1 h-[26rem] sm:h-[30rem] md:order-2 md:h-[36rem]">
+          <div className="relative order-1 h-[24rem] sm:h-[30rem] md:order-2 md:h-[36rem]">
             <HeroShowcase />
           </div>
         </div>
@@ -302,9 +290,9 @@ export default function Landing() {
               { icon: Truck, label: t("trustDelivery") },
               { icon: Star, label: t("trustReturn") },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2.5 px-4 py-5 sm:px-6">
-                <Icon size={16} className="shrink-0 text-brand" strokeWidth={1.4} />
-                <span className="truncate">{label}</span>
+              <div key={label} className="flex items-start gap-2.5 px-4 py-5 sm:items-center sm:px-6">
+                <Icon size={16} className="mt-px shrink-0 text-brand" strokeWidth={1.4} />
+                <span className="leading-snug">{label}</span>
               </div>
             ))}
           </div>
@@ -334,11 +322,7 @@ export default function Landing() {
             const Icon = CATEGORY_ICONS[i % CATEGORY_ICONS.length];
             const photo = group.image_url ?? CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length];
             return (
-              <motion.div
-                key={group.id}
-                {...curtain}
-                transition={{ duration: 0.8, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] }}
-              >
+              <Reveal key={group.id} variant="curtain" delay={(i % 2) * 0.09}>
                 <Link
                   to={`/boutique?categorie=${group.slug}`}
                   className="group relative block aspect-[3/4] overflow-hidden bg-bg"
@@ -363,7 +347,7 @@ export default function Landing() {
                     </span>
                   </div>
                 </Link>
-              </motion.div>
+              </Reveal>
             );
           })}
         </div>
@@ -373,20 +357,19 @@ export default function Landing() {
       <section className="border-y border-line bg-panel/40">
         <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-line md:grid-cols-4 rtl:divide-x-reverse">
           {STATS.map((stat, i) => (
-            <motion.div
+            <Reveal
               key={stat.labelFr}
-              {...fadeUp}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
+              delay={(i % 2) * 0.08}
               className="flex flex-col items-center px-4 py-12 text-center sm:py-16"
             >
               <stat.icon size={20} className="mb-4 text-brand" strokeWidth={1.3} />
               <span className="font-display text-4xl font-light text-ink sm:text-5xl">
                 <CountUp value={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
               </span>
-              <span className="mt-2 text-[0.62rem] uppercase tracking-wide2 text-muted sm:text-xs">
+              <span className="mt-2 text-[0.62rem] uppercase tracking-wide2 leading-snug text-muted sm:text-xs">
                 {lang === "ar" ? stat.labelAr : stat.labelFr}
               </span>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -414,9 +397,9 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
             {featured.slice(0, 8).map((product, i) => (
-              <motion.div key={product.id} {...fadeUp} transition={{ duration: 0.5, delay: (i % 4) * 0.07 }}>
+              <Reveal key={product.id} delay={(i % 2) * 0.07}>
                 <ProductCard product={product} />
-              </motion.div>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -425,7 +408,7 @@ export default function Landing() {
       {/* ======================== Editorial split ======================== */}
       <section className="overflow-hidden border-t border-line bg-panel/40 py-16 sm:py-24 md:py-28">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 md:grid-cols-2 md:gap-16 md:px-8">
-          <motion.div {...fadeUp} transition={{ duration: 0.7 }}>
+          <Reveal duration={0.7}>
             <Eyebrow>{lang === "ar" ? EDITORIAL.eyebrowAr : EDITORIAL.eyebrowFr}</Eyebrow>
             <h2 className="mt-6 font-display text-4xl font-light leading-tight text-ink sm:text-5xl">
               {lang === "ar" ? EDITORIAL.titleAr : EDITORIAL.titleFr}
@@ -434,16 +417,11 @@ export default function Landing() {
               {lang === "ar" ? EDITORIAL.textAr : EDITORIAL.textFr}
             </p>
             <ul className="mt-8 space-y-4">
-              {(lang === "ar" ? EDITORIAL.pointsAr : EDITORIAL.pointsFr).map((point, i) => (
-                <motion.li
-                  key={point}
-                  {...fadeUp}
-                  transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
-                  className="flex items-center gap-3 text-sm text-ink"
-                >
+              {(lang === "ar" ? EDITORIAL.pointsAr : EDITORIAL.pointsFr).map((point) => (
+                <li key={point} className="flex items-center gap-3 text-sm text-ink">
                   <span className="text-brand">✦</span>
                   {point}
-                </motion.li>
+                </li>
               ))}
             </ul>
             <Button size="lg" variant="outline" className="group mt-10" asChild>
@@ -455,10 +433,10 @@ export default function Landing() {
                 />
               </Link>
             </Button>
-          </motion.div>
+          </Reveal>
 
-          <motion.div {...fadeUp} transition={{ duration: 0.8 }} className="relative pe-4 md:pe-0">
-            <motion.div {...curtain} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
+          <Reveal duration={0.8} className="relative ms-8 mt-6 pe-4 sm:ms-12 md:ms-0 md:mt-0 md:pe-0">
+            <Reveal variant="curtain" duration={1}>
               <ParallaxImage
                 src={EDITORIAL_MAIN}
                 className="fx-frame aspect-[4/5] border border-line"
@@ -467,11 +445,11 @@ export default function Landing() {
                 sizes="(max-width: 768px) 100vw, 50vw"
                 drift={50}
               />
-            </motion.div>
+            </Reveal>
             <motion.div
               animate={{ y: [0, -12, 0] }}
               transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -start-4 bottom-10 w-36 border border-brand/50 bg-bg p-1.5 shadow-panel sm:w-44 md:-start-10"
+              className="absolute -start-8 bottom-10 w-28 border border-brand/50 bg-bg p-1.5 shadow-panel sm:-start-12 sm:w-44 md:-start-10"
             >
               <SmartImage
                 src={EDITORIAL_ACCENT}
@@ -482,10 +460,10 @@ export default function Landing() {
                 className="aspect-square w-full object-cover"
               />
             </motion.div>
-            <div className="absolute -top-8 end-6">
+            <div className="absolute -top-6 end-2 md:-top-8 md:end-6">
               <RotatingBadge />
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 
@@ -499,14 +477,10 @@ export default function Landing() {
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {COLLECTION_SHOWCASE.map((card, i) => (
-            <motion.div
-              key={card.slug}
-              {...curtain}
-              transition={{ duration: 0.85, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-            >
+            <Reveal key={card.slug} variant="curtain" delay={i * 0.12}>
               <Link
                 to={`/boutique?collection=${card.slug}`}
-                className="group relative flex h-80 flex-col justify-end overflow-hidden border border-line p-8 sm:h-96"
+                className="group relative flex h-80 flex-col justify-end overflow-hidden border border-line p-6 sm:h-96 sm:p-8"
               >
                 <SmartImage
                   src={COLLECTION_IMAGES[card.slug]}
@@ -519,7 +493,7 @@ export default function Landing() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
                 <card.icon
                   size={26}
-                  className="absolute start-8 top-8 text-brand transition-transform duration-500 group-hover:-translate-y-1"
+                  className="absolute start-6 top-6 text-brand transition-transform duration-500 group-hover:-translate-y-1 sm:start-8 sm:top-8"
                   strokeWidth={1.2}
                 />
                 <h3 className="relative font-display text-2xl font-light text-white sm:text-3xl">
@@ -533,7 +507,7 @@ export default function Landing() {
                   <span className="h-px w-6 bg-brand transition-all duration-500 group-hover:w-10" />
                 </span>
               </Link>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -562,9 +536,9 @@ export default function Landing() {
             </div>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
               {newArrivals.slice(0, 4).map((product, i) => (
-                <motion.div key={product.id} {...fadeUp} transition={{ duration: 0.5, delay: i * 0.07 }}>
+                <Reveal key={product.id} delay={(i % 2) * 0.07}>
                   <ProductCard product={product} />
-                </motion.div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -581,13 +555,15 @@ export default function Landing() {
             {lang === "ar" ? GALLERY_HEADING.titleAr : GALLERY_HEADING.titleFr}
           </h2>
         </div>
-        <div className="grid auto-rows-[10rem] grid-cols-2 gap-3 sm:auto-rows-[12rem] sm:gap-4 md:grid-cols-4">
+        {/* uniform 2-up on phones — `row-span-2` there leaves a dead column
+            whenever the tall items don't pair evenly with the short ones */}
+        <div className="grid auto-rows-[11rem] grid-cols-2 gap-3 sm:auto-rows-[12rem] sm:gap-4 md:grid-cols-4">
           {GALLERY.map((item, i) => (
-            <motion.div
+            <Reveal
               key={item.src + i}
-              {...curtain}
-              transition={{ duration: 0.75, delay: (i % 4) * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className={item.tall ? "row-span-2" : ""}
+              variant="curtain"
+              delay={(i % 2) * 0.1}
+              className={item.tall ? "md:row-span-2" : ""}
             >
               <Link
                 to="/boutique"
@@ -607,7 +583,7 @@ export default function Landing() {
                   </span>
                 </div>
               </Link>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -627,18 +603,17 @@ export default function Landing() {
               { title: t("howItWorks2Title"), text: t("howItWorks2Text") },
               { title: t("howItWorks3Title"), text: t("howItWorks3Text") },
             ].map((step, i) => (
-              <motion.div
+              <Reveal
                 key={step.title}
-                {...fadeUp}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="group flex flex-col items-center bg-bg px-8 py-12 text-center transition-colors duration-500 hover:bg-panel"
+                delay={i * 0.1}
+                className="group flex flex-col items-center bg-bg px-6 py-10 text-center transition-colors duration-500 hover:bg-panel sm:px-8 sm:py-12"
               >
                 <span className="font-display text-5xl font-light text-brand/30 transition-colors duration-500 group-hover:text-brand/60">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mb-3 mt-5 font-display text-xl text-ink">{step.title}</h3>
                 <p className="text-sm leading-relaxed text-muted">{step.text}</p>
-              </motion.div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -653,14 +628,11 @@ export default function Landing() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-5 sm:gap-x-16">
               {brands.map((brand, i) => (
-                <motion.span
-                  key={brand.id}
-                  {...fadeUp}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="font-display text-xl text-muted transition-colors hover:text-brand sm:text-2xl"
-                >
-                  {brand.name}
-                </motion.span>
+                <Reveal key={brand.id} duration={0.4} delay={i * 0.05}>
+                  <span className="font-display text-xl text-muted transition-colors hover:text-brand sm:text-2xl">
+                    {brand.name}
+                  </span>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -679,13 +651,9 @@ export default function Landing() {
             </div>
             <div className="grid gap-6 md:grid-cols-3">
               {reviews.slice(0, 6).map((review, i) => (
-                <motion.div
-                  key={review.id}
-                  {...fadeUp}
-                  transition={{ duration: 0.45, delay: (i % 3) * 0.08 }}
-                >
+                <Reveal key={review.id} duration={0.45} delay={(i % 3) * 0.08}>
                   <TiltCard className="h-full">
-                  <div className="fx-card-glow h-full border border-line bg-bg p-8">
+                  <div className="fx-card-glow h-full border border-line bg-bg p-6 sm:p-8">
                   <div className="mb-4 flex gap-1">
                     {[...Array(5)].map((_, s) => (
                       <Star
@@ -703,7 +671,7 @@ export default function Landing() {
                   </p>
                   </div>
                   </TiltCard>
-                </motion.div>
+                </Reveal>
               ))}
             </div>
           </div>

@@ -8,6 +8,7 @@ import { useProducts, type ProductFilters } from "@/hooks/useProducts";
 import { useSeo } from "@/hooks/useSeo";
 import { Select } from "@/components/ui/Select";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Reveal } from "@/components/effects/Reveal";
 
 export default function Shop() {
   const { t, lang } = useLanguage();
@@ -169,15 +170,9 @@ export default function Shop() {
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
               {products.map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 22 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-40px" }}
-                  transition={{ duration: 0.5, delay: (i % 3) * 0.07 }}
-                >
+                <Reveal key={product.id} delay={(i % 2) * 0.07}>
                   <ProductCard product={product} />
-                </motion.div>
+                </Reveal>
               ))}
             </div>
           )}

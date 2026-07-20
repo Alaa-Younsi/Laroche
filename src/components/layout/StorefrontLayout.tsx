@@ -15,7 +15,7 @@ export function StorefrontLayout() {
       {/* gold reading-progress hairline */}
       <motion.div
         style={{ scaleX: progress }}
-        className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left bg-brand rtl:origin-right"
+        className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-brand rtl:origin-right"
       />
       <Header />
       <main className="flex-1">

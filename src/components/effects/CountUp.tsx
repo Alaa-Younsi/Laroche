@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { useInView, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useReducedMotion } from "framer-motion";
+import { useReveal } from "@/hooks/useReveal";
 
 interface CountUpProps {
   value: number;
@@ -10,8 +11,7 @@ interface CountUpProps {
 
 /** Scroll-triggered count-up (ease-out cubic, fr-FR digit grouping). */
 export function CountUp({ value, prefix = "", suffix = "", duration = 1.8 }: CountUpProps) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const [ref, inView] = useReveal<HTMLSpanElement>();
   const reducedMotion = useReducedMotion();
   const [display, setDisplay] = useState(0);
 

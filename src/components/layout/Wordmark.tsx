@@ -12,7 +12,7 @@ export function Wordmark({ className, dark }: { className?: string; dark?: boole
     >
       <span
         className={cn(
-          "font-display text-2xl tracking-wide3 uppercase transition-colors duration-300 hover:text-brand",
+          "font-display text-xl tracking-wide3 uppercase transition-colors duration-300 hover:text-brand sm:text-2xl",
           dark ? "text-white" : "text-ink",
         )}
       >

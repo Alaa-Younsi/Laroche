@@ -50,6 +50,7 @@ export function ParallaxImage({
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
         style={reducedMotion ? undefined : { y, scale: 1.15 }}
         className={cn(
           "h-full w-full object-cover transition-[opacity,filter] duration-500",

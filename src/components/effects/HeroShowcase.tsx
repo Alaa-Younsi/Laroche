@@ -142,9 +142,9 @@ export function HeroShowcase() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.8 }}
         style={parallax ? { x: frontX, y: frontY } : undefined}
-        className="absolute -bottom-2 end-[8%] z-30 flex h-24 w-24 items-center justify-center rounded-full border border-brand/40 bg-bg/85 backdrop-blur-sm sm:end-[14%]"
+        className="absolute bottom-0 end-[6%] z-20 flex h-20 w-20 items-center justify-center rounded-full border border-brand/40 bg-bg/85 backdrop-blur-sm sm:-bottom-2 sm:end-[14%] sm:h-24 sm:w-24"
       >
-        <svg viewBox="0 0 100 100" className="h-20 w-20 animate-spin-slow">
+        <svg viewBox="0 0 100 100" className="h-16 w-16 animate-spin-slow sm:h-20 sm:w-20">
           <defs>
             <path id="hero-stamp" d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0" />
           </defs>

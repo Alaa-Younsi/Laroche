@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { InlineCheckout } from "@/components/product/InlineCheckout";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Reveal } from "@/components/effects/Reveal";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
@@ -366,26 +367,16 @@ export default function Product() {
 
       {related.length > 0 && (
         <section className="mt-20">
-          <motion.h2
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.5 }}
-            className="mb-8 font-display text-2xl text-ink md:text-3xl"
-          >
-            {t("productRelated")}
-          </motion.h2>
+          <Reveal>
+            <h2 className="mb-8 font-display text-2xl text-ink md:text-3xl">
+              {t("productRelated")}
+            </h2>
+          </Reveal>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {related.map((p, i) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.5, delay: (i % 4) * 0.07 }}
-              >
+              <Reveal key={p.id} delay={(i % 2) * 0.07}>
                 <ProductCard product={p} />
-              </motion.div>
+              </Reveal>
             ))}
           </div>
         </section>
