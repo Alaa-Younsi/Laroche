@@ -11,6 +11,11 @@ function sanitizeSearchTerm(term: string): string {
 
 export interface ProductFilters {
   categoryId?: string;
+  /** A category id plus all of its descendant ids — pass this instead of
+   * `categoryId` when the selected category may have sub-categories, so
+   * picking a parent (e.g. "Hommes") also returns products filed under its
+   * children (e.g. "Colliers" under "Hommes"). */
+  categoryIds?: string[];
   collectionSlug?: string;
   brandId?: string;
   search?: string;
@@ -26,7 +31,9 @@ export function useProducts(filters: ProductFilters = {}) {
     queryFn: async (): Promise<Product[]> => {
       let query = supabase.from("products").select(PRODUCT_SELECT).eq("status", "active");
 
-      if (filters.categoryId) {
+      if (filters.categoryIds && filters.categoryIds.length > 0) {
+        query = query.in("category_id", filters.categoryIds);
+      } else if (filters.categoryId) {
         query = query.eq("category_id", filters.categoryId);
       }
       if (filters.brandId) {

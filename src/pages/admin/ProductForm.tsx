@@ -3,9 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { uniqueSlug } from "@/lib/utils";
+import { flattenCategoryTree } from "@/lib/categoryTree";
 import { sanitizeOffers } from "@/lib/sanitizeOffers";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
@@ -48,7 +49,7 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { data: categories = [] } = useCategories();
+  const { data: categoryTree = [] } = useCategoryGroups();
   const { data: collections = [] } = useCollections();
   const { data: brands = [] } = useBrands();
 
@@ -59,8 +60,6 @@ export default function ProductForm() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
-
-  const parents = categories.filter((c) => !c.parent_id);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -262,13 +261,14 @@ export default function ProductForm() {
               <label className="mb-1 block text-xs uppercase tracking-wide2 text-muted">Catégorie</label>
               <Select value={form.category_id} onChange={(e) => update("category_id", e.target.value)} required>
                 <option value="">—</option>
-                {parents.map((parent) => (
-                  <optgroup key={parent.id} label={parent.name_fr}>
-                    {categories
-                      .filter((c) => c.parent_id === parent.id)
-                      .map((child) => (
-                        <option key={child.id} value={child.id}>
-                          {child.name_fr}
+                {categoryTree.map((top) => (
+                  <optgroup key={top.id} label={top.name_fr}>
+                    {flattenCategoryTree(top.children)
+                      .filter(({ node }) => node.children.length === 0)
+                      .map(({ node, depth }) => (
+                        <option key={node.id} value={node.id}>
+                          {"— ".repeat(depth)}
+                          {node.name_fr}
                         </option>
                       ))}
                   </optgroup>

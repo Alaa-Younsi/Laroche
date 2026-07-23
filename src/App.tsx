@@ -10,6 +10,7 @@ const Shop = lazy(() => import("@/pages/Shop"));
 const Product = lazy(() => import("@/pages/Product"));
 const Checkout = lazy(() => import("@/pages/Checkout"));
 const OrderConfirmation = lazy(() => import("@/pages/OrderConfirmation"));
+const StorePolicy = lazy(() => import("@/pages/StorePolicy"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const AdminLayout = lazy(() =>
@@ -24,6 +25,7 @@ const AdminOrders = lazy(() => import("@/pages/admin/Orders"));
 const AdminOrderDetail = lazy(() => import("@/pages/admin/OrderDetail"));
 const AdminDeliveryPrices = lazy(() => import("@/pages/admin/DeliveryPrices"));
 const AdminReviews = lazy(() => import("@/pages/admin/Reviews"));
+const AdminNewsletter = lazy(() => import("@/pages/admin/Newsletter"));
 
 function RouteFallback() {
   const { t } = useLanguage();
@@ -48,6 +50,7 @@ function App() {
             <Route path="/produit/:slug" element={<Product />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/commande/:orderNumber" element={<OrderConfirmation />} />
+            <Route path="/politique-retour-livraison" element={<StorePolicy />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -62,6 +65,7 @@ function App() {
             <Route path="commandes/:id" element={<AdminOrderDetail />} />
             <Route path="livraison" element={<AdminDeliveryPrices />} />
             <Route path="avis" element={<AdminReviews />} />
+            <Route path="newsletter" element={<AdminNewsletter />} />
           </Route>
         </Routes>
       </Suspense>

@@ -17,6 +17,59 @@ import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCartStore } from "@/store/cart";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { cn } from "@/lib/utils";
+import type { CategoryNode } from "@/lib/categoryTree";
+
+const DESKTOP_DEPTH_PADDING = ["ps-4", "ps-7", "ps-10"] as const;
+const MOBILE_DEPTH_PADDING = ["ps-8", "ps-11", "ps-14"] as const;
+
+function DesktopMenuItem({ node, depth, index, lang }: { node: CategoryNode; depth: number; index: number; lang: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.045 }}
+    >
+      <Link
+        to={`/boutique?categorie=${node.slug}`}
+        className={cn(
+          "group/item flex items-center pe-4 py-2.5 transition-colors hover:bg-panel-2 hover:text-brand",
+          DESKTOP_DEPTH_PADDING[Math.min(depth, DESKTOP_DEPTH_PADDING.length - 1)],
+          depth === 0 ? "text-sm text-ink" : "text-xs text-muted",
+        )}
+      >
+        <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover/item:me-2 group-hover/item:w-3" />
+        {lang === "ar" ? node.name_ar : node.name_fr}
+      </Link>
+      {node.children.map((child, ci) => (
+        <DesktopMenuItem key={child.id} node={child} depth={depth + 1} index={ci} lang={lang} />
+      ))}
+    </motion.div>
+  );
+}
+
+function MobileCategoryLinks({ nodes, depth, lang }: { nodes: CategoryNode[]; depth: number; lang: string }) {
+  return (
+    <>
+      {nodes.map((node) => (
+        <div key={node.id}>
+          <Link
+            to={`/boutique?categorie=${node.slug}`}
+            className={cn(
+              "block py-2.5 pe-4 text-[0.8rem]",
+              MOBILE_DEPTH_PADDING[Math.min(depth, MOBILE_DEPTH_PADDING.length - 1)],
+              depth === 0 ? "text-muted" : "text-muted/80",
+            )}
+          >
+            {lang === "ar" ? node.name_ar : node.name_fr}
+          </Link>
+          {node.children.length > 0 && (
+            <MobileCategoryLinks nodes={node.children} depth={depth + 1} lang={lang} />
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
 
 // Full category names ("Bijoux en Argent 925", "Bijoux en Acier
 // Inoxydable") are the correct copy for page titles and the footer, but
@@ -140,20 +193,7 @@ export function Header() {
                     className="absolute start-0 top-full z-40 min-w-52 border border-line bg-panel p-2 shadow-panel"
                   >
                     {group.children.map((child, ci) => (
-                      <motion.div
-                        key={child.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: ci * 0.045 }}
-                      >
-                        <Link
-                          to={`/boutique?categorie=${child.slug}`}
-                          className="group/item flex items-center px-4 py-2.5 text-sm text-ink transition-colors hover:bg-panel-2 hover:text-brand"
-                        >
-                          <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover/item:me-2 group-hover/item:w-3" />
-                          {lang === "ar" ? child.name_ar : child.name_fr}
-                        </Link>
-                      </motion.div>
+                      <DesktopMenuItem key={child.id} node={child} depth={0} index={ci} lang={lang} />
                     ))}
                   </motion.div>
                 )}
@@ -301,15 +341,7 @@ export function Header() {
                           transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                           className="overflow-hidden bg-panel/50"
                         >
-                          {group.children.map((child) => (
-                            <Link
-                              key={child.id}
-                              to={`/boutique?categorie=${child.slug}`}
-                              className="block py-2.5 ps-8 pe-4 text-[0.8rem] text-muted"
-                            >
-                              {lang === "ar" ? child.name_ar : child.name_fr}
-                            </Link>
-                          ))}
+                          <MobileCategoryLinks nodes={group.children} depth={0} lang={lang} />
                         </motion.div>
                       )}
                     </AnimatePresence>

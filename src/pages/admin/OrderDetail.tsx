@@ -6,7 +6,8 @@ import { useOrder } from "@/hooks/useOrders";
 import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Select } from "@/components/ui/Select";
-import { formatPrice, formatDate } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
+import { formatDate } from "@/lib/format";
 import type { OrderStatus } from "@/types/db";
 
 const STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
@@ -82,7 +83,7 @@ export default function OrderDetail() {
                       <p className="text-xs text-muted">{fields.join(" · ")}</p>
                     )}
                   </div>
-                  <span className="text-sm text-brand">{formatPrice(item.price * item.quantity)}</span>
+                  <Price value={item.price * item.quantity} className="text-sm text-brand" />
                 </div>
               );
             })}
@@ -91,21 +92,21 @@ export default function OrderDetail() {
           <div className="mt-5 space-y-1.5 border-t border-line pt-4 text-sm">
             <div className="flex justify-between text-muted">
               <span>{t("cartSubtotal")}</span>
-              <span>{formatPrice(order.subtotal)}</span>
+              <Price value={order.subtotal} />
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-muted">
                 <span>{t("cartDiscount")}</span>
-                <span>-{formatPrice(order.discount)}</span>
+                <Price value={order.discount} prefix="-" />
               </div>
             )}
             <div className="flex justify-between text-muted">
               <span>{t("cartShipping")}</span>
-              <span>{formatPrice(order.shipping)}</span>
+              <Price value={order.shipping} />
             </div>
             <div className="flex justify-between border-t border-line pt-2 font-medium text-ink">
               <span>{t("cartTotal")}</span>
-              <span className="text-brand">{formatPrice(order.total)}</span>
+              <Price value={order.total} className="text-brand" />
             </div>
           </div>
         </BentoPanel>

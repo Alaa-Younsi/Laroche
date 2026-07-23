@@ -11,7 +11,7 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { InlineCheckout } from "@/components/product/InlineCheckout";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Reveal } from "@/components/effects/Reveal";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { cn } from "@/lib/utils";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
 import type { VariantPick } from "@/types/db";
@@ -27,9 +27,18 @@ export default function Product() {
   const [size, setSize] = useState<string | null>(null);
   const [variantPicks, setVariantPicks] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
-  const [buyNow, setBuyNow] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>("description");
   const trackedViewId = useRef<string | null>(null);
+  const checkoutRef = useRef<HTMLDivElement>(null);
+
+  function scrollToCheckout() {
+    const el = checkoutRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      el.querySelector<HTMLInputElement>("input")?.focus();
+    }, 450);
+  }
 
   useEffect(() => {
     if (product && trackedViewId.current !== product.id) {
@@ -159,11 +168,9 @@ export default function Product() {
           <h1 className="font-display text-3xl text-ink md:text-4xl">{name}</h1>
 
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-2xl font-medium text-brand">{formatPrice(product.price)}</span>
+            <Price value={product.price} className="text-2xl font-medium text-brand" />
             {product.compare_at_price != null && product.compare_at_price > product.price && (
-              <span className="text-muted line-through">
-                {formatPrice(product.compare_at_price)}
-              </span>
+              <Price value={product.compare_at_price} className="text-muted line-through" />
             )}
           </div>
 
@@ -296,24 +303,22 @@ export default function Product() {
               size="lg"
               className="flex-1"
               disabled={product.stock <= 0 || missingVariant}
-              onClick={() => setBuyNow((v) => !v)}
+              onClick={scrollToCheckout}
             >
               {t("productBuyNow")}
             </Button>
           </div>
 
-          {buyNow && !missingVariant && (
-            <div className="mt-8 rounded-2xl border border-line bg-panel p-6">
-              <h3 className="mb-4 font-display text-xl text-ink">{t("checkoutQuickBuy")}</h3>
-              <InlineCheckout
-                product={product}
-                color={color}
-                size={size}
-                variants={variants}
-                quantity={quantity}
-              />
-            </div>
-          )}
+          <div ref={checkoutRef} className="mt-8 scroll-mt-24 rounded-2xl border border-line bg-panel p-6">
+            <h3 className="mb-4 font-display text-xl text-ink">{t("checkoutQuickBuy")}</h3>
+            <InlineCheckout
+              product={product}
+              color={color}
+              size={size}
+              variants={variants}
+              quantity={quantity}
+            />
+          </div>
 
           <div className="mt-8 flex items-center gap-6 text-xs text-muted">
             <span className="flex items-center gap-1.5">

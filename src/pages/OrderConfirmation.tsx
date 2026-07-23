@@ -6,7 +6,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useSeo } from "@/hooks/useSeo";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 
 interface OrderRecapItem {
   name_fr: string;
@@ -116,7 +116,7 @@ export default function OrderConfirmation() {
                       <p className="text-xs text-muted">{fields.join(" · ")}</p>
                     )}
                   </div>
-                  <span className="text-brand">{formatPrice(item.price * item.quantity)}</span>
+                  <Price value={item.price * item.quantity} className="text-brand" />
                 </div>
               );
             })}
@@ -124,21 +124,21 @@ export default function OrderConfirmation() {
           <div className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
             <div className="flex justify-between text-muted">
               <span>{t("cartSubtotal")}</span>
-              <span>{formatPrice(order.subtotal)}</span>
+              <Price value={order.subtotal} />
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-muted">
                 <span>{t("cartDiscount")}</span>
-                <span>-{formatPrice(order.discount)}</span>
+                <Price value={order.discount} prefix="-" />
               </div>
             )}
             <div className="flex justify-between text-muted">
               <span>{t("cartShipping")}</span>
-              <span>{order.shipping === 0 ? t("cartFreeShipping") : formatPrice(order.shipping)}</span>
+              <span>{order.shipping === 0 ? t("cartFreeShipping") : <Price value={order.shipping} />}</span>
             </div>
             <div className="flex justify-between border-t border-line pt-2 font-medium text-ink">
               <span>{t("cartTotal")}</span>
-              <span className="text-brand">{formatPrice(order.total)}</span>
+              <Price value={order.total} className="text-brand" />
             </div>
           </div>
         </motion.div>

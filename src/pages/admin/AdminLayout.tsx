@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Navigate, NavLink, Outlet } from "react-router-dom";
+import { Navigate, NavLink, Link, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -7,11 +7,13 @@ import {
   ShoppingCart,
   Truck,
   Star,
+  Mail,
   LogOut,
   Menu,
   Sun,
   Moon,
   Languages,
+  ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -30,6 +32,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
     { to: "/admin/commandes", label: t("adminOrders"), icon: ShoppingCart },
     { to: "/admin/livraison", label: t("adminDeliveryPrices"), icon: Truck },
     { to: "/admin/avis", label: t("adminReviews"), icon: Star },
+    { to: "/admin/newsletter", label: t("adminNewsletter"), icon: Mail },
   ];
 
   return (
@@ -62,6 +65,13 @@ function SidebarFooter() {
 
   return (
     <div className="space-y-1 border-t border-line pt-4">
+      <Link
+        to="/"
+        className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-muted hover:bg-panel-2 hover:text-ink"
+      >
+        <ArrowLeft size={16} className="rtl:rotate-180" />
+        {t("adminBackToSite")}
+      </Link>
       <button
         onClick={toggleTheme}
         className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-muted hover:bg-panel-2 hover:text-ink"
@@ -109,7 +119,7 @@ export function AdminLayout(): ReactNode {
         <SidebarFooter />
       </aside>
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
           <button onClick={() => setMobileOpen(true)} aria-label="menu">
             <Menu size={22} />

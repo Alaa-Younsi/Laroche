@@ -1,14 +1,61 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategoryGroups } from "@/hooks/useCategories";
 import { useProducts, type ProductFilters } from "@/hooks/useProducts";
 import { useSeo } from "@/hooks/useSeo";
 import { Select } from "@/components/ui/Select";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Reveal } from "@/components/effects/Reveal";
+import { collectDescendantIds, findCategoryNodeBySlug, type CategoryNode } from "@/lib/categoryTree";
+import { cn } from "@/lib/utils";
+
+function CategoryTreeList({
+  nodes,
+  depth,
+  activeSlug,
+  lang,
+  onSelect,
+}: {
+  nodes: CategoryNode[];
+  depth: number;
+  activeSlug: string | undefined;
+  lang: string;
+  onSelect: (slug: string) => void;
+}) {
+  return (
+    <ul className={depth === 0 ? "space-y-1" : "ms-3 border-s border-line ps-2"}>
+      {nodes.map((node) => (
+        <li key={node.id}>
+          <button
+            onClick={() => onSelect(node.slug)}
+            className={cn(
+              "group flex w-full items-center text-start transition-colors",
+              depth === 0 ? "px-3 py-2 text-sm" : "px-3 py-1.5 text-xs",
+              activeSlug === node.slug ? "bg-panel-2 text-brand" : "text-muted hover:text-ink",
+            )}
+          >
+            {depth === 0 && (
+              <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover:me-2 group-hover:w-3" />
+            )}
+            {lang === "ar" ? node.name_ar : node.name_fr}
+          </button>
+          {node.children.length > 0 && (
+            <CategoryTreeList
+              nodes={node.children}
+              depth={depth + 1}
+              activeSlug={activeSlug}
+              lang={lang}
+              onSelect={onSelect}
+            />
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function Shop() {
   const { t, lang } = useLanguage();
@@ -20,11 +67,11 @@ export default function Shop() {
   const search = params.get("q") ?? undefined;
   const sort = (params.get("tri") as ProductFilters["sort"]) ?? "newest";
 
-  const { data: categories = [] } = useCategories();
-  const activeCategory = categories.find((c) => c.slug === categorySlug);
+  const { data: categoryTree = [] } = useCategoryGroups();
+  const activeNode = categorySlug ? findCategoryNodeBySlug(categoryTree, categorySlug) : undefined;
 
   const filters: ProductFilters = {
-    categoryId: activeCategory?.id,
+    categoryIds: activeNode ? collectDescendantIds(activeNode) : undefined,
     collectionSlug,
     search,
     sort,
@@ -36,8 +83,6 @@ export default function Shop() {
     title: `${t("shopTitle")} — Laroche Bijoux`,
     description: "Découvrez toute la collection Laroche Bijoux : argent 925, acier inoxydable, montres et personnalisation.",
   });
-
-  const parentCategories = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -60,10 +105,10 @@ export default function Shop() {
             {t("shopTitle")}
           </span>
           <h1 className="font-display text-4xl font-light text-ink md:text-5xl">
-            {activeCategory
+            {activeNode
               ? lang === "ar"
-                ? activeCategory.name_ar
-                : activeCategory.name_fr
+                ? activeNode.name_ar
+                : activeNode.name_fr
               : t("shopTitle")}
           </h1>
           <p className="text-xs uppercase tracking-wide2 text-muted">
@@ -115,38 +160,14 @@ export default function Shop() {
                   {t("viewAll")}
                 </button>
               </li>
-              {parentCategories.map((parent) => (
-                <li key={parent.id}>
-                  <button
-                    onClick={() => setParam("categorie", parent.slug)}
-                    className={`group flex w-full items-center px-3 py-2 text-start text-sm transition-colors ${
-                      categorySlug === parent.slug ? "bg-panel-2 text-brand" : "text-muted hover:text-ink"
-                    }`}
-                  >
-                    <span className="inline-block h-px w-0 bg-brand transition-all duration-300 group-hover:me-2 group-hover:w-3" />
-                    {lang === "ar" ? parent.name_ar : parent.name_fr}
-                  </button>
-                  <ul className="ms-3 border-s border-line ps-2">
-                    {categories
-                      .filter((c) => c.parent_id === parent.id)
-                      .map((child) => (
-                        <li key={child.id}>
-                          <button
-                            onClick={() => setParam("categorie", child.slug)}
-                            className={`block w-full px-3 py-1.5 text-start text-xs ${
-                              categorySlug === child.slug
-                                ? "text-brand"
-                                : "text-muted hover:text-ink"
-                            }`}
-                          >
-                            {lang === "ar" ? child.name_ar : child.name_fr}
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
-                </li>
-              ))}
             </ul>
+            <CategoryTreeList
+              nodes={categoryTree}
+              depth={0}
+              activeSlug={categorySlug}
+              lang={lang}
+              onSelect={(slug) => setParam("categorie", slug)}
+            />
           </div>
 
           {(categorySlug || collectionSlug || search) && (

@@ -10,7 +10,7 @@ import { useHoneypot } from "@/hooks/useHoneypot";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/checkoutSchema";
 import { CheckoutFields } from "@/components/product/CheckoutFields";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { orderErrorKey } from "@/lib/orderErrors";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
 import type { Product, VariantPick } from "@/types/db";
@@ -100,7 +100,7 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
       <div className="rounded-xl border border-line bg-panel-2/50 p-4 text-sm">
         <div className="flex justify-between text-muted">
           <span>{t("cartSubtotal")}</span>
-          <span>{formatPrice(lineTotal)}</span>
+          <Price value={lineTotal} />
         </div>
         <div className="mt-1 flex justify-between text-muted">
           <span>{t("cartShipping")}</span>
@@ -109,12 +109,12 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
               ? t("cartShippingUnknown")
               : shipping === 0
                 ? t("cartFreeShipping")
-                : formatPrice(shipping)}
+                : <Price value={shipping} />}
           </span>
         </div>
         <div className="mt-2 flex justify-between border-t border-line pt-2 font-medium text-ink">
           <span>{t("cartTotal")}</span>
-          <span className="text-brand">{formatPrice(total)}</span>
+          <Price value={total} className="text-brand" />
         </div>
       </div>
 

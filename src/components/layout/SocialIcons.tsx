@@ -17,3 +17,20 @@ export function FacebookIcon({ size = 16 }: { size?: number }) {
     </svg>
   );
 }
+
+export function TikTokIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 4v10.5a3.5 3.5 0 1 1 -3.5 -3.5" />
+      <path d="M14 4c0 2.49 2.01 4.5 4.5 4.5" />
+    </svg>
+  );
+}
+
+export function SnapchatIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 4c-2.8 0-5 2.1-5 4.8v2.1c-.9.5-1.9.9-3 1 .7 1 1.7 1.6 2.8 1.8-.2.6-.5 1.1-1 1.5.9.3 1.9.4 2.9.3.5 1.2 1.7 2 3.3 2s2.8-.8 3.3-2c1 .1 2 0 2.9-.3-.5-.4-.8-.9-1-1.5 1.1-.2 2.1-.8 2.8-1.8-1.1-.1-2.1-.5-3-1v-2.1c0-2.7-2.2-4.8-5-4.8z" />
+    </svg>
+  );
+}

@@ -2,11 +2,26 @@ import { Link } from "react-router-dom";
 import { ShieldCheck, Truck, BadgeCheck } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { Wordmark } from "@/components/layout/Wordmark";
-import { InstagramIcon, FacebookIcon } from "@/components/layout/SocialIcons";
+import { InstagramIcon, FacebookIcon, TikTokIcon, SnapchatIcon } from "@/components/layout/SocialIcons";
 import { Reveal } from "@/components/effects/Reveal";
 
 const linkClass =
   "inline-block transition-all duration-300 hover:text-brand hover:ps-1.5";
+
+const SOCIAL_LINKS = [
+  { href: "https://www.instagram.com/larochebijoux.officiel", label: "Instagram", Icon: InstagramIcon },
+  {
+    href: "https://www.facebook.com/laroche.bijoux1?rdid=iKK18O1R37rkylCc&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1bzp8n3T8D%2F#",
+    label: "Facebook",
+    Icon: FacebookIcon,
+  },
+  { href: "https://www.tiktok.com/@laroche.bijoux?_r=1&_t=ZS-98DaxIQMqqz", label: "TikTok", Icon: TikTokIcon },
+  {
+    href: "https://www.snapchat.com/@laroche.bijoux?share_id=C65MhCjR8FY&locale=fr-FR",
+    label: "Snapchat",
+    Icon: SnapchatIcon,
+  },
+] as const;
 
 export function Footer() {
   const { t } = useLanguage();
@@ -18,20 +33,18 @@ export function Footer() {
           <Wordmark className="items-start" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{t("footerAbout")}</p>
           <div className="mt-5 flex gap-3">
-            <a
-              href="#"
-              className="rounded-full border border-line p-2 text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-brand hover:text-brand"
-              aria-label="Instagram"
-            >
-              <InstagramIcon size={16} />
-            </a>
-            <a
-              href="#"
-              className="rounded-full border border-line p-2 text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-brand hover:text-brand"
-              aria-label="Facebook"
-            >
-              <FacebookIcon size={16} />
-            </a>
+            {SOCIAL_LINKS.map(({ href, label, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-line p-2 text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-brand hover:text-brand"
+                aria-label={label}
+              >
+                <Icon size={16} />
+              </a>
+            ))}
           </div>
         </Reveal>
 
@@ -44,6 +57,7 @@ export function Footer() {
             <li><Link to="/boutique" className={linkClass}>{t("shopTitle")}</Link></li>
             <li><Link to="/boutique?collection=nouveautes" className={linkClass}>{t("sectionNewArrivals")}</Link></li>
             <li><Link to="/boutique?collection=promotions" className={linkClass}>{t("navPromotions")}</Link></li>
+            <li><Link to="/politique-retour-livraison" className={linkClass}>{t("footerStorePolicy")}</Link></li>
           </ul>
         </Reveal>
 

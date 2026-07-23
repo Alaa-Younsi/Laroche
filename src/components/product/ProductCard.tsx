@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { TiltCard } from "@/components/effects/TiltCard";
 import { SmartImage } from "@/components/ui/SmartImage";
 import type { Product } from "@/types/db";
@@ -54,11 +54,12 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="space-y-1.5 border-t border-line p-4">
           <h3 className="truncate font-display text-lg text-ink">{name}</h3>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-brand">{formatPrice(product.price)}</span>
+            <Price value={product.price} className="text-sm text-brand" />
             {onSale && (
-              <span className="text-xs text-muted line-through">
-                {formatPrice(product.compare_at_price as number)}
-              </span>
+              <Price
+                value={product.compare_at_price as number}
+                className="text-xs text-muted line-through"
+              />
             )}
           </div>
         </div>

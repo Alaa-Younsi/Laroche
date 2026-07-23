@@ -13,7 +13,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/checkoutSchema";
 import { CheckoutFields } from "@/components/product/CheckoutFields";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { lineTotal } from "@/lib/offers";
 import { orderErrorKey } from "@/lib/orderErrors";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
@@ -151,9 +151,10 @@ export default function Checkout() {
                     <p className="text-xs text-muted">× {item.quantity}</p>
                   </div>
                 </div>
-                <span className="text-brand">
-                  {formatPrice(lineTotal(item.price, item.quantity, item.quantity_offers))}
-                </span>
+                <Price
+                  value={lineTotal(item.price, item.quantity, item.quantity_offers)}
+                  className="text-brand"
+                />
               </div>
             ))}
           </div>
@@ -161,12 +162,12 @@ export default function Checkout() {
           <div className="mt-5 space-y-1.5 border-t border-line pt-4 text-sm">
             <div className="flex justify-between text-muted">
               <span>{t("cartSubtotal")}</span>
-              <span>{formatPrice(subtotal)}</span>
+              <Price value={subtotal} />
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-muted">
                 <span>{t("cartDiscount")}</span>
-                <span>-{formatPrice(discount)}</span>
+                <Price value={discount} prefix="-" />
               </div>
             )}
             <div className="flex justify-between text-muted">
@@ -176,12 +177,12 @@ export default function Checkout() {
                   ? t("cartShippingUnknown")
                   : shipping === 0
                     ? t("cartFreeShipping")
-                    : formatPrice(shipping)}
+                    : <Price value={shipping} />}
               </span>
             </div>
             <div className="flex justify-between border-t border-line pt-2 font-medium text-ink">
               <span>{t("cartTotal")}</span>
-              <span className="text-brand">{formatPrice(total)}</span>
+              <Price value={total} className="text-brand" />
             </div>
           </div>
         </div>

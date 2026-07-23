@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useOrders } from "@/hooks/useOrders";
-import { formatPrice } from "@/lib/format";
 import { BentoPanel } from "@/components/ui/BentoPanel";
+import { Price } from "@/components/ui/Price";
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -18,10 +18,10 @@ export default function Dashboard() {
     return { ordersToday: ordersToday.length, pending: pending.length, revenue };
   }, [orders]);
 
-  const cards = [
+  const cards: { label: string; value: number; isPrice?: boolean }[] = [
     { label: t("adminOrdersToday"), value: stats.ordersToday },
     { label: t("adminPendingOrders"), value: stats.pending },
-    { label: t("adminRevenueTotal"), value: formatPrice(stats.revenue) },
+    { label: t("adminRevenueTotal"), value: stats.revenue, isPrice: true },
   ];
 
   return (
@@ -33,7 +33,13 @@ export default function Dashboard() {
           <BentoPanel key={card.label} className="p-6">
             <p className="text-xs uppercase tracking-wide2 text-muted">{card.label}</p>
             <p className="mt-2 font-display text-3xl text-brand">
-              {isLoading ? "…" : card.value}
+              {isLoading ? (
+                "…"
+              ) : card.isPrice ? (
+                <Price value={card.value} />
+              ) : (
+                card.value
+              )}
             </p>
           </BentoPanel>
         ))}
@@ -59,7 +65,9 @@ export default function Dashboard() {
                   <td className="whitespace-nowrap px-6 py-3 text-brand">{order.order_number}</td>
                   <td className="whitespace-nowrap px-6 py-3">{order.customer_name}</td>
                   <td className="whitespace-nowrap px-6 py-3 capitalize">{order.status}</td>
-                  <td className="whitespace-nowrap px-6 py-3">{formatPrice(order.total)}</td>
+                  <td className="whitespace-nowrap px-6 py-3">
+                    <Price value={order.total} />
+                  </td>
                 </tr>
               ))}
               {orders.length === 0 && !isLoading && (

@@ -19,7 +19,7 @@ export const translations = {
     optional: "optionnel",
 
     // Top bar
-    topbarShipping: "Livraison 58 wilayas",
+    topbarShipping: "Livraison 69 wilayas",
     topbarWarranty: "Argent 925 · Garantie",
     topbarPayment: "Paiement à la livraison",
 
@@ -57,12 +57,12 @@ export const translations = {
     howItWorks2Title: "Commandez sans avance",
     howItWorks2Text: "Passez commande en quelques clics, paiement à la livraison.",
     howItWorks3Title: "Recevez chez vous",
-    howItWorks3Text: "Livraison partout en Algérie, dans les 58 wilayas.",
+    howItWorks3Text: "Livraison partout en Algérie, dans les 69 wilayas.",
 
     // Trust badges
     trustAuthentic: "Argent 925 certifié",
     trustSecure: "Paiement sécurisé à la livraison",
-    trustDelivery: "Livraison rapide 58 wilayas",
+    trustDelivery: "Livraison rapide 69 wilayas",
     trustReturn: "Garantie sur chaque pièce",
 
     // Product
@@ -150,6 +150,36 @@ export const translations = {
     footerContact: "Contact",
     footerFollow: "Suivez-nous",
     footerRights: "Tous droits réservés.",
+    footerStorePolicy: "Retour & Livraison",
+
+    // Store policy page (placeholder copy — to be replaced with the client's real text)
+    storePolicyTitle: "Retour & Livraison",
+    storePolicyIntro: "Cette page présente notre politique de retour, d'échange et de livraison. Le contenu ci-dessous est un texte provisoire, à remplacer par le texte définitif du client.",
+    storePolicyDeliveryTitle: "Livraison",
+    storePolicyDeliveryText: "Nous livrons dans les 69 wilayas d'Algérie, à domicile ou en point relais, avec paiement à la livraison. Les délais moyens varient entre 2 et 7 jours ouvrés selon la wilaya. [Texte provisoire — à remplacer.]",
+    storePolicyReturnsTitle: "Retours & Échanges",
+    storePolicyReturnsText: "Vous disposez d'un délai de 7 jours après réception pour demander un retour ou un échange, sous réserve que le bijou soit dans son état d'origine, non porté et avec son emballage. [Texte provisoire — à remplacer.]",
+    storePolicyRefundTitle: "Remboursement",
+    storePolicyRefundText: "Une fois le retour reçu et vérifié, le remboursement est effectué selon les modalités convenues avec notre service client. [Texte provisoire — à remplacer.]",
+    storePolicyContactTitle: "Une question ?",
+    storePolicyContactText: "Notre équipe reste à votre disposition pour toute question concernant votre commande, un retour ou un échange. [Texte provisoire — à remplacer.]",
+
+    // Newsletter
+    newsletterTitle: "Restez informée",
+    newsletterSubtitle: "Recevez nos nouveautés et offres exclusives en avant-première.",
+    newsletterPlaceholder: "Votre adresse email",
+    newsletterSubmit: "S'inscrire",
+    newsletterSubmitting: "Envoi…",
+    newsletterSuccess: "Merci ! Votre inscription est confirmée.",
+    newsletterAlready: "Cette adresse est déjà inscrite.",
+    newsletterInvalid: "Veuillez entrer une adresse email valide.",
+
+    // Store locations
+    storesTitle: "Nos boutiques",
+    storesSubtitle: "Retrouvez-nous en magasin",
+    storesCta: "Voir sur Google Maps",
+    storeCityAlger: "Alger",
+    storeCityBatna: "Batna",
 
     // Theme / lang toggles
     toggleTheme: "Changer le thème",
@@ -161,12 +191,16 @@ export const translations = {
     adminPassword: "Mot de passe",
     adminSignIn: "Se connecter",
     adminSignOut: "Déconnexion",
+    adminBackToSite: "Retour au site",
     adminDashboard: "Tableau de bord",
     adminProducts: "Produits",
     adminCategories: "Catégories",
     adminOrders: "Commandes",
     adminDeliveryPrices: "Frais de livraison",
     adminReviews: "Avis clients",
+    adminNewsletter: "Newsletter",
+    adminNewsletterSubscribers: "Abonnés",
+    adminNewsletterEmpty: "Aucun abonné pour le moment",
     adminSettings: "Paramètres",
     adminAddProduct: "Ajouter un produit",
     adminEditProduct: "Modifier le produit",
@@ -201,7 +235,7 @@ export const translations = {
     confirm: "تأكيد",
     optional: "اختياري",
 
-    topbarShipping: "توصيل لـ 58 ولاية",
+    topbarShipping: "توصيل لـ 69 ولاية",
     topbarWarranty: "فضة 925 · ضمان",
     topbarPayment: "الدفع عند الاستلام",
 
@@ -236,11 +270,11 @@ export const translations = {
     howItWorks2Title: "اطلبي دون دفع مسبق",
     howItWorks2Text: "أتمي طلبك بنقرات قليلة، الدفع عند الاستلام.",
     howItWorks3Title: "استلمي في منزلك",
-    howItWorks3Text: "توصيل في جميع أنحاء الجزائر، 58 ولاية.",
+    howItWorks3Text: "توصيل في جميع أنحاء الجزائر، 69 ولاية.",
 
     trustAuthentic: "فضة 925 معتمدة",
     trustSecure: "دفع آمن عند الاستلام",
-    trustDelivery: "توصيل سريع لـ 58 ولاية",
+    trustDelivery: "توصيل سريع لـ 69 ولاية",
     trustReturn: "ضمان على كل قطعة",
 
     productAddToCart: "أضف إلى السلة",
@@ -321,6 +355,33 @@ export const translations = {
     footerContact: "اتصل بنا",
     footerFollow: "تابعينا",
     footerRights: "جميع الحقوق محفوظة.",
+    footerStorePolicy: "الإرجاع والتوصيل",
+
+    storePolicyTitle: "الإرجاع والتوصيل",
+    storePolicyIntro: "تعرض هذه الصفحة سياستنا للإرجاع والاستبدال والتوصيل. النص أدناه مؤقت، وسيتم استبداله بالنص النهائي الخاص بالعميل.",
+    storePolicyDeliveryTitle: "التوصيل",
+    storePolicyDeliveryText: "نوصل إلى 69 ولاية في الجزائر، إلى المنزل أو إلى نقطة استلام، مع الدفع عند الاستلام. تتراوح مدة التوصيل عادة بين 2 و7 أيام عمل حسب الولاية. [نص مؤقت — سيتم استبداله.]",
+    storePolicyReturnsTitle: "الإرجاع والاستبدال",
+    storePolicyReturnsText: "لديك مهلة 7 أيام بعد الاستلام لطلب إرجاع أو استبدال، شرط أن تكون القطعة في حالتها الأصلية، غير مستعملة ومع تغليفها. [نص مؤقت — سيتم استبداله.]",
+    storePolicyRefundTitle: "الاسترجاع المالي",
+    storePolicyRefundText: "بعد استلام المرتجع والتحقق منه، يتم رد المبلغ وفق الطريقة المتفق عليها مع خدمة العملاء. [نص مؤقت — سيتم استبداله.]",
+    storePolicyContactTitle: "لديك سؤال؟",
+    storePolicyContactText: "فريقنا في خدمتكم لأي استفسار بخصوص طلبكم أو الإرجاع أو الاستبدال. [نص مؤقت — سيتم استبداله.]",
+
+    newsletterTitle: "ابقي على اطلاع",
+    newsletterSubtitle: "احصلي على أحدث منتجاتنا وعروضنا الحصرية قبل الجميع.",
+    newsletterPlaceholder: "بريدك الإلكتروني",
+    newsletterSubmit: "اشتراك",
+    newsletterSubmitting: "جارٍ الإرسال…",
+    newsletterSuccess: "شكراً! تم تأكيد اشتراكك.",
+    newsletterAlready: "هذا البريد الإلكتروني مسجل بالفعل.",
+    newsletterInvalid: "الرجاء إدخال بريد إلكتروني صالح.",
+
+    storesTitle: "متاجرنا",
+    storesSubtitle: "زورونا في متاجرنا",
+    storesCta: "عرض على خرائط جوجل",
+    storeCityAlger: "الجزائر العاصمة",
+    storeCityBatna: "باتنة",
 
     toggleTheme: "تغيير المظهر",
     toggleLang: "FR",
@@ -330,12 +391,16 @@ export const translations = {
     adminPassword: "كلمة المرور",
     adminSignIn: "تسجيل الدخول",
     adminSignOut: "تسجيل الخروج",
+    adminBackToSite: "العودة إلى الموقع",
     adminDashboard: "لوحة التحكم",
     adminProducts: "المنتجات",
     adminCategories: "الفئات",
     adminOrders: "الطلبات",
     adminDeliveryPrices: "أسعار التوصيل",
     adminReviews: "آراء العملاء",
+    adminNewsletter: "النشرة الإخبارية",
+    adminNewsletterSubscribers: "المشتركون",
+    adminNewsletterEmpty: "لا يوجد مشتركون حالياً",
     adminSettings: "الإعدادات",
     adminAddProduct: "إضافة منتج",
     adminEditProduct: "تعديل المنتج",

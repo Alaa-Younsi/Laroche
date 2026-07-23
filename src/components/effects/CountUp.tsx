@@ -34,7 +34,7 @@ export function CountUp({ value, prefix = "", suffix = "", duration = 1.8 }: Cou
   }, [inView, value, duration, reducedMotion]);
 
   return (
-    <span ref={ref}>
+    <span ref={ref} dir="ltr">
       {prefix}
       {display.toLocaleString("fr-FR")}
       {suffix}

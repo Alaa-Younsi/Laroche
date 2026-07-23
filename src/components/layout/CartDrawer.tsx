@@ -4,7 +4,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCartStore } from "@/store/cart";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { lineTotal } from "@/lib/offers";
 
 export function CartDrawer() {
@@ -110,9 +110,10 @@ export function CartDrawer() {
                           <Plus size={13} />
                         </button>
                       </div>
-                      <span className="text-sm font-medium text-brand">
-                        {formatPrice(lineTotal(item.price, item.quantity, item.quantity_offers))}
-                      </span>
+                      <Price
+                        value={lineTotal(item.price, item.quantity, item.quantity_offers)}
+                        className="text-sm font-medium text-brand"
+                      />
                     </div>
                   </div>
                 </div>
@@ -123,7 +124,7 @@ export function CartDrawer() {
           <div className="border-t border-line p-5">
             <div className="mb-4 flex items-center justify-between text-sm">
               <span className="text-muted">{t("cartSubtotal")}</span>
-              <span className="font-medium text-ink">{formatPrice(subtotal)}</span>
+              <Price value={subtotal} className="font-medium text-ink" />
             </div>
             <Button className="w-full" size="lg" onClick={closeCart} asChild>
               <Link to="/checkout">{t("cartCheckout")}</Link>

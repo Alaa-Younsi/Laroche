@@ -2,6 +2,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Newsletter } from "@/components/layout/Newsletter";
+import { StoreLocations } from "@/components/layout/StoreLocations";
 import { CartDrawer } from "@/components/layout/CartDrawer";
 
 export function StorefrontLayout() {
@@ -28,6 +30,8 @@ export function StorefrontLayout() {
           <Outlet />
         </motion.div>
       </main>
+      <Newsletter />
+      <StoreLocations />
       <Footer />
       <CartDrawer />
     </div>

@@ -9,7 +9,7 @@ import { DeleteAllOrdersModal } from "@/components/admin/DeleteAllOrdersModal";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { formatDate } from "@/lib/format";
 import type { OrderStatus } from "@/types/db";
 
@@ -82,7 +82,9 @@ export default function Orders() {
                   <td className="whitespace-nowrap px-5 py-3">{order.customer_name}</td>
                   <td className="whitespace-nowrap px-5 py-3">{order.wilaya}</td>
                   <td className="whitespace-nowrap px-5 py-3 capitalize">{order.status}</td>
-                  <td className="whitespace-nowrap px-5 py-3">{formatPrice(order.total)}</td>
+                  <td className="whitespace-nowrap px-5 py-3">
+                    <Price value={order.total} />
+                  </td>
                   <td className="whitespace-nowrap px-5 py-3 text-muted">
                     {formatDate(order.created_at)}
                   </td>

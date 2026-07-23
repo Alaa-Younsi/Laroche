@@ -69,7 +69,7 @@ const COLLECTION_SHOWCASE = [
 ];
 
 const STATS = [
-  { icon: MapPin, value: 58, prefix: "", suffix: "", labelFr: "Wilayas livrées", labelAr: "ولاية موصلة" },
+  { icon: MapPin, value: 69, prefix: "", suffix: "", labelFr: "Wilayas livrées", labelAr: "ولاية موصلة" },
   { icon: Award, value: 925, prefix: "", suffix: "", labelFr: "Argent certifié", labelAr: "فضة معتمدة" },
   { icon: Users, value: 2000, prefix: "+", suffix: "", labelFr: "Clientes conquises", labelAr: "عميلة راضية" },
   { icon: ShieldCheck, value: 100, prefix: "", suffix: "%", labelFr: "Garantie sur chaque pièce", labelAr: "ضمان على كل قطعة" },
@@ -81,9 +81,9 @@ const EDITORIAL = {
   titleFr: "L'art de la joaillerie",
   titleAr: "فنّ صياغة المجوهرات",
   textFr:
-    "Chaque pièce est choisie pour la pureté de son argent 925, la précision de ses finitions et l'émotion qu'elle porte. De l'écrin à votre porte, dans les 58 wilayas.",
+    "Chaque pièce est choisie pour la pureté de son argent 925, la précision de ses finitions et l'émotion qu'elle porte. De l'écrin à votre porte, dans les 69 wilayas.",
   textAr:
-    "كل قطعة مختارة بعناية لنقاء فضتها 925 ودقة تشطيباتها والمشاعر التي تحملها. من العلبة إلى باب منزلك، في 58 ولاية.",
+    "كل قطعة مختارة بعناية لنقاء فضتها 925 ودقة تشطيباتها والمشاعر التي تحملها. من العلبة إلى باب منزلك، في 69 ولاية.",
   pointsFr: ["Argent 925 certifié", "Finitions contrôlées à la main", "Écrin offert avec chaque commande"],
   pointsAr: ["فضة 925 معتمدة", "تشطيبات مفحوصة يدويًا", "علبة هدية مع كل طلب"],
 };
@@ -171,7 +171,7 @@ export default function Landing() {
   useSeo({
     title: "Laroche Bijoux — Bijouterie & Horlogerie de Luxe en Algérie",
     description:
-      "Bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 58 wilayas, paiement à la livraison.",
+      "Bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 69 wilayas, paiement à la livraison.",
   });
 
   return (
@@ -191,7 +191,7 @@ export default function Landing() {
           className="pointer-events-none absolute z-0 hidden h-80 w-80 rounded-full bg-brand/[0.07] blur-3xl md:block"
         />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 pb-16 pt-12 sm:px-6 md:min-h-[calc(100vh-10rem)] md:grid-cols-2 md:gap-10 md:px-8 md:pb-24 md:pt-16">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-14 sm:px-6 md:min-h-[calc(100vh-8rem)] md:grid-cols-2 md:gap-10 md:px-8 md:py-16">
           <div className="order-2 md:order-1">
             <motion.div
               initial={{ opacity: 0 }}
@@ -243,7 +243,7 @@ export default function Landing() {
               className="mt-10 flex items-center gap-6 border-t border-line pt-6 sm:gap-8 md:mt-12"
             >
               {[
-                { value: 58, prefix: "", suffix: "", labelFr: "Wilayas", labelAr: "ولاية" },
+                { value: 69, prefix: "", suffix: "", labelFr: "Wilayas", labelAr: "ولاية" },
                 { value: 925, prefix: "", suffix: "", labelFr: "Argent", labelAr: "فضة" },
                 { value: 2000, prefix: "+", suffix: "", labelFr: "Clientes", labelAr: "عميلة" },
               ].map((stat) => (
@@ -259,7 +259,7 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          <div className="relative order-1 h-[24rem] sm:h-[30rem] md:order-2 md:h-[36rem]">
+          <div className="relative order-1 h-[24rem] sm:h-[28rem] md:order-2 md:h-[32rem]">
             <HeroShowcase />
           </div>
         </div>

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/format";
+import { Price } from "@/components/ui/Price";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/db";
 
@@ -77,7 +77,9 @@ export default function Products() {
                         : product.category.name_fr
                       : "—"}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-2.5">{formatPrice(product.price)}</td>
+                  <td className="whitespace-nowrap px-5 py-2.5">
+                    <Price value={product.price} />
+                  </td>
                   <td className="whitespace-nowrap px-5 py-2.5">{product.stock}</td>
                   <td className="whitespace-nowrap px-5 py-2.5">
                     <span

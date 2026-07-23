@@ -26,6 +26,7 @@ export interface Category {
   image_url: string | null;
   sort_order: number;
   created_at: string;
+  parent_id: string | null;
 }
 
 export interface ProductImage {
@@ -127,6 +128,13 @@ export interface DeliveryPrice {
   office_price: number;
   active: boolean;
   updated_at: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  active: boolean;
+  created_at: string;
 }
 
 export interface ClientReview {

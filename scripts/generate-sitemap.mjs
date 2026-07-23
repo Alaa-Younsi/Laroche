@@ -7,7 +7,7 @@ const SITE_URL = process.env.VITE_SITE_URL || "https://larochebijoux.dz";
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
-const STATIC_ROUTES = ["/", "/boutique"];
+const STATIC_ROUTES = ["/", "/boutique", "/politique-retour-livraison"];
 
 async function fetchProductSlugs() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {

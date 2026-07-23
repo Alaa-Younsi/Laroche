@@ -2,15 +2,18 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
+import { flattenCategoryTree, type CategoryNode } from "@/lib/categoryTree";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
+
+const DEPTH_INDENT = ["", "ms-6", "ms-12", "ms-[4.5rem]"] as const;
 
 type Tab = "categories" | "collections" | "brands";
 
@@ -50,15 +53,47 @@ export default function Categories() {
   );
 }
 
+function CategoryNodeRow({
+  node,
+  depth,
+  lang,
+  onRemove,
+}: {
+  node: CategoryNode;
+  depth: number;
+  lang: string;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <BentoPanel className={cn("p-4", DEPTH_INDENT[Math.min(depth, DEPTH_INDENT.length - 1)])}>
+      <div className="flex items-center justify-between">
+        <span className={depth === 0 ? "font-medium text-ink" : "text-sm text-ink"}>
+          {lang === "ar" ? node.name_ar : node.name_fr}
+        </span>
+        <button onClick={() => onRemove(node.id)} className="text-muted hover:text-red-500">
+          <Trash2 size={15} />
+        </button>
+      </div>
+      {node.children.length > 0 && (
+        <div className="mt-2 space-y-2">
+          {node.children.map((child) => (
+            <CategoryNodeRow key={child.id} node={child} depth={depth + 1} lang={lang} onRemove={onRemove} />
+          ))}
+        </div>
+      )}
+    </BentoPanel>
+  );
+}
+
 function CategoriesTab({ lang }: { lang: string }) {
   const { t } = useLanguage();
-  const { data: categories = [] } = useCategories();
+  const { data: tree = [] } = useCategoryGroups();
   const queryClient = useQueryClient();
   const [nameFr, setNameFr] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [parentId, setParentId] = useState("");
 
-  const parents = categories.filter((c) => !c.parent_id);
+  const flatOptions = flattenCategoryTree(tree);
 
   function invalidate() {
     return queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -92,9 +127,10 @@ function CategoriesTab({ lang }: { lang: string }) {
           <Input placeholder="الاسم (AR)" dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
           <Select value={parentId} onChange={(e) => setParentId(e.target.value)}>
             <option value="">— Catégorie principale —</option>
-            {parents.map((p) => (
-              <option key={p.id} value={p.id}>
-                {lang === "ar" ? p.name_ar : p.name_fr}
+            {flatOptions.map(({ node, depth }) => (
+              <option key={node.id} value={node.id}>
+                {"— ".repeat(depth)}
+                {lang === "ar" ? node.name_ar : node.name_fr}
               </option>
             ))}
           </Select>
@@ -105,32 +141,8 @@ function CategoriesTab({ lang }: { lang: string }) {
       </BentoPanel>
 
       <div className="space-y-2">
-        {parents.map((parent) => (
-          <BentoPanel key={parent.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-ink">
-                {lang === "ar" ? parent.name_ar : parent.name_fr}
-              </span>
-              <button onClick={() => remove(parent.id)} className="text-muted hover:text-red-500">
-                <Trash2 size={15} />
-              </button>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {categories
-                .filter((c) => c.parent_id === parent.id)
-                .map((child) => (
-                  <span
-                    key={child.id}
-                    className="flex items-center gap-2 rounded-full bg-panel-2 px-3 py-1.5 text-xs text-ink"
-                  >
-                    {lang === "ar" ? child.name_ar : child.name_fr}
-                    <button onClick={() => remove(child.id)} className="text-muted hover:text-red-500">
-                      <Trash2 size={11} />
-                    </button>
-                  </span>
-                ))}
-            </div>
-          </BentoPanel>
+        {tree.map((node) => (
+          <CategoryNodeRow key={node.id} node={node} depth={0} lang={lang} onRemove={remove} />
         ))}
       </div>
     </div>
