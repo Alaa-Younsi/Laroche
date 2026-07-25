@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ChipListEditor } from "@/components/admin/ChipListEditor";
+import { ColorsEditor } from "@/components/admin/ColorsEditor";
 import { CustomVariantsEditor } from "@/components/admin/CustomVariantsEditor";
 import { OffersEditor } from "@/components/admin/OffersEditor";
 import { ImagesEditor } from "@/components/admin/ImagesEditor";
-import type { Product, ProductImage, VariantGroup, QuantityOffer } from "@/types/db";
+import type { Product, ProductColor, ProductImage, VariantGroup, QuantityOffer } from "@/types/db";
 
 const EMPTY: Omit<Product, "id" | "created_at" | "updated_at" | "category" | "product_images"> = {
   slug: "",
@@ -114,6 +115,7 @@ export default function ProductForm() {
       brand_id: brandId || null,
       quantity_offers: sanitizeOffers(form.quantity_offers as QuantityOffer[]),
       variants: (form.variants as VariantGroup[]).filter((g) => g.name_fr.trim() && g.values.length > 0),
+      colors: (form.colors as ProductColor[]).filter((c) => c.label_fr.trim() || c.label_ar.trim()),
       compare_at_price: form.compare_at_price || null,
     };
 
@@ -203,10 +205,12 @@ export default function ProductForm() {
           </BentoPanel>
 
           <BentoPanel className="space-y-4 p-6">
-            <h3 className="text-sm font-medium uppercase tracking-wide2 text-muted">
-              {t("productColor")} / {t("productSize")}
-            </h3>
-            <ChipListEditor values={form.colors} onChange={(v) => update("colors", v)} placeholder="Couleur…" />
+            <h3 className="text-sm font-medium uppercase tracking-wide2 text-muted">{t("productColor")}</h3>
+            <ColorsEditor colors={form.colors} onChange={(v) => update("colors", v)} />
+          </BentoPanel>
+
+          <BentoPanel className="space-y-4 p-6">
+            <h3 className="text-sm font-medium uppercase tracking-wide2 text-muted">{t("productSize")}</h3>
             <ChipListEditor values={form.sizes} onChange={(v) => update("sizes", v)} placeholder="Taille…" />
           </BentoPanel>
 

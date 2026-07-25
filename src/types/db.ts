@@ -37,6 +37,13 @@ export interface ProductImage {
   sort_order: number;
 }
 
+export interface ProductColor {
+  label_fr: string;
+  label_ar: string;
+  hex: string;
+  image_url: string | null;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -54,7 +61,7 @@ export interface Product {
   material: string | null;
   warranty_fr: string | null;
   warranty_ar: string | null;
-  colors: string[];
+  colors: ProductColor[];
   sizes: string[];
   variants: VariantGroup[];
   quantity_offers: QuantityOffer[];

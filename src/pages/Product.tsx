@@ -7,14 +7,14 @@ import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 import { useSeo } from "@/hooks/useSeo";
 import { useCartStore } from "@/store/cart";
 import { Button } from "@/components/ui/Button";
-import { ProductGallery } from "@/components/product/ProductGallery";
+import { ProductGallery, type GalleryImage } from "@/components/product/ProductGallery";
 import { InlineCheckout } from "@/components/product/InlineCheckout";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Reveal } from "@/components/effects/Reveal";
 import { Price } from "@/components/ui/Price";
 import { cn } from "@/lib/utils";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
-import type { VariantPick } from "@/types/db";
+import type { ProductColor, VariantPick } from "@/types/db";
 
 export default function Product() {
   const { slug } = useParams();
@@ -28,6 +28,7 @@ export default function Product() {
   const [variantPicks, setVariantPicks] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [openSection, setOpenSection] = useState<string | null>("description");
+  const [activeImage, setActiveImage] = useState(0);
   const trackedViewId = useRef<string | null>(null);
   const checkoutRef = useRef<HTMLDivElement>(null);
 
@@ -44,8 +45,37 @@ export default function Product() {
     if (product && trackedViewId.current !== product.id) {
       trackedViewId.current = product.id;
       trackViewContent({ value: product.price, currency: "DZD", content_ids: [product.id] });
+      setActiveImage(0);
     }
   }, [product]);
+
+  const galleryImages: GalleryImage[] = useMemo(() => {
+    if (!product) return [];
+    const base = (product.product_images ?? [])
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((img) => ({ key: img.id, url: img.url, alt: img.alt }));
+    const seen = new Set(base.map((g) => g.url));
+    const colorImages = product.colors
+      .filter((c) => c.image_url && !seen.has(c.image_url))
+      .map((c) => {
+        seen.add(c.image_url as string);
+        return {
+          key: `color-${c.hex}`,
+          url: c.image_url as string,
+          alt: lang === "ar" ? c.label_ar : c.label_fr,
+        };
+      });
+    return [...base, ...colorImages];
+  }, [product, lang]);
+
+  function handleSelectColor(c: ProductColor) {
+    setColor(lang === "ar" ? c.label_ar : c.label_fr);
+    if (c.image_url) {
+      const idx = galleryImages.findIndex((g) => g.url === c.image_url);
+      if (idx >= 0) setActiveImage(idx);
+    }
+  }
 
   const name = product ? (lang === "ar" ? product.name_ar : product.name_fr) : "";
   const description = product ? (lang === "ar" ? product.description_ar : product.description_fr) : "";
@@ -152,7 +182,12 @@ export default function Product() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          <ProductGallery images={product.product_images ?? []} alt={name} />
+          <ProductGallery
+            images={galleryImages}
+            alt={name}
+            activeIndex={activeImage}
+            onActiveChange={setActiveImage}
+          />
         </motion.div>
 
         <motion.div
@@ -195,22 +230,34 @@ export default function Product() {
 
           {requiresColor && (
             <div className="mt-6">
-              <p className="mb-2 text-xs uppercase tracking-wide2 text-muted">{t("productColor")}</p>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setColor(c)}
-                    className={cn(
-                      "rounded-full border px-4 py-2 text-sm transition-colors",
-                      color === c
-                        ? "border-brand bg-brand/10 text-brand"
-                        : "border-line text-muted hover:border-brand/50",
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
+              <p className="mb-2 text-xs uppercase tracking-wide2 text-muted">
+                {t("productColor")}
+                {color && <span className="ms-1.5 normal-case text-ink">— {color}</span>}
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {product.colors.map((c) => {
+                  const label = lang === "ar" ? c.label_ar : c.label_fr;
+                  const selected = color === label;
+                  return (
+                    <button
+                      key={`${c.hex}-${label}`}
+                      type="button"
+                      onClick={() => handleSelectColor(c)}
+                      title={label}
+                      aria-label={label}
+                      aria-pressed={selected}
+                      className={cn(
+                        "relative h-9 w-9 shrink-0 rounded-full ring-1 ring-line ring-offset-2 ring-offset-bg transition-all hover:ring-brand/50",
+                        selected && "ring-2 ring-brand",
+                      )}
+                    >
+                      <span
+                        className="absolute inset-0.5 rounded-full border border-black/10"
+                        style={{ backgroundColor: c.hex }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

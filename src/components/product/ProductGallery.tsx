@@ -1,22 +1,40 @@
-import { useState, useRef, type MouseEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useRef, useState, type MouseEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import { SmartImage } from "@/components/ui/SmartImage";
-import type { ProductImage } from "@/types/db";
+
+export interface GalleryImage {
+  key: string;
+  url: string;
+  alt?: string | null;
+}
+
+const SWIPE_THRESHOLD = 60;
 
 export function ProductGallery({
   images,
   alt,
+  activeIndex,
+  onActiveChange,
 }: {
-  images: ProductImage[];
+  images: GalleryImage[];
   alt: string;
+  activeIndex: number;
+  onActiveChange: (index: number) => void;
 }) {
-  const [active, setActive] = useState(0);
+  const { dir } = useLanguage();
   const [zoom, setZoom] = useState({ x: 50, y: 50, active: false });
   const [lightbox, setLightbox] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
+  const wasDragged = useRef(false);
+  const reducedMotion = useReducedMotion();
 
-  const current = images[active];
+  const current = images[activeIndex];
+
+  function goTo(index: number) {
+    onActiveChange((index + images.length) % images.length);
+  }
 
   function handleMouseMove(e: MouseEvent<HTMLDivElement>) {
     const rect = imgRef.current?.getBoundingClientRect();
@@ -24,6 +42,21 @@ export function ProductGallery({
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setZoom({ x, y, active: true });
+  }
+
+  function handleDragEnd(_: unknown, info: PanInfo) {
+    const offset = dir === "rtl" ? -info.offset.x : info.offset.x;
+    if (Math.abs(offset) > 5) wasDragged.current = true;
+    if (offset > SWIPE_THRESHOLD) goTo(activeIndex - 1);
+    else if (offset < -SWIPE_THRESHOLD) goTo(activeIndex + 1);
+  }
+
+  function handleImageClick() {
+    if (wasDragged.current) {
+      wasDragged.current = false;
+      return;
+    }
+    setLightbox(true);
   }
 
   if (!current) {
@@ -34,19 +67,23 @@ export function ProductGallery({
     <div>
       <div
         ref={imgRef}
-        className="relative aspect-square cursor-zoom-in overflow-hidden rounded-2xl border border-line bg-panel-2"
+        className="group relative aspect-square cursor-zoom-in touch-pan-y select-none overflow-hidden rounded-2xl border border-line bg-panel-2"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setZoom((z) => ({ ...z, active: false }))}
-        onClick={() => setLightbox(true)}
+        onClick={handleImageClick}
       >
         {/* crossfade between gallery images — exiting frame stays absolute under the entering one */}
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} mode="wait">
           <motion.div
-            key={current.id}
-            initial={{ opacity: 0, scale: 1.03 }}
+            key={current.key}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.25}
+            onDragEnd={handleDragEnd}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 1.03 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: reducedMotion ? 0.15 : 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
             <img
@@ -57,7 +94,7 @@ export function ProductGallery({
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              className="h-full w-full object-cover transition-transform duration-200"
+              className="pointer-events-none h-full w-full object-cover transition-transform duration-200"
               style={
                 zoom.active
                   ? {
@@ -69,17 +106,42 @@ export function ProductGallery({
             />
           </motion.div>
         </AnimatePresence>
+
+        {images.length > 1 && (
+          <>
+            <button
+              className="absolute start-2 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-opacity hover:bg-black/50 group-hover:opacity-100 sm:opacity-70"
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo(activeIndex - 1);
+              }}
+              aria-label="previous"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-opacity hover:bg-black/50 group-hover:opacity-100 sm:opacity-70"
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo(activeIndex + 1);
+              }}
+              aria-label="next"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
       </div>
 
       {images.length > 1 && (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {images.map((img, i) => (
             <motion.button
-              key={img.id}
-              onClick={() => setActive(i)}
+              key={img.key}
+              onClick={() => goTo(i)}
               whileTap={{ scale: 0.94 }}
               className={`relative shrink-0 overflow-hidden rounded-lg border transition-colors ${
-                i === active ? "border-brand" : "border-line opacity-70 hover:opacity-100"
+                i === activeIndex ? "border-brand" : "border-line opacity-70 hover:opacity-100"
               }`}
             >
               <SmartImage
@@ -89,7 +151,7 @@ export function ProductGallery({
                 height={72}
                 className="h-18 w-18 object-cover"
               />
-              {i === active && (
+              {i === activeIndex && (
                 <motion.span
                   layoutId="gallery-thumb-indicator"
                   className="absolute inset-x-0 bottom-0 h-0.5 bg-brand"
@@ -122,7 +184,7 @@ export function ProductGallery({
                   className="absolute start-6 top-1/2 -translate-y-1/2 text-white transition-transform hover:scale-125"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActive((i) => (i - 1 + images.length) % images.length);
+                    goTo(activeIndex - 1);
                   }}
                   aria-label="previous"
                 >
@@ -132,7 +194,7 @@ export function ProductGallery({
                   className="absolute end-6 top-1/2 -translate-y-1/2 text-white transition-transform hover:scale-125"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActive((i) => (i + 1) % images.length);
+                    goTo(activeIndex + 1);
                   }}
                   aria-label="next"
                 >
@@ -141,7 +203,7 @@ export function ProductGallery({
               </>
             )}
             <motion.img
-              key={current.id}
+              key={current.key}
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
