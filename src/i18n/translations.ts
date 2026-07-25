@@ -158,7 +158,7 @@ export const translations = {
     storePolicyDeliveryTitle: "Livraison",
     storePolicyDeliveryText: "Nous livrons dans les 69 wilayas d'Algérie, à domicile ou en point relais, avec paiement à la livraison. Les délais moyens varient entre 2 et 7 jours ouvrés selon la wilaya. [Texte provisoire — à remplacer.]",
     storePolicyReturnsTitle: "Retours & Échanges",
-    storePolicyReturnsText: "Vous disposez d'un délai de 7 jours après réception pour demander un retour ou un échange, sous réserve que le bijou soit dans son état d'origine, non porté et avec son emballage. [Texte provisoire — à remplacer.]",
+    storePolicyReturnsText: "Vous disposez d'un délai de 3 jours après réception pour demander un retour ou un échange, sous réserve que le bijou soit dans son état d'origine, non porté et avec son emballage. [Texte provisoire — à remplacer.]",
     storePolicyRefundTitle: "Remboursement",
     storePolicyRefundText: "Une fois le retour reçu et vérifié, le remboursement est effectué selon les modalités convenues avec notre service client. [Texte provisoire — à remplacer.]",
     storePolicyContactTitle: "Une question ?",
@@ -179,7 +179,7 @@ export const translations = {
     storesSubtitle: "Retrouvez-nous en magasin",
     storesCta: "Voir sur Google Maps",
     storeCityAlger: "Alger",
-    storeCityBatna: "Batna",
+    storeCityOumElBouaghi: "Oum El Bouaghi",
 
     // Theme / lang toggles
     toggleTheme: "Changer le thème",
@@ -362,7 +362,7 @@ export const translations = {
     storePolicyDeliveryTitle: "التوصيل",
     storePolicyDeliveryText: "نوصل إلى 69 ولاية في الجزائر، إلى المنزل أو إلى نقطة استلام، مع الدفع عند الاستلام. تتراوح مدة التوصيل عادة بين 2 و7 أيام عمل حسب الولاية. [نص مؤقت — سيتم استبداله.]",
     storePolicyReturnsTitle: "الإرجاع والاستبدال",
-    storePolicyReturnsText: "لديك مهلة 7 أيام بعد الاستلام لطلب إرجاع أو استبدال، شرط أن تكون القطعة في حالتها الأصلية، غير مستعملة ومع تغليفها. [نص مؤقت — سيتم استبداله.]",
+    storePolicyReturnsText: "لديك مهلة 3 أيام بعد الاستلام لطلب إرجاع أو استبدال، شرط أن تكون القطعة في حالتها الأصلية، غير مستعملة ومع تغليفها. [نص مؤقت — سيتم استبداله.]",
     storePolicyRefundTitle: "الاسترجاع المالي",
     storePolicyRefundText: "بعد استلام المرتجع والتحقق منه، يتم رد المبلغ وفق الطريقة المتفق عليها مع خدمة العملاء. [نص مؤقت — سيتم استبداله.]",
     storePolicyContactTitle: "لديك سؤال؟",
@@ -381,7 +381,7 @@ export const translations = {
     storesSubtitle: "زورونا في متاجرنا",
     storesCta: "عرض على خرائط جوجل",
     storeCityAlger: "الجزائر العاصمة",
-    storeCityBatna: "باتنة",
+    storeCityOumElBouaghi: "أم البواقي",
 
     toggleTheme: "تغيير المظهر",
     toggleLang: "FR",

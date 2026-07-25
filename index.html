@@ -13,6 +13,8 @@
 
     <!-- editorial imagery lives on Unsplash; warm the connection before React asks -->
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <!-- Supabase serves the catalogue query + product photos on every route -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
     <!-- landing hero = LCP; start it during HTML parse instead of after the JS bundle.
          imagesrcset/imagesizes must stay identical to what SmartImage renders for
          HERO_MAIN or the browser fetches the image twice. -->
@@ -32,7 +34,7 @@
     <title>Laroche Bijoux — Bijouterie & Horlogerie de Luxe en Algérie</title>
     <meta
       name="description"
-      content="Laroche Bijoux — bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 58 wilayas, paiement à la livraison, garantie sur chaque pièce."
+      content="Laroche Bijoux — bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 69 wilayas, paiement à la livraison, garantie sur chaque pièce."
     />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://larochebijoux.dz/" />
@@ -42,7 +44,7 @@
     <meta property="og:title" content="Laroche Bijoux — Bijouterie & Horlogerie de Luxe" />
     <meta
       property="og:description"
-      content="Bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 58 wilayas, paiement à la livraison."
+      content="Bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 69 wilayas, paiement à la livraison."
     />
     <meta property="og:url" content="https://larochebijoux.dz/" />
     <meta property="og:image" content="https://larochebijoux.dz/og-image.png" />
@@ -56,7 +58,7 @@
     <meta name="twitter:title" content="Laroche Bijoux — Bijouterie & Horlogerie de Luxe" />
     <meta
       name="twitter:description"
-      content="Bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 58 wilayas, paiement à la livraison."
+      content="Bijoux en argent 925, acier inoxydable, montres et pièces personnalisées. Livraison dans les 69 wilayas, paiement à la livraison."
     />
     <meta name="twitter:image" content="https://larochebijoux.dz/og-image.png" />
 
@@ -67,7 +69,7 @@
         "name": "Laroche Bijoux",
         "url": "https://larochebijoux.dz/",
         "logo": "https://larochebijoux.dz/og-image.png",
-        "description": "Bijouterie & Horlogerie de luxe — argent 925, acier inoxydable, montres et bijoux personnalisés. Livraison dans les 58 wilayas d'Algérie, paiement à la livraison.",
+        "description": "Bijouterie & Horlogerie de luxe — argent 925, acier inoxydable, montres et bijoux personnalisés. Livraison dans les 69 wilayas d'Algérie, paiement à la livraison.",
         "areaServed": "Algérie",
         "paymentAccepted": "Cash on delivery"
       }

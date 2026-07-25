@@ -293,7 +293,7 @@ export default function Product() {
             <Button
               size="lg"
               variant="outline"
-              className="flex-1"
+              className="w-full sm:flex-1 hover:-translate-y-0.5 hover:shadow-panel"
               disabled={product.stock <= 0 || missingVariant}
               onClick={handleAddToCart}
             >
@@ -301,7 +301,7 @@ export default function Product() {
             </Button>
             <Button
               size="lg"
-              className="flex-1"
+              className="w-full sm:flex-1 hover:-translate-y-0.5"
               disabled={product.stock <= 0 || missingVariant}
               onClick={scrollToCheckout}
             >

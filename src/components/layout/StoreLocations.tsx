@@ -15,12 +15,12 @@ const STORES = [
       "https://www.google.com/maps/place/LAROCHE+BIJOUX/@36.7790694,3.2404806,17z/data=!3m1!4b1!4m6!3m5!1s0x128e4f005f81a0ad:0x8d3552c5f7e0a392!8m2!3d36.7790694!4d3.2404806!16s%2Fg%2F11n4bhlysk!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDcxOS4wIKXMDSoASAFQAw%3D%3D",
   },
   {
-    id: "batna",
-    cityKey: "storeCityBatna" as const,
+    id: "oum-el-bouaghi",
+    cityKey: "storeCityOumElBouaghi" as const,
     lat: 35.8730305,
     lng: 7.1102271,
     mapsUrl:
-      "https://www.google.com/maps/place/LAROCHE+BIJOUX/@35.8731487,7.1102821,16.84z/data=!4m6!3m5!1s0x12f0d7a989d52075:0x66e1ca6db7132cf1!8m2!3d35.8730305!4d7.1102271!16s%2Fg%2F11jh34j1jv!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDcxOS4wIKXMDSoASAFQAw%3D%3D",
+      "https://www.google.com/maps/place/LAROCHE+BIJOUX,+vers+Polyclinique,+Oum+El+Bouaghi+04000/@35.8730305,7.1102271,15z/data=!4m6!3m5!1s0x12f0d7a989d52075:0x66e1ca6db7132cf1!8m2!3d35.8730305!4d7.1102271!16s%2Fg%2F11jh34j1jv?entry=ttu",
   },
 ] as const;
 
