@@ -155,7 +155,7 @@ export default function ProductForm() {
 
   return (
     <form onSubmit={handleSave}>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl text-ink">
           {isEdit ? t("adminEditProduct") : t("adminAddProduct")}
         </h1>

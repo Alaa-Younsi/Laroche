@@ -18,6 +18,7 @@ export const CATEGORY_FALLBACKS = [
   u("photo-1610694955371-d4a3e0ce4b52", 700), // dainty layered necklaces — acier
   u("photo-1587836374828-4dbafa94cf0e", 700), // black steel watch — montres
   u("photo-1611591437281-460bfbe1220a", 700), // gold pavé bangle — personnalisation
+  u("photo-1602173574767-37ac01994b2a", 700), // gold chain bracelet — plaqué/xuping
 ];
 
 /** Collection showcase banners. */

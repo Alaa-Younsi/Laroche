@@ -29,7 +29,7 @@ export default function Products() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl text-ink">{t("adminProducts")}</h1>
         <Button asChild>
           <Link to="/admin/produits/nouveau">

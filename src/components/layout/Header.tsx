@@ -71,16 +71,6 @@ function MobileCategoryLinks({ nodes, depth, lang }: { nodes: CategoryNode[]; de
   );
 }
 
-// Full category names ("Bijoux en Argent 925", "Bijoux en Acier
-// Inoxydable") are the correct copy for page titles and the footer, but
-// they're too long for a single-line desktop nav item — at common desktop
-// widths (confirmed at 1440px) the flex row has no room and the label
-// wraps onto two lines. Short-form labels only for the nav trigger.
-const NAV_LABEL_OVERRIDES: Record<string, { fr: string; ar: string }> = {
-  "bijoux-argent-925": { fr: "Argent 925", ar: "فضة 925" },
-  "bijoux-acier-inox": { fr: "Acier Inox.", ar: "ستانلس ستيل" },
-};
-
 export function Header() {
   const { t, lang, setLang } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -159,47 +149,50 @@ export function Header() {
             {t("navHome")}
             <span className="absolute -bottom-1.5 start-0 h-px w-0 bg-brand transition-all duration-300 group-hover:w-full" />
           </Link>
-          {groups.map((group) => (
+          {groups.length > 0 && (
             <div
-              key={group.id}
               className="relative"
-              onMouseEnter={() => setOpenMenu(group.id)}
+              onMouseEnter={() => setOpenMenu("shop")}
               onMouseLeave={() => setOpenMenu(null)}
             >
               <Link
-                to={`/boutique?categorie=${group.slug}`}
+                to="/boutique"
                 className="group relative flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-ink transition-colors hover:text-brand"
               >
-                {(() => {
-                  const override = NAV_LABEL_OVERRIDES[group.slug];
-                  if (override) return lang === "ar" ? override.ar : override.fr;
-                  return lang === "ar" ? group.name_ar : group.name_fr;
-                })()}
-                {group.children.length > 0 && (
-                  <ChevronDown
-                    size={12}
-                    className="transition-transform duration-300 group-hover:rotate-180"
-                  />
-                )}
+                {t("shopTitle")}
+                <ChevronDown
+                  size={12}
+                  className="transition-transform duration-300 group-hover:rotate-180"
+                />
                 <span className="absolute -bottom-1.5 start-0 h-px w-0 bg-brand transition-all duration-300 group-hover:w-full" />
               </Link>
               <AnimatePresence>
-                {openMenu === group.id && group.children.length > 0 && (
+                {openMenu === "shop" && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute start-0 top-full z-40 min-w-52 border border-line bg-panel p-2 shadow-panel"
+                    className="absolute start-0 top-full z-40 flex w-[38rem] max-w-[90vw] flex-wrap gap-x-8 gap-y-5 border border-line bg-panel p-6 shadow-panel"
                   >
-                    {group.children.map((child, ci) => (
-                      <DesktopMenuItem key={child.id} node={child} depth={0} index={ci} lang={lang} />
+                    {groups.map((group) => (
+                      <div key={group.id} className="w-44 shrink-0">
+                        <Link
+                          to={`/boutique?categorie=${group.slug}`}
+                          className="mb-1.5 block text-xs font-semibold uppercase tracking-wide2 text-ink transition-colors hover:text-brand"
+                        >
+                          {lang === "ar" ? group.name_ar : group.name_fr}
+                        </Link>
+                        {group.children.map((child, ci) => (
+                          <DesktopMenuItem key={child.id} node={child} depth={0} index={ci} lang={lang} />
+                        ))}
+                      </div>
                     ))}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-          ))}
+          )}
           <Link
             to="/boutique?collection=promotions"
             className="group relative shrink-0 whitespace-nowrap text-xs font-medium uppercase tracking-wide2 text-brand transition-colors hover:brightness-110"

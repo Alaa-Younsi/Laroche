@@ -15,6 +15,7 @@ import {
   Users,
   MapPin,
   Award,
+  Layers,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
@@ -39,7 +40,7 @@ import {
   GALLERY,
 } from "@/lib/editorialImages";
 
-const CATEGORY_ICONS = [Gem, SparklesIcon, Watch, Wand2];
+const CATEGORY_ICONS = [Gem, SparklesIcon, Watch, Wand2, Layers];
 
 const COLLECTION_SHOWCASE = [
   {
@@ -317,15 +318,20 @@ export default function Landing() {
             {t("sectionCategories")}
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-px border border-line bg-line md:grid-cols-4">
+        <div className="flex flex-wrap justify-center">
           {groups.map((group, i) => {
             const Icon = CATEGORY_ICONS[i % CATEGORY_ICONS.length];
             const photo = group.image_url ?? CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length];
             return (
-              <Reveal key={group.id} variant="curtain" delay={(i % 2) * 0.09}>
+              <Reveal
+                key={group.id}
+                variant="curtain"
+                delay={(i % 2) * 0.09}
+                className="w-1/2 md:w-1/4"
+              >
                 <Link
                   to={`/boutique?categorie=${group.slug}`}
-                  className="group relative block aspect-[3/4] overflow-hidden bg-bg"
+                  className="group relative block aspect-[3/4] overflow-hidden border border-line bg-bg -m-px"
                 >
                   <SmartImage
                     src={photo}
