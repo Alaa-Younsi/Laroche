@@ -7,7 +7,7 @@ interface SeoOptions {
   jsonLd?: Record<string, unknown>;
 }
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://larochebijoux.dz";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.larochebijoux.com";
 
 function upsertMeta(attr: "name" | "property", key: string, content: string) {
   let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);

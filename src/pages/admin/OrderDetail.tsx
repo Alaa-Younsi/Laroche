@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
+import { EcotrackPanel } from "@/components/admin/EcotrackPanel";
 import { formatDate } from "@/lib/format";
 import type { OrderStatus } from "@/types/db";
 
@@ -146,6 +147,8 @@ export default function OrderDetail() {
             )}
           </dl>
         </BentoPanel>
+
+        <EcotrackPanel order={order} />
       </div>
     </div>
   );

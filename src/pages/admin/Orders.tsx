@@ -67,6 +67,7 @@ export default function Orders() {
                 <th className="whitespace-nowrap px-5 py-3 text-start">Client</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">Wilaya</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">{t("adminStatus")}</th>
+                <th className="whitespace-nowrap px-5 py-3 text-start">Suivi</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">{t("cartTotal")}</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">Date</th>
               </tr>
@@ -83,6 +84,15 @@ export default function Orders() {
                   <td className="whitespace-nowrap px-5 py-3">{order.wilaya}</td>
                   <td className="whitespace-nowrap px-5 py-3 capitalize">{order.status}</td>
                   <td className="whitespace-nowrap px-5 py-3">
+                    {order.ecotrack_tracking ? (
+                      <span dir="ltr" className="font-mono text-xs text-brand">
+                        {order.ecotrack_tracking}
+                      </span>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3">
                     <Price value={order.total} />
                   </td>
                   <td className="whitespace-nowrap px-5 py-3 text-muted">
@@ -92,7 +102,7 @@ export default function Orders() {
               ))}
               {orders.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-muted">
+                  <td colSpan={7} className="px-5 py-8 text-center text-muted">
                     {t("adminNoOrders")}
                   </td>
                 </tr>

@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /checkout
 Disallow: /commande
 
-Sitemap: https://larochebijoux.dz/sitemap.xml
+Sitemap: https://www.larochebijoux.com/sitemap.xml

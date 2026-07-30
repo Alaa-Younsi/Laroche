@@ -3,7 +3,7 @@
 // deploys. Every entry here must exist as a <Route> in src/App.tsx.
 import { writeFileSync } from "node:fs";
 
-const SITE_URL = process.env.VITE_SITE_URL || "https://larochebijoux.dz";
+const SITE_URL = process.env.VITE_SITE_URL || "https://www.larochebijoux.com";
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 

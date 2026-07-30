@@ -25,6 +25,7 @@ export async function exportOrdersToExcel(orders: Order[]): Promise<void> {
     Ville: excelSafe(order.city),
     Adresse: excelSafe(order.address),
     Statut: STATUS_LABELS[order.status] ?? order.status,
+    Suivi_ECOTRACK: excelSafe(order.ecotrack_tracking),
     Livraison: order.delivery_type === "home" ? "Domicile" : "Bureau",
     "Sous-total": formatPrice(order.subtotal),
     Livraison_Frais: formatPrice(order.shipping),

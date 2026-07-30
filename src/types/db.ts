@@ -119,6 +119,10 @@ export interface Order {
   language: Lang;
   delivery_type: DeliveryType;
   created_at: string;
+  // ECOTRACK delivery (0013_ecotrack_tracking.sql) — null until shipped.
+  ecotrack_tracking?: string | null;
+  ecotrack_status?: string | null;
+  ecotrack_synced_at?: string | null;
   order_items?: OrderItem[];
 }
 
