@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Pencil, Check, X, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, AlertTriangle, ImagePlus, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { supabase } from "@/lib/supabase";
+import { compressImage } from "@/lib/image";
 import { slugify } from "@/lib/utils";
 import {
   flattenCategoryTree,
@@ -21,6 +22,90 @@ import { cn } from "@/lib/utils";
 const DEPTH_INDENT = ["", "ms-6", "ms-12", "ms-[4.5rem]"] as const;
 
 type Tab = "categories" | "collections" | "brands";
+
+// Categories rendered from the FALLBACK_TREE in useCategories carry synthetic
+// `slug:` ids — there is no row behind them, so any write silently no-ops.
+const isPersisted = (id: string) => !id.startsWith("slug:");
+
+// The category photo is what the landing page shows on its category cards
+// (Landing.tsx falls back to a stock editorial shot when image_url is null).
+// It saves on pick rather than behind the edit form, so swapping a photo is a
+// single click — same interaction as the colour swatches in ColorsEditor.
+function CategoryImagePicker({
+  imageUrl,
+  onChange,
+}: {
+  imageUrl: string | null;
+  onChange: (url: string | null) => void;
+}) {
+  const { t } = useLanguage();
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File | null) {
+    if (!file) return;
+    setUploading(true);
+    const compressed = await compressImage(file);
+    const path = `categories/${crypto.randomUUID()}-${compressed.name}`;
+    const { data, error } = await supabase.storage
+      .from("product-images")
+      .upload(path, compressed, { cacheControl: "31536000" });
+    if (!error && data) {
+      onChange(supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl);
+    }
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div className="shrink-0">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+      />
+      {imageUrl ? (
+        <div className="group relative h-11 w-11 overflow-hidden rounded-lg border border-line">
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="text-white/80 hover:text-white"
+              title={t("categoryImageReplace")}
+              aria-label={t("categoryImageReplace")}
+            >
+              {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              className="text-white/80 hover:text-white"
+              title={t("categoryImageRemove")}
+              aria-label={t("categoryImageRemove")}
+            >
+              <X size={13} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-dashed border-line text-muted hover:border-brand hover:text-brand disabled:opacity-50"
+          title={t("categoryImageAdd")}
+          aria-label={t("categoryImageAdd")}
+        >
+          {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImagePlus size={15} />}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function Categories() {
   const { t, lang } = useLanguage();
@@ -69,6 +154,7 @@ function CategoryNodeRow({
   onEdit,
   onCancelEdit,
   onSave,
+  onSaveImage,
   onRemove,
 }: {
   node: CategoryNode;
@@ -79,6 +165,7 @@ function CategoryNodeRow({
   onEdit: (id: string) => void;
   onCancelEdit: () => void;
   onSave: (id: string, values: { name_fr: string; name_ar: string; parent_id: string | null }) => void;
+  onSaveImage: (id: string, url: string | null) => void;
   onRemove: (node: CategoryNode) => void;
 }) {
   const isEditing = editingId === node.id;
@@ -95,9 +182,17 @@ function CategoryNodeRow({
         />
       ) : (
         <div className="flex items-center justify-between gap-3">
-          <span className={depth === 0 ? "font-medium text-ink" : "text-sm text-ink"}>
-            {lang === "ar" ? node.name_ar : node.name_fr}
-          </span>
+          <div className="flex min-w-0 items-center gap-3">
+            {isPersisted(node.id) && (
+              <CategoryImagePicker
+                imageUrl={node.image_url}
+                onChange={(url) => onSaveImage(node.id, url)}
+              />
+            )}
+            <span className={depth === 0 ? "font-medium text-ink" : "text-sm text-ink"}>
+              {lang === "ar" ? node.name_ar : node.name_fr}
+            </span>
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => onEdit(node.id)}
@@ -130,6 +225,7 @@ function CategoryNodeRow({
               onEdit={onEdit}
               onCancelEdit={onCancelEdit}
               onSave={onSave}
+              onSaveImage={onSaveImage}
               onRemove={onRemove}
             />
           ))}
@@ -285,6 +381,11 @@ function CategoriesTab({ lang }: { lang: string }) {
     invalidate();
   }
 
+  async function saveImage(id: string, image_url: string | null) {
+    await supabase.from("categories").update({ image_url }).eq("id", id);
+    invalidate();
+  }
+
   async function confirmDelete() {
     if (!pendingDelete) return;
     await supabase.from("categories").delete().eq("id", pendingDelete.id);
@@ -313,6 +414,8 @@ function CategoriesTab({ lang }: { lang: string }) {
         </form>
       </BentoPanel>
 
+      <p className="mb-3 text-xs text-muted">{t("categoryImageHint")}</p>
+
       <div className="space-y-2">
         {tree.map((node) => (
           <CategoryNodeRow
@@ -325,6 +428,7 @@ function CategoriesTab({ lang }: { lang: string }) {
             onEdit={setEditingId}
             onCancelEdit={() => setEditingId(null)}
             onSave={save}
+            onSaveImage={saveImage}
             onRemove={setPendingDelete}
           />
         ))}

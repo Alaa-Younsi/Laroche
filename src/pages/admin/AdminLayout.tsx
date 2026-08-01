@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Navigate, NavLink, Link, Outlet } from "react-router-dom";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Navigate, NavLink, Link, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -8,6 +8,7 @@ import {
   Truck,
   Star,
   Mail,
+  UserCog,
   LogOut,
   Menu,
   Sun,
@@ -33,6 +34,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
     { to: "/admin/livraison", label: t("adminDeliveryPrices"), icon: Truck },
     { to: "/admin/avis", label: t("adminReviews"), icon: Star },
     { to: "/admin/newsletter", label: t("adminNewsletter"), icon: Mail },
+    { to: "/admin/compte", label: t("adminAccount"), icon: UserCog },
   ];
 
   return (
@@ -101,6 +103,14 @@ export function AdminLayout(): ReactNode {
   const { isAuthenticated, loading } = useAuth();
   const { dir } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // <main> scrolls instead of the window here, so the global <ScrollToTop />
+  // can't reach it — reset this pane ourselves on every admin route change.
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-muted">…</div>;
@@ -109,9 +119,13 @@ export function AdminLayout(): ReactNode {
 
   const mobileSide = dir === "rtl" ? "right" : "left";
 
+  // The shell is pinned to the viewport (h-dvh, not min-h-screen) and clips its
+  // own overflow, so the sidebar and the content area each own a scroll region.
+  // The sidebar therefore stays full-height and fixed no matter how long the
+  // page under it gets — a 300-row orders table scrolls inside <main> alone.
   return (
-    <div className="flex min-h-screen bg-bg">
-      <aside className="hidden w-64 shrink-0 flex-col border-e border-line bg-panel p-5 lg:flex">
+    <div className="flex h-dvh overflow-hidden bg-bg">
+      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-e border-line bg-panel p-5 lg:flex">
         <Wordmark className="mb-8 items-start" />
         <div className="flex-1">
           <NavItems />
@@ -119,8 +133,8 @@ export function AdminLayout(): ReactNode {
         <SidebarFooter />
       </aside>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
           <button onClick={() => setMobileOpen(true)} aria-label="menu">
             <Menu size={22} />
           </button>
@@ -137,7 +151,7 @@ export function AdminLayout(): ReactNode {
           </div>
         </Drawer>
 
-        <main className="p-4 md:p-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 md:p-8">
           <Outlet />
         </main>
       </div>

@@ -7,7 +7,6 @@ export const checkoutSchema = z.object({
   city: z.string().trim().min(1).max(80),
   delivery_type: z.enum(["home", "office"]),
   payment_method: z.enum(["cod", "online"]).default("cod"),
-  notes: z.string().trim().max(500).optional().or(z.literal("")),
   honeypot: z.string().optional(),
 });
 

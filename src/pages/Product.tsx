@@ -16,6 +16,64 @@ import { cn } from "@/lib/utils";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
 import type { ProductColor, VariantPick } from "@/types/db";
 
+// Sits under the gallery on desktop (left column) but under the checkout form
+// on mobile, where the single-column stack would otherwise push it above the
+// form and bury the buy path. Rendered in both slots and toggled by breakpoint.
+//
+// Plays itself, forever, with no controls of any kind — the shopper can only
+// watch it. Playback is driven by an observer rather than the autoplay
+// attribute for two reasons: the off-breakpoint copy is display:none, so it
+// never intersects and never pulls the file down (autoplay would have fetched
+// the clip twice), and the visible copy stays off the wire until it is scrolled
+// to, which matters on the mobile data plans most of these orders come from.
+function ProductVideo({
+  src,
+  poster,
+  className,
+}: {
+  src: string;
+  poster?: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // React does not reliably reflect the `muted` prop onto the element, and an
+    // unmuted video is refused autoplay everywhere — pin it imperatively.
+    el.muted = true;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) void el.play().catch(() => {});
+        else el.pause();
+      },
+      { threshold: 0.25 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className={cn("overflow-hidden rounded-xl border border-line", className)}>
+      <video
+        ref={ref}
+        loop
+        muted
+        playsInline
+        preload="none"
+        poster={poster}
+        disablePictureInPicture
+        controlsList="nodownload nofullscreen noremoteplayback"
+        onContextMenu={(e) => e.preventDefault()}
+        className="pointer-events-none w-full"
+      >
+        <source src={src} />
+      </video>
+    </div>
+  );
+}
+
 export default function Product() {
   const { slug } = useParams();
   const { t, lang } = useLanguage();
@@ -188,6 +246,13 @@ export default function Product() {
             activeIndex={activeImage}
             onActiveChange={setActiveImage}
           />
+          {product.video_url && (
+            <ProductVideo
+              src={product.video_url}
+              poster={product.product_images?.[0]?.url}
+              className="mt-6 hidden md:block"
+            />
+          )}
         </motion.div>
 
         <motion.div
@@ -213,19 +278,6 @@ export default function Product() {
             <p className="mt-3 text-sm text-muted">
               {t("productMaterial")}: <span className="text-ink">{product.material}</span>
             </p>
-          )}
-
-          {product.video_url && (
-            <div className="mt-6 overflow-hidden rounded-xl border border-line">
-              <video
-                controls
-                preload="none"
-                poster={product.product_images?.[0]?.url}
-                className="w-full"
-              >
-                <source src={product.video_url} />
-              </video>
-            </div>
           )}
 
           {requiresColor && (
@@ -366,6 +418,14 @@ export default function Product() {
               quantity={quantity}
             />
           </div>
+
+          {product.video_url && (
+            <ProductVideo
+              src={product.video_url}
+              poster={product.product_images?.[0]?.url}
+              className="mt-6 md:hidden"
+            />
+          )}
 
           <div className="mt-8 flex items-center gap-6 text-xs text-muted">
             <span className="flex items-center gap-1.5">

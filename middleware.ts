@@ -38,7 +38,7 @@ export default async function middleware(request: Request) {
 
     const title = escapeHtml(`${product.name_fr} — Laroche Bijoux`);
     const description = escapeHtml(product.description_fr || "Laroche Bijoux — bijouterie de luxe.");
-    const image = escapeHtml(product.product_images?.[0]?.url || `${url.origin}/og-image.png`);
+    const image = escapeHtml(product.product_images?.[0]?.url || `${url.origin}/og-image.jpg`);
     const availability = product.stock > 0 ? "in stock" : "out of stock";
 
     const html = `<!doctype html>

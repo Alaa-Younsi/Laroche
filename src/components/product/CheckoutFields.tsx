@@ -1,7 +1,7 @@
 import type { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from "react-hook-form";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useDeliveryPrices } from "@/hooks/useDeliveryPrices";
-import { Input, Textarea } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 import type { CheckoutFormValues } from "@/lib/checkoutSchema";
@@ -112,14 +112,6 @@ export function CheckoutFields({ register, errors, watch, setValue }: CheckoutFi
         {paymentMethod === "online" && (
           <p className="mt-2 text-xs text-muted">{t("checkoutPayOnlineHint")}</p>
         )}
-      </div>
-
-      <div>
-        <Textarea
-          placeholder={`${t("checkoutNotes")} (${t("optional")})`}
-          rows={3}
-          {...register("notes")}
-        />
       </div>
     </div>
   );
