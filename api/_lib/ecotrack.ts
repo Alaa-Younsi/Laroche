@@ -94,16 +94,21 @@ export async function proxyEcotrack(
 
   const url = new URL(`${env.apiUrl.replace(/\/$/, "")}/api/v1/${req.subpath}`);
   for (const [key, value] of req.search) url.searchParams.set(key, value);
-  // Inject the secret token server-side. ECOTRACK reads it from the query on
-  // both GET and POST (Laravel merges query + body), so this covers all routes.
+  // Inject the secret token server-side. ECOTRACK's docs say to pass it as an
+  // `Authorization: Bearer` header, but the older public endpoints (e.g.
+  // validate/token) read it from the `api_token` query param. Sending BOTH
+  // covers every tenant/deployment regardless of which it expects — the token
+  // never reaches the browser either way.
   url.searchParams.set("api_token", env.apiToken);
 
-  const init: RequestInit = { method: req.method };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    Authorization: `Bearer ${env.apiToken}`,
+  };
+  const init: RequestInit = { method: req.method, headers };
   if (req.method === "POST") {
-    init.headers = { "Content-Type": "application/json", Accept: "application/json" };
+    headers["Content-Type"] = "application/json";
     init.body = req.body && req.body.length > 0 ? req.body : "{}";
-  } else {
-    init.headers = { Accept: "application/json" };
   }
 
   let upstream: Response;

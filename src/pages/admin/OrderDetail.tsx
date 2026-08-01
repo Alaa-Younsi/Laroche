@@ -8,6 +8,7 @@ import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
 import { EcotrackPanel } from "@/components/admin/EcotrackPanel";
+import { PaymentBadge } from "@/components/admin/PaymentBadge";
 import { formatDate } from "@/lib/format";
 import type { OrderStatus } from "@/types/db";
 
@@ -38,7 +39,10 @@ export default function OrderDetail() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl text-ink">{order.order_number}</h1>
-          <p className="text-sm text-muted">{formatDate(order.created_at)}</p>
+          <div className="mt-1 flex items-center gap-3">
+            <p className="text-sm text-muted">{formatDate(order.created_at)}</p>
+            <PaymentBadge method={order.payment_method} status={order.payment_status} />
+          </div>
         </div>
         <Select
           value={order.status}

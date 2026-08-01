@@ -12,6 +12,7 @@ import { CheckoutFields } from "@/components/product/CheckoutFields";
 import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
 import { orderErrorKey } from "@/lib/orderErrors";
+import { createChargilyCheckout } from "@/lib/chargily";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
 import type { Product, VariantPick } from "@/types/db";
 
@@ -31,6 +32,7 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
   const { isSpam } = useHoneypot();
   const submitOrder = useSubmitOrder();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const trackedCheckoutId = useRef<string | null>(null);
 
   const {
@@ -41,7 +43,7 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: { delivery_type: "home" },
+    defaultValues: { delivery_type: "home", payment_method: "cod" },
   });
 
   const wilayaName = watch("wilaya");
@@ -86,6 +88,19 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
         lang,
       });
       trackPurchase({ value: total, currency: "DZD", content_ids: [product.id] });
+
+      if (values.payment_method === "online") {
+        setRedirecting(true);
+        try {
+          const checkoutUrl = await createChargilyCheckout(orderNumber);
+          window.location.href = checkoutUrl;
+          return;
+        } catch {
+          navigate(`/commande/${orderNumber}?payment=failed`);
+          return;
+        }
+      }
+
       navigate(`/commande/${orderNumber}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
@@ -120,8 +135,12 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
 
       {serverError && <p className="text-sm text-red-500">{serverError}</p>}
 
-      <Button type="submit" size="lg" className="w-full" disabled={submitOrder.isPending}>
-        {submitOrder.isPending ? t("checkoutSubmitting") : t("checkoutSubmit")}
+      <Button type="submit" size="lg" className="w-full" disabled={submitOrder.isPending || redirecting}>
+        {redirecting
+          ? t("checkoutRedirecting")
+          : submitOrder.isPending
+            ? t("checkoutSubmitting")
+            : t("checkoutSubmit")}
       </Button>
     </form>
   );

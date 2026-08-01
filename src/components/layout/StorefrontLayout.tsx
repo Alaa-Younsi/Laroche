@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Newsletter } from "@/components/layout/Newsletter";
 import { StoreLocations } from "@/components/layout/StoreLocations";
 import { CartDrawer } from "@/components/layout/CartDrawer";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 
 export function StorefrontLayout() {
   const location = useLocation();
@@ -34,6 +35,7 @@ export function StorefrontLayout() {
       <StoreLocations />
       <Footer />
       <CartDrawer />
+      <WhatsAppButton />
     </div>
   );
 }

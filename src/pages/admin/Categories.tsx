@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
-import { flattenCategoryTree, type CategoryNode } from "@/lib/categoryTree";
+import {
+  flattenCategoryTree,
+  findCategoryNode,
+  collectDescendantIds,
+  type CategoryNode,
+} from "@/lib/categoryTree";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -53,35 +58,190 @@ export default function Categories() {
   );
 }
 
+// A single category row. Toggles between a read view (name + edit/delete
+// buttons) and an inline edit form (FR/AR names + parent picker).
 function CategoryNodeRow({
   node,
   depth,
   lang,
+  tree,
+  editingId,
+  onEdit,
+  onCancelEdit,
+  onSave,
   onRemove,
 }: {
   node: CategoryNode;
   depth: number;
   lang: string;
-  onRemove: (id: string) => void;
+  tree: CategoryNode[];
+  editingId: string | null;
+  onEdit: (id: string) => void;
+  onCancelEdit: () => void;
+  onSave: (id: string, values: { name_fr: string; name_ar: string; parent_id: string | null }) => void;
+  onRemove: (node: CategoryNode) => void;
 }) {
+  const isEditing = editingId === node.id;
+
   return (
     <BentoPanel className={cn("p-4", DEPTH_INDENT[Math.min(depth, DEPTH_INDENT.length - 1)])}>
-      <div className="flex items-center justify-between">
-        <span className={depth === 0 ? "font-medium text-ink" : "text-sm text-ink"}>
-          {lang === "ar" ? node.name_ar : node.name_fr}
-        </span>
-        <button onClick={() => onRemove(node.id)} className="text-muted hover:text-red-500">
-          <Trash2 size={15} />
-        </button>
-      </div>
+      {isEditing ? (
+        <CategoryEditForm
+          node={node}
+          lang={lang}
+          tree={tree}
+          onCancel={onCancelEdit}
+          onSave={(values) => onSave(node.id, values)}
+        />
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <span className={depth === 0 ? "font-medium text-ink" : "text-sm text-ink"}>
+            {lang === "ar" ? node.name_ar : node.name_fr}
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onEdit(node.id)}
+              className="text-muted hover:text-brand"
+              aria-label="edit"
+            >
+              <Pencil size={15} />
+            </button>
+            <button
+              onClick={() => onRemove(node)}
+              className="text-muted hover:text-red-500"
+              aria-label="delete"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {node.children.length > 0 && (
         <div className="mt-2 space-y-2">
           {node.children.map((child) => (
-            <CategoryNodeRow key={child.id} node={child} depth={depth + 1} lang={lang} onRemove={onRemove} />
+            <CategoryNodeRow
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              lang={lang}
+              tree={tree}
+              editingId={editingId}
+              onEdit={onEdit}
+              onCancelEdit={onCancelEdit}
+              onSave={onSave}
+              onRemove={onRemove}
+            />
           ))}
         </div>
       )}
     </BentoPanel>
+  );
+}
+
+function CategoryEditForm({
+  node,
+  lang,
+  tree,
+  onCancel,
+  onSave,
+}: {
+  node: CategoryNode;
+  lang: string;
+  tree: CategoryNode[];
+  onCancel: () => void;
+  onSave: (values: { name_fr: string; name_ar: string; parent_id: string | null }) => void;
+}) {
+  const [nameFr, setNameFr] = useState(node.name_fr);
+  const [nameAr, setNameAr] = useState(node.name_ar);
+  const [parentId, setParentId] = useState(node.parent_id ?? "");
+
+  // A category can't become its own parent or a child of one of its own
+  // descendants (that would create a cycle) — exclude the whole subtree.
+  const self = findCategoryNode(tree, node.id);
+  const excluded = new Set(self ? collectDescendantIds(self) : [node.id]);
+  const parentOptions = flattenCategoryTree(tree).filter(({ node: n }) => !excluded.has(n.id));
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nameFr.trim() || !nameAr.trim()) return;
+    onSave({
+      name_fr: nameFr.trim(),
+      name_ar: nameAr.trim(),
+      parent_id: parentId || null,
+    });
+  }
+
+  return (
+    <form onSubmit={submit} className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+      <Input placeholder="Nom (FR)" value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
+      <Input placeholder="الاسم (AR)" dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
+      <Select value={parentId} onChange={(e) => setParentId(e.target.value)}>
+        <option value="">— Catégorie principale —</option>
+        {parentOptions.map(({ node: n, depth }) => (
+          <option key={n.id} value={n.id}>
+            {"— ".repeat(depth)}
+            {lang === "ar" ? n.name_ar : n.name_fr}
+          </option>
+        ))}
+      </Select>
+      <div className="flex items-center gap-2">
+        <Button type="submit" size="sm" aria-label="save">
+          <Check size={14} />
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onCancel} aria-label="cancel">
+          <X size={14} />
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Confirmation before deleting a category — deletion cascades to every
+// sub-category (categories.parent_id is ON DELETE CASCADE), so we spell out
+// exactly how many children will disappear before the user commits.
+function DeleteCategoryModal({
+  node,
+  lang,
+  onConfirm,
+  onCancel,
+}: {
+  node: CategoryNode;
+  lang: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useLanguage();
+  const descendantCount = collectDescendantIds(node).length - 1;
+  const name = lang === "ar" ? node.name_ar : node.name_fr;
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
+      <BentoPanel className="w-full max-w-md p-6" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+            <AlertTriangle size={18} />
+          </span>
+          <h3 className="font-display text-lg text-ink">{t("categoryDeleteTitle")}</h3>
+        </div>
+        <p className="text-sm text-muted">
+          {t("categoryDeleteConfirm").replace("{name}", name)}
+          {descendantCount > 0 && (
+            <span className="mt-2 block font-medium text-red-500">
+              {t("categoryDeleteCascade").replace("{count}", String(descendantCount))}
+            </span>
+          )}
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button size="sm" variant="outline" onClick={onCancel}>
+            {t("cancel")}
+          </Button>
+          <Button size="sm" variant="danger" onClick={onConfirm}>
+            {t("delete")}
+          </Button>
+        </div>
+      </BentoPanel>
+    </div>
   );
 }
 
@@ -92,6 +252,8 @@ function CategoriesTab({ lang }: { lang: string }) {
   const [nameFr, setNameFr] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [parentId, setParentId] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CategoryNode | null>(null);
 
   const flatOptions = flattenCategoryTree(tree);
 
@@ -114,8 +276,19 @@ function CategoriesTab({ lang }: { lang: string }) {
     invalidate();
   }
 
-  async function remove(id: string) {
-    await supabase.from("categories").delete().eq("id", id);
+  async function save(
+    id: string,
+    values: { name_fr: string; name_ar: string; parent_id: string | null },
+  ) {
+    await supabase.from("categories").update(values).eq("id", id);
+    setEditingId(null);
+    invalidate();
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    await supabase.from("categories").delete().eq("id", pendingDelete.id);
+    setPendingDelete(null);
     invalidate();
   }
 
@@ -142,9 +315,29 @@ function CategoriesTab({ lang }: { lang: string }) {
 
       <div className="space-y-2">
         {tree.map((node) => (
-          <CategoryNodeRow key={node.id} node={node} depth={0} lang={lang} onRemove={remove} />
+          <CategoryNodeRow
+            key={node.id}
+            node={node}
+            depth={0}
+            lang={lang}
+            tree={tree}
+            editingId={editingId}
+            onEdit={setEditingId}
+            onCancelEdit={() => setEditingId(null)}
+            onSave={save}
+            onRemove={setPendingDelete}
+          />
         ))}
       </div>
+
+      {pendingDelete && (
+        <DeleteCategoryModal
+          node={pendingDelete}
+          lang={lang}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }
@@ -155,6 +348,13 @@ function CollectionsTab({ lang }: { lang: string }) {
   const queryClient = useQueryClient();
   const [nameFr, setNameFr] = useState("");
   const [nameAr, setNameAr] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFr, setEditFr] = useState("");
+  const [editAr, setEditAr] = useState("");
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -166,12 +366,25 @@ function CollectionsTab({ lang }: { lang: string }) {
     });
     setNameFr("");
     setNameAr("");
-    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    invalidate();
+  }
+
+  function startEdit(id: string, fr: string, ar: string) {
+    setEditingId(id);
+    setEditFr(fr);
+    setEditAr(ar);
+  }
+
+  async function saveEdit(id: string) {
+    if (!editFr.trim() || !editAr.trim()) return;
+    await supabase.from("collections").update({ name_fr: editFr.trim(), name_ar: editAr.trim() }).eq("id", id);
+    setEditingId(null);
+    invalidate();
   }
 
   async function remove(id: string) {
     await supabase.from("collections").delete().eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    invalidate();
   }
 
   return (
@@ -186,15 +399,41 @@ function CollectionsTab({ lang }: { lang: string }) {
         </form>
       </BentoPanel>
 
-      <div className="flex flex-wrap gap-2">
-        {collections.map((c) => (
-          <span key={c.id} className="flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm text-ink">
-            {lang === "ar" ? c.name_ar : c.name_fr}
-            <button onClick={() => remove(c.id)} className="text-muted hover:text-red-500">
-              <Trash2 size={13} />
-            </button>
-          </span>
-        ))}
+      <div className="space-y-2">
+        {collections.map((c) =>
+          editingId === c.id ? (
+            <BentoPanel key={c.id} className="p-4">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <Input value={editFr} onChange={(e) => setEditFr(e.target.value)} />
+                <Input value={editAr} dir="rtl" onChange={(e) => setEditAr(e.target.value)} />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => saveEdit(c.id)} aria-label="save">
+                    <Check size={14} />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingId(null)} aria-label="cancel">
+                    <X size={14} />
+                  </Button>
+                </div>
+              </div>
+            </BentoPanel>
+          ) : (
+            <BentoPanel key={c.id} className="flex items-center justify-between p-4">
+              <span className="text-sm text-ink">{lang === "ar" ? c.name_ar : c.name_fr}</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => startEdit(c.id, c.name_fr, c.name_ar)}
+                  className="text-muted hover:text-brand"
+                  aria-label="edit"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => remove(c.id)} className="text-muted hover:text-red-500" aria-label="delete">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </BentoPanel>
+          ),
+        )}
       </div>
     </div>
   );
@@ -205,6 +444,12 @@ function BrandsTab() {
   const { data: brands = [] } = useBrands();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ["brands"] });
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -214,12 +459,19 @@ function BrandsTab() {
       name: name.trim(),
     });
     setName("");
-    queryClient.invalidateQueries({ queryKey: ["brands"] });
+    invalidate();
+  }
+
+  async function saveEdit(id: string) {
+    if (!editName.trim()) return;
+    await supabase.from("brands").update({ name: editName.trim() }).eq("id", id);
+    setEditingId(null);
+    invalidate();
   }
 
   async function remove(id: string) {
     await supabase.from("brands").delete().eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["brands"] });
+    invalidate();
   }
 
   return (
@@ -233,15 +485,41 @@ function BrandsTab() {
         </form>
       </BentoPanel>
 
-      <div className="flex flex-wrap gap-2">
-        {brands.map((b) => (
-          <span key={b.id} className="flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm text-ink">
-            {b.name}
-            <button onClick={() => remove(b.id)} className="text-muted hover:text-red-500">
-              <Trash2 size={13} />
-            </button>
-          </span>
-        ))}
+      <div className="space-y-2">
+        {brands.map((b) =>
+          editingId === b.id ? (
+            <BentoPanel key={b.id} className="p-4">
+              <div className="flex gap-3">
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+                <Button size="sm" onClick={() => saveEdit(b.id)} aria-label="save">
+                  <Check size={14} />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingId(null)} aria-label="cancel">
+                  <X size={14} />
+                </Button>
+              </div>
+            </BentoPanel>
+          ) : (
+            <BentoPanel key={b.id} className="flex items-center justify-between p-4">
+              <span className="text-sm text-ink">{b.name}</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setEditingId(b.id);
+                    setEditName(b.name);
+                  }}
+                  className="text-muted hover:text-brand"
+                  aria-label="edit"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => remove(b.id)} className="text-muted hover:text-red-500" aria-label="delete">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </BentoPanel>
+          ),
+        )}
       </div>
     </div>
   );

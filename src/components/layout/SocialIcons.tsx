@@ -27,6 +27,15 @@ export function TikTokIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+export function WhatsAppIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20l1.3-3.9A7.5 7.5 0 1 1 8 19.2z" />
+      <path d="M9 8.5c0 3.5 3 6.5 6.5 6.5.6 0 1-.5 1-1 0-.3-.1-.5-.4-.7l-1.4-.7c-.3-.1-.6 0-.8.2l-.4.5c-1-.5-1.9-1.4-2.4-2.4l.5-.4c.2-.2.3-.5.2-.8l-.7-1.4c-.2-.3-.4-.4-.7-.4-.5 0-1 .4-1 1z" />
+    </svg>
+  );
+}
+
 export function SnapchatIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">

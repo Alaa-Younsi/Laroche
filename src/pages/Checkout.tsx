@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
 import { lineTotal } from "@/lib/offers";
 import { orderErrorKey } from "@/lib/orderErrors";
+import { createChargilyCheckout } from "@/lib/chargily";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
 
 export default function Checkout() {
@@ -28,6 +29,7 @@ export default function Checkout() {
   const { isSpam } = useHoneypot();
   const submitOrder = useSubmitOrder();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const trackedInitiate = useRef(false);
 
   useSeo({ title: `${t("checkoutTitle")} — Laroche Bijoux`, description: "Finaliser votre commande Laroche Bijoux." });
@@ -40,7 +42,7 @@ export default function Checkout() {
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: { delivery_type: "home" },
+    defaultValues: { delivery_type: "home", payment_method: "cod" },
   });
 
   const wilayaName = watch("wilaya");
@@ -95,6 +97,23 @@ export default function Checkout() {
         content_ids: items.map((i) => i.productId),
       });
       clearCart();
+
+      // Online payment: hand off to the Chargily hosted checkout. The order is
+      // already placed (payment_status 'pending'); the webhook flips it to
+      // 'paid' once the customer completes payment. If the handoff fails, the
+      // order still exists — send them to the confirmation with a retry option.
+      if (values.payment_method === "online") {
+        setRedirecting(true);
+        try {
+          const checkoutUrl = await createChargilyCheckout(orderNumber);
+          window.location.href = checkoutUrl;
+          return;
+        } catch {
+          navigate(`/commande/${orderNumber}?payment=failed`);
+          return;
+        }
+      }
+
       navigate(`/commande/${orderNumber}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
@@ -124,8 +143,12 @@ export default function Checkout() {
 
           {serverError && <p className="text-sm text-red-500">{serverError}</p>}
 
-          <Button type="submit" size="lg" className="w-full" disabled={submitOrder.isPending}>
-            {submitOrder.isPending ? t("checkoutSubmitting") : t("checkoutSubmit")}
+          <Button type="submit" size="lg" className="w-full" disabled={submitOrder.isPending || redirecting}>
+            {redirecting
+              ? t("checkoutRedirecting")
+              : submitOrder.isPending
+                ? t("checkoutSubmitting")
+                : t("checkoutSubmit")}
           </Button>
         </form>
 

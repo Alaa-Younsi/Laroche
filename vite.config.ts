@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react'
 import type { ServerResponse } from 'node:http'
 import path from 'node:path'
 import { proxyEcotrack, type EcotrackEnv } from './api/_lib/ecotrack.ts'
+import {
+  createCheckoutForOrder,
+  handleWebhook,
+  readChargilyEnv,
+  type ChargilyEnv,
+} from './api/_lib/chargily.ts'
 
 // Mirrors the Vercel Edge function at /api/ecotrack/* during `bun run dev`,
 // so the ECOTRACK integration is testable locally without `vercel dev`. The
@@ -43,6 +49,62 @@ function ecotrackDevProxy(env: EcotrackEnv): Plugin {
   }
 }
 
+// Mirrors the Vercel Edge functions at /api/chargily/* during `bun run dev`,
+// so the payment flow (checkout create + webhook) is testable locally without
+// `vercel dev`. Secret keys are read from .env server-side, never bundled.
+function chargilyDevProxy(env: ChargilyEnv): Plugin {
+  return {
+    name: 'chargily-dev-proxy',
+    configureServer(server) {
+      server.middlewares.use(
+        '/api/chargily',
+        async (req: Connect.IncomingMessage, res: ServerResponse) => {
+          const parsed = new URL(req.url ?? '/', 'http://localhost')
+          const route = parsed.pathname.replace(/^\/+/, '').replace(/\/+$/, '')
+
+          let body = ''
+          if (req.method === 'POST') {
+            body = await new Promise<string>((resolve) => {
+              let data = ''
+              req.on('data', (chunk) => (data += chunk))
+              req.on('end', () => resolve(data))
+            })
+          }
+
+          const send = (status: number, obj: unknown) => {
+            res.statusCode = status
+            res.setHeader('Content-Type', 'application/json')
+            res.setHeader('Cache-Control', 'no-store')
+            res.end(JSON.stringify(obj))
+          }
+
+          if (route === 'checkout' && req.method === 'POST') {
+            let parsedBody: { order_number?: string }
+            try {
+              parsedBody = JSON.parse(body || '{}')
+            } catch {
+              return send(400, { error: 'Invalid JSON' })
+            }
+            const result = await createCheckoutForOrder(env, {
+              orderNumber: parsedBody.order_number ?? '',
+              origin: `http://${req.headers.host ?? 'localhost:5173'}`,
+            })
+            return send(result.status, result.body)
+          }
+
+          if (route === 'webhook' && req.method === 'POST') {
+            const signature = (req.headers['signature'] as string | undefined) ?? null
+            const result = await handleWebhook(env, body, signature)
+            return send(result.status, result.body)
+          }
+
+          send(404, { error: 'Not found' })
+        },
+      )
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // load ALL env (no prefix filter) so server-only vars reach the dev proxy
@@ -53,9 +115,10 @@ export default defineConfig(({ mode }) => {
     supabaseUrl: env.SUPABASE_URL ?? env.VITE_SUPABASE_URL ?? '',
     supabaseAnonKey: env.SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_ANON_KEY ?? '',
   }
+  const chargilyEnv = readChargilyEnv((k) => env[k])
 
   return {
-    plugins: [react(), ecotrackDevProxy(ecotrackEnv)],
+    plugins: [react(), ecotrackDevProxy(ecotrackEnv), chargilyDevProxy(chargilyEnv)],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

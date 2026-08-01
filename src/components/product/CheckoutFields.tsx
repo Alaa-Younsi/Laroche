@@ -17,6 +17,7 @@ export function CheckoutFields({ register, errors, watch, setValue }: CheckoutFi
   const { t } = useLanguage();
   const { data: wilayas = [] } = useDeliveryPrices(true);
   const deliveryType = watch("delivery_type");
+  const paymentMethod = watch("payment_method") ?? "cod";
 
   return (
     <div className="space-y-4">
@@ -85,6 +86,32 @@ export function CheckoutFields({ register, errors, watch, setValue }: CheckoutFi
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs uppercase tracking-wide2 text-muted">
+          {t("checkoutPaymentMethod")}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(["cod", "online"] as const).map((method) => (
+            <button
+              key={method}
+              type="button"
+              onClick={() => setValue("payment_method", method)}
+              className={cn(
+                "rounded-lg border px-4 py-3 text-start text-sm transition-colors",
+                paymentMethod === method
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-line text-muted hover:border-brand/50",
+              )}
+            >
+              {method === "cod" ? t("checkoutPayCod") : t("checkoutPayOnline")}
+            </button>
+          ))}
+        </div>
+        {paymentMethod === "online" && (
+          <p className="mt-2 text-xs text-muted">{t("checkoutPayOnlineHint")}</p>
+        )}
       </div>
 
       <div>

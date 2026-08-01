@@ -81,6 +81,8 @@ export type OrderStatus =
   | "shipped"
   | "delivered"
   | "cancelled";
+export type PaymentMethod = "cod" | "online";
+export type PaymentStatus = "unpaid" | "pending" | "paid" | "failed";
 
 export interface OrderItemVariantSnapshot {
   name_fr: string;
@@ -119,6 +121,11 @@ export interface Order {
   language: Lang;
   delivery_type: DeliveryType;
   created_at: string;
+  // Payment (0015_chargily_payments.sql). Older rows default to cod/unpaid.
+  payment_method?: PaymentMethod;
+  payment_status?: PaymentStatus;
+  chargily_checkout_id?: string | null;
+  paid_at?: string | null;
   // ECOTRACK delivery (0013_ecotrack_tracking.sql) — null until shipped.
   ecotrack_tracking?: string | null;
   ecotrack_status?: string | null;

@@ -6,6 +6,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useOrders } from "@/hooks/useOrders";
 import { exportOrdersToExcel } from "@/lib/exportOrders";
 import { DeleteAllOrdersModal } from "@/components/admin/DeleteAllOrdersModal";
+import { PaymentBadge } from "@/components/admin/PaymentBadge";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -67,6 +68,7 @@ export default function Orders() {
                 <th className="whitespace-nowrap px-5 py-3 text-start">Client</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">Wilaya</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">{t("adminStatus")}</th>
+                <th className="whitespace-nowrap px-5 py-3 text-start">{t("adminPayment")}</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">Suivi</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">{t("cartTotal")}</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">Date</th>
@@ -83,6 +85,9 @@ export default function Orders() {
                   <td className="whitespace-nowrap px-5 py-3">{order.customer_name}</td>
                   <td className="whitespace-nowrap px-5 py-3">{order.wilaya}</td>
                   <td className="whitespace-nowrap px-5 py-3 capitalize">{order.status}</td>
+                  <td className="whitespace-nowrap px-5 py-3">
+                    <PaymentBadge method={order.payment_method} status={order.payment_status} />
+                  </td>
                   <td className="whitespace-nowrap px-5 py-3">
                     {order.ecotrack_tracking ? (
                       <span dir="ltr" className="font-mono text-xs text-brand">
@@ -102,7 +107,7 @@ export default function Orders() {
               ))}
               {orders.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-muted">
+                  <td colSpan={8} className="px-5 py-8 text-center text-muted">
                     {t("adminNoOrders")}
                   </td>
                 </tr>

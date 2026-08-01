@@ -1,10 +1,12 @@
-import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, BadgeCheck, Clock, XCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useSeo } from "@/hooks/useSeo";
 import { supabase } from "@/lib/supabase";
+import { createChargilyCheckout } from "@/lib/chargily";
 import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
 
@@ -29,12 +31,16 @@ interface OrderRecap {
   discount: number;
   total: number;
   status: string;
+  payment_method: string;
+  payment_status: string;
   items: OrderRecapItem[];
 }
 
 export default function OrderConfirmation() {
   const { orderNumber } = useParams();
+  const [searchParams] = useSearchParams();
   const { t, lang } = useLanguage();
+  const [retrying, setRetrying] = useState(false);
 
   useSeo({
     title: `${t("orderConfirmedTitle")} — Laroche Bijoux`,
@@ -52,6 +58,29 @@ export default function OrderConfirmation() {
       return data as OrderRecap | null;
     },
   });
+
+  // Payment banner state: prefer the authoritative DB status, fall back to the
+  // ?payment= redirect flag Chargily appends to the success/failure URL (the
+  // webhook may land a beat after the browser returns).
+  const paymentState =
+    order?.payment_status === "paid"
+      ? "paid"
+      : order?.payment_method === "online" || searchParams.get("payment")
+        ? searchParams.get("payment") === "failed" || order?.payment_status === "failed"
+          ? "failed"
+          : "pending"
+        : null;
+
+  async function retryPayment() {
+    if (!orderNumber) return;
+    setRetrying(true);
+    try {
+      const url = await createChargilyCheckout(orderNumber);
+      window.location.href = url;
+    } catch {
+      setRetrying(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center md:px-8">
@@ -89,6 +118,27 @@ export default function OrderConfirmation() {
         <span className="text-xs uppercase tracking-wide2 text-muted">{t("orderNumber")}</span>
         <span className="font-medium text-brand">{orderNumber}</span>
       </motion.div>
+
+      {paymentState === "paid" && (
+        <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-5 py-2.5 text-sm font-medium text-green-600">
+          <BadgeCheck size={16} /> {t("orderPaidBadge")}
+        </div>
+      )}
+      {paymentState === "pending" && (
+        <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-600">
+          <Clock size={16} /> {t("orderPayPending")}
+        </div>
+      )}
+      {paymentState === "failed" && (
+        <div className="mx-auto mt-6 max-w-md rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
+          <p className="flex items-center justify-center gap-2 text-sm text-red-600">
+            <XCircle size={16} /> {t("orderPayFailed")}
+          </p>
+          <Button className="mt-4" size="sm" onClick={retryPayment} disabled={retrying}>
+            {retrying ? t("checkoutRedirecting") : t("orderRetryPayment")}
+          </Button>
+        </div>
+      )}
 
       {!isLoading && order && (
         <motion.div

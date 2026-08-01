@@ -129,11 +129,37 @@ export const translations = {
     checkoutQuickBuy: "Achat rapide",
     checkoutOrderRecap: "Récapitulatif",
 
+    // Payment method
+    checkoutPaymentMethod: "Mode de paiement",
+    checkoutPayCod: "Paiement à la livraison",
+    checkoutPayOnline: "Payer en ligne (CIB / EDAHABIA)",
+    checkoutPayOnlineHint: "Vous serez redirigé vers une page de paiement sécurisée.",
+    checkoutRedirecting: "Redirection vers le paiement…",
+
     // Order confirmation
     orderConfirmedTitle: "Merci pour votre commande !",
     orderConfirmedText: "Votre commande a bien été enregistrée. Notre équipe vous contactera pour confirmer la livraison.",
     orderNumber: "Numéro de commande",
     orderConfirmedBackHome: "Retour à l'accueil",
+    orderPaidBadge: "Payée en ligne",
+    orderPayPending: "En attente de paiement",
+    orderPayFailed: "Le paiement a échoué. Vous pouvez réessayer ou vous serez contacté pour un paiement à la livraison.",
+    orderRetryPayment: "Réessayer le paiement",
+
+    // WhatsApp
+    whatsappContact: "Contactez-nous sur WhatsApp",
+
+    // Category admin
+    categoryDeleteTitle: "Supprimer la catégorie",
+    categoryDeleteConfirm: "Voulez-vous vraiment supprimer « {name} » ?",
+    categoryDeleteCascade: "Attention : ses {count} sous-catégorie(s) seront aussi supprimées.",
+
+    // Payment (admin)
+    adminPayment: "Paiement",
+    payStatusCod: "À la livraison",
+    payStatusPaid: "Payée",
+    payStatusPending: "En attente",
+    payStatusFailed: "Échouée",
 
     // Errors
     errorCartEmpty: "Votre panier est vide.",
@@ -337,10 +363,32 @@ export const translations = {
     checkoutQuickBuy: "شراء سريع",
     checkoutOrderRecap: "ملخص الطلب",
 
+    checkoutPaymentMethod: "طريقة الدفع",
+    checkoutPayCod: "الدفع عند الاستلام",
+    checkoutPayOnline: "الدفع عبر الإنترنت (CIB / الذهبية)",
+    checkoutPayOnlineHint: "سيتم تحويلك إلى صفحة دفع آمنة.",
+    checkoutRedirecting: "جارٍ التحويل إلى صفحة الدفع…",
+
     orderConfirmedTitle: "شكراً لطلبك!",
     orderConfirmedText: "تم تسجيل طلبك بنجاح. سيتصل بك فريقنا لتأكيد التوصيل.",
     orderNumber: "رقم الطلب",
     orderConfirmedBackHome: "العودة للرئيسية",
+    orderPaidBadge: "مدفوع عبر الإنترنت",
+    orderPayPending: "في انتظار الدفع",
+    orderPayFailed: "فشلت عملية الدفع. يمكنك إعادة المحاولة أو سيتم الاتصال بك للدفع عند الاستلام.",
+    orderRetryPayment: "إعادة محاولة الدفع",
+
+    whatsappContact: "تواصل معنا عبر واتساب",
+
+    categoryDeleteTitle: "حذف الفئة",
+    categoryDeleteConfirm: "هل تريد فعلاً حذف « {name} »؟",
+    categoryDeleteCascade: "تنبيه: سيتم أيضاً حذف {count} فئة فرعية.",
+
+    adminPayment: "الدفع",
+    payStatusCod: "عند الاستلام",
+    payStatusPaid: "مدفوعة",
+    payStatusPending: "قيد الانتظار",
+    payStatusFailed: "فشلت",
 
     errorCartEmpty: "سلتك فارغة.",
     errorProductUnavailable: "هذا المنتج لم يعد متوفراً.",
