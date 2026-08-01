@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
 import { orderErrorKey } from "@/lib/orderErrors";
 import { createChargilyCheckout } from "@/lib/chargily";
-import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
+import { usePixel } from "@/components/MetaPixelProvider";
 import type { Product, VariantPick } from "@/types/db";
 
 interface InlineCheckoutProps {
@@ -33,6 +33,7 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
   const submitOrder = useSubmitOrder();
   const [serverError, setServerError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const pixel = usePixel();
   const trackedCheckoutId = useRef<string | null>(null);
 
   const {
@@ -55,14 +56,16 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
       : selectedWilaya.office_price
     : null;
 
-  const lineTotal = product.price * quantity;
+  // Number(): a Postgres numeric can arrive over PostgREST as a string, and
+  // "1200" * qty silently NaNs — which the pixel guard would then drop.
+  const lineTotal = Number(product.price) * quantity;
   const shipping = resolveShipping(wilayaFee, lineTotal, settings);
   const total = lineTotal + (shipping ?? 0);
 
   function handleFormFocus() {
     if (trackedCheckoutId.current === product.id) return;
     trackedCheckoutId.current = product.id;
-    trackInitiateCheckout({
+    pixel.track("initiate_checkout", {
       value: lineTotal,
       currency: "DZD",
       content_ids: [product.id],
@@ -87,7 +90,11 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
         customer: values,
         lang,
       });
-      trackPurchase({ value: total, currency: "DZD", content_ids: [product.id] });
+      pixel.track(
+        "purchase",
+        { value: total, currency: "DZD", content_ids: [product.id] },
+        orderNumber,
+      );
 
       if (values.payment_method === "online") {
         setRedirecting(true);

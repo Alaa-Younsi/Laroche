@@ -1,49 +1,32 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, NavLink, Link, Outlet, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Package,
-  Tags,
-  ShoppingCart,
-  Truck,
-  Star,
-  Mail,
-  UserCog,
-  LogOut,
-  Menu,
-  Sun,
-  Moon,
-  Languages,
-  ArrowLeft,
-} from "lucide-react";
+import { LogOut, Menu, Sun, Moon, Languages, ArrowLeft, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { Drawer } from "@/components/ui/Drawer";
 import { Wordmark } from "@/components/layout/Wordmark";
+import { Button } from "@/components/ui/Button";
+import { ADMIN_SECTIONS, routeToSection, type AdminSection } from "@/lib/adminSections";
 import { cn } from "@/lib/utils";
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavItems({
+  sections,
+  onNavigate,
+}: {
+  sections: AdminSection[];
+  onNavigate?: () => void;
+}) {
   const { t } = useLanguage();
-
-  const links = [
-    { to: "/admin", label: t("adminDashboard"), icon: LayoutDashboard, end: true },
-    { to: "/admin/produits", label: t("adminProducts"), icon: Package },
-    { to: "/admin/catalogue", label: t("adminCategories"), icon: Tags },
-    { to: "/admin/commandes", label: t("adminOrders"), icon: ShoppingCart },
-    { to: "/admin/livraison", label: t("adminDeliveryPrices"), icon: Truck },
-    { to: "/admin/avis", label: t("adminReviews"), icon: Star },
-    { to: "/admin/newsletter", label: t("adminNewsletter"), icon: Mail },
-    { to: "/admin/compte", label: t("adminAccount"), icon: UserCog },
-  ];
 
   return (
     <nav className="flex flex-col gap-1">
-      {links.map(({ to, label, icon: Icon, end }) => (
+      {sections.map(({ key, route, exact, labelKey, icon: Icon }) => (
         <NavLink
-          key={to}
-          to={to}
-          end={end}
+          key={key}
+          to={route}
+          end={exact}
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
@@ -53,7 +36,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
           }
         >
           <Icon size={17} />
-          {label}
+          {t(labelKey)}
         </NavLink>
       ))}
     </nav>
@@ -99,8 +82,27 @@ function SidebarFooter() {
   );
 }
 
+function NoAccess() {
+  const { t } = useLanguage();
+  const { signOut } = useAuth();
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
+      <ShieldAlert size={40} className="text-red-500" />
+      <div>
+        <h1 className="font-display text-2xl text-ink">{t("adminNoAccessTitle")}</h1>
+        <p className="mt-2 max-w-sm text-sm text-muted">{t("adminNoAccessBody")}</p>
+      </div>
+      <Button variant="outline" onClick={() => signOut()}>
+        <LogOut size={15} /> {t("adminSignOut")}
+      </Button>
+    </div>
+  );
+}
+
 export function AdminLayout(): ReactNode {
   const { isAuthenticated, loading } = useAuth();
+  const { isOwner, isActive, hasSection, isLoading: profileLoading } = useAdminProfile();
   const { dir } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
@@ -112,10 +114,32 @@ export function AdminLayout(): ReactNode {
     mainRef.current?.scrollTo(0, 0);
   }, [pathname]);
 
-  if (loading) {
+  // Hold the loading screen until the profile has landed too — without this the
+  // first render has no profile yet and bounces a legitimate worker.
+  if (loading || (isAuthenticated && profileLoading)) {
     return <div className="flex min-h-screen items-center justify-center text-muted">…</div>;
   }
   if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+
+  // A session is authentication, not authorization: no admin_profiles row (or a
+  // deactivated one) means no dashboard. Show a way out rather than an empty
+  // dashboard or a redirect loop.
+  if (!isActive) return <NoAccess />;
+
+  function canAccess(section: AdminSection): boolean {
+    if (section.ownerOnly) return isOwner;
+    if (section.always) return true;
+    return hasSection(section.key);
+  }
+
+  const visibleSections = ADMIN_SECTIONS.filter(canAccess);
+
+  // Same predicate guards a direct URL. The dashboard is `always`, so the
+  // redirect target can never itself be forbidden — no loop.
+  const currentSection = routeToSection(pathname);
+  if (currentSection && !canAccess(currentSection)) {
+    return <Navigate to="/admin" replace />;
+  }
 
   const mobileSide = dir === "rtl" ? "right" : "left";
 
@@ -128,7 +152,7 @@ export function AdminLayout(): ReactNode {
       <aside className="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-e border-line bg-panel p-5 lg:flex">
         <Wordmark className="mb-8 items-start" />
         <div className="flex-1">
-          <NavItems />
+          <NavItems sections={visibleSections} />
         </div>
         <SidebarFooter />
       </aside>
@@ -145,7 +169,7 @@ export function AdminLayout(): ReactNode {
         <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} side={mobileSide}>
           <div className="flex h-full flex-col p-5">
             <div className="flex-1">
-              <NavItems onNavigate={() => setMobileOpen(false)} />
+              <NavItems sections={visibleSections} onNavigate={() => setMobileOpen(false)} />
             </div>
             <SidebarFooter />
           </div>

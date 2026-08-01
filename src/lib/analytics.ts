@@ -1,23 +1,26 @@
-// Injects Meta Pixel / GA4 only when their IDs are configured — pixel.ts
-// calls window.fbq / window.gtag optionally, so with no IDs everything no-ops.
-// The canonical vendor snippets are used verbatim (as inline scripts) because
-// both libraries require the queue stub to push the literal `arguments`
-// object — hand-rolled rest-param stubs silently drop events.
+// Injects GA4 only when its ID is configured. Everything no-ops without it.
+// The canonical vendor snippet is used verbatim (as an inline script) because
+// the library requires the queue stub to push the literal `arguments` object —
+// a hand-rolled rest-param stub silently drops events.
+//
+// The Meta Pixel is NOT loaded here any more: pixels are managed in
+// /admin/pixels and loaded from the database at runtime (src/lib/metaPixel.ts +
+// src/components/MetaPixelProvider.tsx), so the owner can run several campaign
+// pixels with different targeting without a redeploy.
 
-const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID;
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
+  }
+}
+
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
 function inject(js: string) {
   const script = document.createElement("script");
   script.textContent = js;
   document.head.appendChild(script);
-}
-
-function loadMetaPixel(id: string) {
-  if (!/^\d+$/.test(id)) return;
-  inject(
-    `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${id}');fbq('track','PageView');`,
-  );
 }
 
 function loadGa4(id: string) {
@@ -33,6 +36,9 @@ function loadGa4(id: string) {
 
 export function initAnalytics(): void {
   if (import.meta.env.DEV) return;
-  if (PIXEL_ID) loadMetaPixel(PIXEL_ID);
   if (GA_ID) loadGa4(GA_ID);
+}
+
+export function trackGaPageView(): void {
+  window.gtag?.("event", "page_view");
 }

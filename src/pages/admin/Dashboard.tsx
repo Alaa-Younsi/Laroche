@@ -1,12 +1,19 @@
 import { useMemo } from "react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useOrders } from "@/hooks/useOrders";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Price } from "@/components/ui/Price";
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const { hasSection } = useAdminProfile();
   const { data: orders = [], isLoading } = useOrders();
+
+  // The overview is visible to every admin, but its numbers all come from
+  // orders — a worker without that section would otherwise stare at zeros and
+  // assume the dashboard is broken. (RLS returns nothing to them either way.)
+  const canSeeOrders = hasSection("orders");
 
   const stats = useMemo(() => {
     const today = new Date().toDateString();
@@ -23,6 +30,17 @@ export default function Dashboard() {
     { label: t("adminPendingOrders"), value: stats.pending },
     { label: t("adminRevenueTotal"), value: stats.revenue, isPrice: true },
   ];
+
+  if (!canSeeOrders) {
+    return (
+      <div>
+        <h1 className="mb-8 font-display text-3xl text-ink">{t("adminDashboard")}</h1>
+        <BentoPanel className="p-6">
+          <p className="text-sm text-muted">{t("adminDashboardRestricted")}</p>
+        </BentoPanel>
+      </div>
+    );
+  }
 
   return (
     <div>

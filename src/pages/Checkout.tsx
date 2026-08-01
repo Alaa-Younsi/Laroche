@@ -17,7 +17,7 @@ import { Price } from "@/components/ui/Price";
 import { lineTotal } from "@/lib/offers";
 import { orderErrorKey } from "@/lib/orderErrors";
 import { createChargilyCheckout } from "@/lib/chargily";
-import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
+import { usePixel } from "@/components/MetaPixelProvider";
 
 export default function Checkout() {
   const { t, lang } = useLanguage();
@@ -30,6 +30,7 @@ export default function Checkout() {
   const submitOrder = useSubmitOrder();
   const [serverError, setServerError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const pixel = usePixel();
   const trackedInitiate = useRef(false);
 
   useSeo({ title: `${t("checkoutTitle")} — Laroche Bijoux`, description: "Finaliser votre commande Laroche Bijoux." });
@@ -66,7 +67,7 @@ export default function Checkout() {
   useEffect(() => {
     if (trackedInitiate.current || items.length === 0) return;
     trackedInitiate.current = true;
-    trackInitiateCheckout({
+    pixel.track("initiate_checkout", {
       value: goodsTotal,
       currency: "DZD",
       content_ids: items.map((i) => i.productId),
@@ -91,11 +92,13 @@ export default function Checkout() {
         customer: values,
         lang,
       });
-      trackPurchase({
-        value: total,
-        currency: "DZD",
-        content_ids: items.map((i) => i.productId),
-      });
+      // eventId = the order number: Meta's dedup key, so if this conversion is
+      // ever also sent server-side the two collapse into one.
+      pixel.track(
+        "purchase",
+        { value: total, currency: "DZD", content_ids: items.map((i) => i.productId) },
+        orderNumber,
+      );
       clearCart();
 
       // Online payment: hand off to the Chargily hosted checkout. The order is

@@ -13,7 +13,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { Reveal } from "@/components/effects/Reveal";
 import { Price } from "@/components/ui/Price";
 import { cn } from "@/lib/utils";
-import { trackAddToCart, trackViewContent } from "@/lib/pixel";
+import { usePixel } from "@/components/MetaPixelProvider";
 import type { ProductColor, VariantPick } from "@/types/db";
 
 // Sits under the gallery on desktop (left column) but under the checkout form
@@ -87,6 +87,7 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [openSection, setOpenSection] = useState<string | null>("description");
   const [activeImage, setActiveImage] = useState(0);
+  const pixel = usePixel();
   const trackedViewId = useRef<string | null>(null);
   const checkoutRef = useRef<HTMLDivElement>(null);
 
@@ -102,10 +103,19 @@ export default function Product() {
   useEffect(() => {
     if (product && trackedViewId.current !== product.id) {
       trackedViewId.current = product.id;
-      trackViewContent({ value: product.price, currency: "DZD", content_ids: [product.id] });
+      // Tell the pixel layer which product this is FIRST — a pixel scoped to
+      // specific product pages only matches once the slug is registered.
+      pixel.setContext({ productSlug: product.slug });
+      // Number(): a Postgres numeric can arrive over PostgREST as a string, and
+      // "1200" * qty silently NaNs.
+      pixel.track("view_content", {
+        value: Number(product.price),
+        currency: "DZD",
+        content_ids: [product.id],
+      });
       setActiveImage(0);
     }
-  }, [product]);
+  }, [product, pixel]);
 
   const galleryImages: GalleryImage[] = useMemo(() => {
     if (!product) return [];
@@ -217,8 +227,8 @@ export default function Product() {
       stock: product.stock,
       quantity_offers: product.quantity_offers,
     });
-    trackAddToCart({
-      value: product.price * quantity,
+    pixel.track("add_to_cart", {
+      value: Number(product.price) * quantity,
       currency: "DZD",
       content_ids: [product.id],
     });

@@ -9,6 +9,12 @@ import {
   readChargilyEnv,
   type ChargilyEnv,
 } from './api/_lib/chargily.ts'
+import {
+  createWorker,
+  readAdminTeamEnv,
+  type AdminTeamEnv,
+  type CreateWorkerBody,
+} from './api/_lib/adminTeam.ts'
 
 // Mirrors the Vercel Edge function at /api/ecotrack/* during `bun run dev`,
 // so the ECOTRACK integration is testable locally without `vercel dev`. The
@@ -105,6 +111,52 @@ function chargilyDevProxy(env: ChargilyEnv): Plugin {
   }
 }
 
+// Mirrors the Vercel Edge function at /api/admin/* during `bun run dev`, so
+// staff-account creation is testable locally without `vercel dev`. The
+// service-role key is read from .env server-side, never bundled.
+function adminDevProxy(env: AdminTeamEnv): Plugin {
+  return {
+    name: 'admin-dev-proxy',
+    configureServer(server) {
+      server.middlewares.use(
+        '/api/admin',
+        async (req: Connect.IncomingMessage, res: ServerResponse) => {
+          const parsed = new URL(req.url ?? '/', 'http://localhost')
+          const route = parsed.pathname.replace(/^\/+/, '').replace(/\/+$/, '')
+
+          const send = (status: number, obj: unknown) => {
+            res.statusCode = status
+            res.setHeader('Content-Type', 'application/json')
+            res.setHeader('Cache-Control', 'no-store')
+            res.end(JSON.stringify(obj))
+          }
+
+          if (route !== 'create-worker') return send(404, { code: 'not_found' })
+          if (req.method !== 'POST') return send(405, { code: 'method_not_allowed' })
+
+          const raw = await new Promise<string>((resolve) => {
+            let data = ''
+            req.on('data', (chunk) => (data += chunk))
+            req.on('end', () => resolve(data))
+          })
+
+          let body: CreateWorkerBody
+          try {
+            body = JSON.parse(raw || '{}')
+          } catch {
+            return send(400, { code: 'invalid_json' })
+          }
+
+          const jwt =
+            (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '') || null
+          const result = await createWorker(env, { jwt, body })
+          send(result.status, result.body)
+        },
+      )
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // load ALL env (no prefix filter) so server-only vars reach the dev proxy
@@ -116,9 +168,15 @@ export default defineConfig(({ mode }) => {
     supabaseAnonKey: env.SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_ANON_KEY ?? '',
   }
   const chargilyEnv = readChargilyEnv((k) => env[k])
+  const adminTeamEnv = readAdminTeamEnv((k) => env[k])
 
   return {
-    plugins: [react(), ecotrackDevProxy(ecotrackEnv), chargilyDevProxy(chargilyEnv)],
+    plugins: [
+      react(),
+      ecotrackDevProxy(ecotrackEnv),
+      chargilyDevProxy(chargilyEnv),
+      adminDevProxy(adminTeamEnv),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

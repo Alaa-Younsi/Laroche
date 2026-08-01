@@ -55,17 +55,35 @@ function json(status: number, obj: unknown): ProxyResponse {
   };
 }
 
-// Any authenticated Supabase user is an admin here — public sign-up is
-// disabled (see 0002_rls.sql), matching the app's own RLS model where the
-// `authenticated` role has full access. Verified by asking Supabase whether
-// the presented access token resolves to a user; no service-role key needed.
+// Dispatching a parcel is an ORDERS action, so the caller must be an active
+// admin who actually holds that section (0016_admin_permissions.sql) — a valid
+// session alone is not enough now that staff accounts exist, and a deactivated
+// worker's token stays valid until it expires.
+//
+// No service-role key needed: admin_profiles' RLS lets a caller read their OWN
+// row, so asking with the caller's own token returns their row or nothing.
 async function isAdmin(jwt: string | undefined, env: EcotrackEnv): Promise<boolean> {
   if (!jwt) return false;
+  const base = env.supabaseUrl.replace(/\/$/, "");
   try {
-    const res = await fetch(`${env.supabaseUrl.replace(/\/$/, "")}/auth/v1/user`, {
+    const res = await fetch(`${base}/auth/v1/user`, {
       headers: { apikey: env.supabaseAnonKey, Authorization: `Bearer ${jwt}` },
     });
-    return res.ok;
+    if (!res.ok) return false;
+
+    const profileRes = await fetch(
+      `${base}/rest/v1/admin_profiles?select=is_owner,active,sections`,
+      { headers: { apikey: env.supabaseAnonKey, Authorization: `Bearer ${jwt}` } },
+    );
+    if (!profileRes.ok) return false;
+    const rows = (await profileRes.json()) as Array<{
+      is_owner?: boolean;
+      active?: boolean;
+      sections?: string[];
+    }>;
+    const profile = rows[0];
+    if (!profile?.active) return false;
+    return profile.is_owner === true || (profile.sections ?? []).includes("orders");
   } catch {
     return false;
   }

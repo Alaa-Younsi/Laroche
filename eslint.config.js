@@ -44,7 +44,11 @@ export default [
     // colocated context + hook is the deliberate structure here (see
     // dz-cod-store skill Phase 3/4) — the fast-refresh warning about
     // mixed exports doesn't apply usefully to these two files.
-    files: ["src/theme/ThemeProvider.tsx", "src/i18n/LanguageProvider.tsx"],
+    files: [
+      "src/theme/ThemeProvider.tsx",
+      "src/i18n/LanguageProvider.tsx",
+      "src/components/MetaPixelProvider.tsx",
+    ],
     rules: {
       "react-refresh/only-export-components": "off",
     },

@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
-import { PixelPageView } from "@/components/layout/PixelPageView";
+import { GaPageView } from "@/components/layout/GaPageView";
+import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import { StorefrontLayout } from "@/components/layout/StorefrontLayout";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
@@ -27,6 +28,8 @@ const AdminDeliveryPrices = lazy(() => import("@/pages/admin/DeliveryPrices"));
 const AdminReviews = lazy(() => import("@/pages/admin/Reviews"));
 const AdminNewsletter = lazy(() => import("@/pages/admin/Newsletter"));
 const AdminAccount = lazy(() => import("@/pages/admin/Account"));
+const AdminPixels = lazy(() => import("@/pages/admin/Pixels"));
+const AdminTeam = lazy(() => import("@/pages/admin/Team"));
 
 function RouteFallback() {
   const { t } = useLanguage();
@@ -40,9 +43,9 @@ function RouteFallback() {
 
 function App() {
   return (
-    <>
+    <MetaPixelProvider>
       <ScrollToTop />
-      <PixelPageView />
+      <GaPageView />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route element={<StorefrontLayout />}>
@@ -68,10 +71,12 @@ function App() {
             <Route path="avis" element={<AdminReviews />} />
             <Route path="newsletter" element={<AdminNewsletter />} />
             <Route path="compte" element={<AdminAccount />} />
+            <Route path="pixels" element={<AdminPixels />} />
+            <Route path="equipe" element={<AdminTeam />} />
           </Route>
         </Routes>
       </Suspense>
-    </>
+    </MetaPixelProvider>
   );
 }
 

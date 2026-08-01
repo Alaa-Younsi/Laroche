@@ -165,6 +165,47 @@ export interface ClientReview {
   created_at: string;
 }
 
+// Staff accounts (0016_admin_permissions.sql). `sections` holds the section
+// keys from src/lib/adminSections.ts; an owner implicitly has all of them.
+export interface AdminProfile {
+  user_id: string;
+  email: string | null;
+  is_owner: boolean;
+  sections: string[];
+  active: boolean;
+  created_at: string;
+}
+
+// Meta pixels (0017_meta_pixels.sql).
+export type PixelScope = "all" | "paths" | "products" | "landing";
+
+export type PixelEventKey =
+  | "page_view"
+  | "view_content"
+  | "add_to_cart"
+  | "initiate_checkout"
+  | "purchase"
+  | "lead"
+  | "search";
+
+export type PixelEvents = Partial<Record<PixelEventKey, boolean>>;
+
+export interface MetaPixel {
+  id: string;
+  label: string;
+  pixel_id: string;
+  active: boolean;
+  scope: PixelScope;
+  match_values: string[];
+  events: PixelEvents;
+  test_event_code: string | null;
+  currency: string;
+  sort_order: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CartVariantPick {
   name_fr: string;
   name_ar: string;
