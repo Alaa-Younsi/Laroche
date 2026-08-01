@@ -49,7 +49,7 @@ function SidebarFooter() {
   const { signOut } = useAuth();
 
   return (
-    <div className="space-y-1 border-t border-line pt-4">
+    <div className="mt-4 shrink-0 space-y-1 border-t border-line pt-4">
       <Link
         to="/"
         className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-muted hover:bg-panel-2 hover:text-ink"
@@ -149,9 +149,12 @@ export function AdminLayout(): ReactNode {
   // page under it gets — a 300-row orders table scrolls inside <main> alone.
   return (
     <div className="flex h-dvh overflow-hidden bg-bg">
-      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-e border-line bg-panel p-5 lg:flex">
-        <Wordmark className="mb-8 items-start" />
-        <div className="flex-1">
+      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-e border-line bg-panel p-5 lg:flex">
+        <Wordmark className="mb-8 shrink-0 items-start" />
+        {/* Only the links scroll: min-h-0 lets this flex child shrink below its
+            content height, which is what confines the scrollbar to this box and
+            keeps the wordmark and footer pinned. */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <NavItems sections={visibleSections} />
         </div>
         <SidebarFooter />
@@ -167,8 +170,8 @@ export function AdminLayout(): ReactNode {
         </div>
 
         <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} side={mobileSide}>
-          <div className="flex h-full flex-col p-5">
-            <div className="flex-1">
+          <div className="flex h-full flex-col overflow-hidden p-5">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <NavItems sections={visibleSections} onNavigate={() => setMobileOpen(false)} />
             </div>
             <SidebarFooter />
