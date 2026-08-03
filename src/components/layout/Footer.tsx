@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShieldCheck, Truck, BadgeCheck } from "lucide-react";
+import { ShieldCheck, Truck, BadgeCheck, Mail, Phone } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { InstagramIcon, FacebookIcon, TikTokIcon, SnapchatIcon } from "@/components/layout/SocialIcons";
@@ -79,9 +79,22 @@ export function Footer() {
             {t("footerContact")}
           </h4>
           <ul className="space-y-3 text-sm text-muted">
-            <li className="flex items-center gap-2"><Truck size={15} className="text-brand" />{t("trustDelivery")}</li>
-            <li className="flex items-center gap-2"><ShieldCheck size={15} className="text-brand" />{t("trustSecure")}</li>
-            <li className="flex items-center gap-2"><BadgeCheck size={15} className="text-brand" />{t("trustAuthentic")}</li>
+            <li className="flex items-center gap-2">
+              <Mail size={15} className="shrink-0 text-brand" />
+              <a href="mailto:larochebijoux04@gmail.com" className="break-all transition-colors duration-300 hover:text-brand">
+                larochebijoux04@gmail.com
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Phone size={15} className="shrink-0 text-brand" />
+              {/* Forced LTR so the number keeps its reading order in the Arabic layout. */}
+              <a href="tel:+213563030696" dir="ltr" className="transition-colors duration-300 hover:text-brand">
+                0563030696
+              </a>
+            </li>
+            <li className="flex items-center gap-2"><Truck size={15} className="shrink-0 text-brand" />{t("trustDelivery")}</li>
+            <li className="flex items-center gap-2"><ShieldCheck size={15} className="shrink-0 text-brand" />{t("trustSecure")}</li>
+            <li className="flex items-center gap-2"><BadgeCheck size={15} className="shrink-0 text-brand" />{t("trustAuthentic")}</li>
           </ul>
         </Reveal>
       </div>

@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { Reveal } from "@/components/effects/Reveal";
 import { Price } from "@/components/ui/Price";
 import { cn } from "@/lib/utils";
+import { isPlayableVideoUrl } from "@/lib/video";
 import { usePixel } from "@/components/MetaPixelProvider";
 import type { ProductColor, VariantPick } from "@/types/db";
 
@@ -48,7 +49,11 @@ function ProductVideo({
         if (entry.isIntersecting) void el.play().catch(() => {});
         else el.pause();
       },
-      { threshold: 0.25 },
+      // threshold 0 + a rootMargin lead-in: playback starts as the clip reaches
+      // the viewport rather than a quarter of the way past it, and the file has
+      // a head start on the wire. A portrait clip can also be taller than the
+      // viewport, in which case a 0.25 ratio is unreachable on short screens.
+      { threshold: 0, rootMargin: "300px 0px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -149,6 +154,9 @@ export default function Product() {
   const description = product ? (lang === "ar" ? product.description_ar : product.description_fr) : "";
   const details = product ? (lang === "ar" ? product.details_ar : product.details_fr) : [];
   const warranty = product ? (lang === "ar" ? product.warranty_ar : product.warranty_fr) : null;
+  // A share link to a social post can't drive a <video> tag — rather than show
+  // a player that will never start, treat it as no video at all.
+  const videoUrl = isPlayableVideoUrl(product?.video_url) ? (product?.video_url as string) : null;
 
   const variants: VariantPick[] = useMemo(() => {
     if (!product) return [];
@@ -256,9 +264,9 @@ export default function Product() {
             activeIndex={activeImage}
             onActiveChange={setActiveImage}
           />
-          {product.video_url && (
+          {videoUrl && (
             <ProductVideo
-              src={product.video_url}
+              src={videoUrl}
               poster={product.product_images?.[0]?.url}
               className="mt-6 hidden md:block"
             />
@@ -429,9 +437,9 @@ export default function Product() {
             />
           </div>
 
-          {product.video_url && (
+          {videoUrl && (
             <ProductVideo
-              src={product.video_url}
+              src={videoUrl}
               poster={product.product_images?.[0]?.url}
               className="mt-6 md:hidden"
             />

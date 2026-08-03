@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
@@ -8,6 +9,7 @@ import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { uniqueSlug } from "@/lib/utils";
 import { flattenCategoryTree } from "@/lib/categoryTree";
 import { sanitizeOffers } from "@/lib/sanitizeOffers";
+import { isPlayableVideoUrl } from "@/lib/video";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -81,6 +83,11 @@ export default function ProductForm() {
       setLoading(false);
     })();
   }, [id, isEdit]);
+
+  // Flagged, not blocked: the field is optional and a bad link only costs the
+  // player, so the save still goes through — the admin just gets told why the
+  // clip won't appear on the product page.
+  const videoUrlInvalid = !!form.video_url?.trim() && !isPlayableVideoUrl(form.video_url);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -183,13 +190,20 @@ export default function ProductForm() {
           </BentoPanel>
 
           <BentoPanel className="p-6">
-            <h3 className="mb-4 text-sm font-medium uppercase tracking-wide2 text-muted">{t("productVideo")}</h3>
+            <h3 className="mb-2 text-sm font-medium uppercase tracking-wide2 text-muted">{t("productVideo")}</h3>
+            <p className="mb-3 text-xs text-muted">{t("productVideoHint")}</p>
             <Input
-              placeholder="URL vidéo (YouTube, Cloudinary…)"
+              placeholder="https://…/video.mp4"
               value={form.video_url ?? ""}
               onChange={(e) => update("video_url", e.target.value)}
               className="mb-3"
             />
+            {videoUrlInvalid && (
+              <p className="mb-3 flex items-start gap-2 text-xs text-red-500">
+                <AlertTriangle size={14} className="mt-px shrink-0" />
+                {t("productVideoInvalid")}
+              </p>
+            )}
             <input
               type="file"
               accept="video/*"

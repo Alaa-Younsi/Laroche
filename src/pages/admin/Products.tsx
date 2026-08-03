@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
@@ -23,9 +24,80 @@ function useAllProducts() {
   });
 }
 
+// Confirmation before deleting a product. product_images / product_collections
+// rows cascade away with it, while order_items.product_id is ON DELETE SET NULL
+// — past orders keep their name/price snapshot, so history stays intact.
+function DeleteProductModal({
+  product,
+  lang,
+  busy,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  product: Product;
+  lang: string;
+  busy: boolean;
+  error: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useLanguage();
+  const name = lang === "ar" ? product.name_ar : product.name_fr;
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
+      onClick={busy ? undefined : onCancel}
+    >
+      <BentoPanel className="w-full max-w-md p-6" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+            <AlertTriangle size={18} />
+          </span>
+          <h3 className="font-display text-lg text-ink">{t("productDeleteTitle")}</h3>
+        </div>
+        <p className="text-sm text-muted">
+          {t("productDeleteConfirm").replace("{name}", name)}
+          <span className="mt-2 block text-xs">{t("productDeleteWarning")}</span>
+        </p>
+        {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button size="sm" variant="outline" onClick={onCancel} disabled={busy}>
+            {t("cancel")}
+          </Button>
+          <Button size="sm" variant="danger" onClick={onConfirm} disabled={busy}>
+            {busy && <Loader2 size={14} className="animate-spin" />}
+            {t("delete")}
+          </Button>
+        </div>
+      </BentoPanel>
+    </div>
+  );
+}
+
 export default function Products() {
   const { t, lang } = useLanguage();
   const { data: products = [], isLoading } = useAllProducts();
+  const queryClient = useQueryClient();
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const { error } = await supabase.from("products").delete().eq("id", pendingDelete.id);
+    setDeleting(false);
+    if (error) {
+      setDeleteError(t("productDeleteError"));
+      return;
+    }
+    setPendingDelete(null);
+    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+  }
 
   return (
     <div>
@@ -49,6 +121,7 @@ export default function Products() {
                 <th className="whitespace-nowrap px-5 py-3 text-start">Prix</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">{t("adminStock")}</th>
                 <th className="whitespace-nowrap px-5 py-3 text-start">{t("adminStatus")}</th>
+                <th className="whitespace-nowrap px-5 py-3 text-end"></th>
               </tr>
             </thead>
             <tbody>
@@ -91,11 +164,24 @@ export default function Products() {
                       {product.status === "active" ? t("adminActive") : t("adminDraft")}
                     </span>
                   </td>
+                  <td className="whitespace-nowrap px-5 py-2.5 text-end">
+                    <button
+                      onClick={() => {
+                        setDeleteError(null);
+                        setPendingDelete(product);
+                      }}
+                      className="text-muted transition-colors hover:text-red-500"
+                      title={t("productDeleteTitle")}
+                      aria-label={t("productDeleteTitle")}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {products.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-muted">
+                  <td colSpan={7} className="px-5 py-8 text-center text-muted">
                     {t("noResults")}
                   </td>
                 </tr>
@@ -104,6 +190,17 @@ export default function Products() {
           </table>
         </div>
       </BentoPanel>
+
+      {pendingDelete && (
+        <DeleteProductModal
+          product={pendingDelete}
+          lang={lang}
+          busy={deleting}
+          error={deleteError}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

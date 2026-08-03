@@ -82,6 +82,10 @@ export const translations = {
     productColor: "Couleur",
     productQuantity: "Quantité",
     productVideo: "Vidéo produit",
+    productVideoHint:
+      "Importez le fichier vidéo ci-dessous, ou collez le lien direct vers un fichier (.mp4, .webm, .mov).",
+    productVideoInvalid:
+      "Ce lien pointe vers une page (Facebook, Instagram, YouTube…), pas vers un fichier vidéo : la vidéo ne s'affichera pas sur la fiche produit. Importez le fichier avec le bouton ci-dessous.",
     productRelated: "Vous aimerez aussi",
     productStyleCode: "Référence",
     productShare: "Partager",
@@ -149,6 +153,13 @@ export const translations = {
     // WhatsApp
     whatsappContact: "Contactez-nous sur WhatsApp",
 
+    // Product admin
+    productDeleteTitle: "Supprimer le produit",
+    productDeleteConfirm: "Voulez-vous vraiment supprimer « {name} » ?",
+    productDeleteWarning:
+      "Cette action est définitive : la fiche produit et ses photos seront retirées de la boutique. Les commandes déjà passées sont conservées.",
+    productDeleteError: "La suppression a échoué. Réessayez.",
+
     // Category admin
     categoryDeleteTitle: "Supprimer la catégorie",
     categoryDeleteConfirm: "Voulez-vous vraiment supprimer « {name} » ?",
@@ -200,13 +211,13 @@ export const translations = {
     storePolicyTitle: "Retour & Livraison",
     storePolicyIntro: "Cette page présente notre politique de retour, d'échange et de livraison. Le contenu ci-dessous est un texte provisoire, à remplacer par le texte définitif du client.",
     storePolicyDeliveryTitle: "Livraison",
-    storePolicyDeliveryText: "Nous livrons dans les 69 wilayas d'Algérie, à domicile ou en point relais, avec paiement à la livraison. Les délais moyens varient entre 2 et 7 jours ouvrés selon la wilaya. [Texte provisoire — à remplacer.]",
+    storePolicyDeliveryText: "Nous livrons dans les 69 wilayas d'Algérie, à domicile ou en point relais, avec paiement à la livraison. Les délais moyens varient entre 2 et 7 jours ouvrés selon la wilaya.",
     storePolicyReturnsTitle: "Retours & Échanges",
-    storePolicyReturnsText: "Vous disposez d'un délai de 3 jours après réception pour demander un retour ou un échange, sous réserve que le bijou soit dans son état d'origine, non porté et avec son emballage. [Texte provisoire — à remplacer.]",
+    storePolicyReturnsText: "Vous disposez d'un délai de 3 jours après réception pour demander un retour ou un échange, sous réserve que le bijou soit dans son état d'origine, non porté et avec son emballage.",
     storePolicyRefundTitle: "Remboursement",
-    storePolicyRefundText: "Une fois le retour reçu et vérifié, le remboursement est effectué selon les modalités convenues avec notre service client. [Texte provisoire — à remplacer.]",
+    storePolicyRefundText: "Une fois le retour reçu et vérifié, le remboursement est effectué selon les modalités convenues avec notre service client.",
     storePolicyContactTitle: "Une question ?",
-    storePolicyContactText: "Notre équipe reste à votre disposition pour toute question concernant votre commande, un retour ou un échange. [Texte provisoire — à remplacer.]",
+    storePolicyContactText: "Notre équipe reste à votre disposition pour toute question concernant votre commande, un retour ou un échange.",
 
     // Newsletter
     newsletterTitle: "Restez informée",
@@ -398,6 +409,9 @@ export const translations = {
     productColor: "اللون",
     productQuantity: "الكمية",
     productVideo: "فيديو المنتج",
+    productVideoHint: "حمّل ملف الفيديو أدناه، أو الصق الرابط المباشر للملف (.mp4، .webm، .mov).",
+    productVideoInvalid:
+      "هذا الرابط يشير إلى صفحة (فيسبوك، إنستغرام، يوتيوب…) وليس إلى ملف فيديو: لن يظهر الفيديو في صفحة المنتج. حمّل الملف عبر الزر أدناه.",
     productRelated: "قد يعجبك أيضاً",
     productStyleCode: "المرجع",
     productShare: "مشاركة",
@@ -459,6 +473,12 @@ export const translations = {
 
     whatsappContact: "تواصل معنا عبر واتساب",
 
+    productDeleteTitle: "حذف المنتج",
+    productDeleteConfirm: "هل تريد فعلاً حذف « {name} »؟",
+    productDeleteWarning:
+      "هذا الإجراء نهائي: سيتم حذف المنتج وصوره من المتجر. الطلبات السابقة تبقى محفوظة.",
+    productDeleteError: "فشل الحذف. حاول مرة أخرى.",
+
     categoryDeleteTitle: "حذف الفئة",
     categoryDeleteConfirm: "هل تريد فعلاً حذف « {name} »؟",
     categoryDeleteCascade: "تنبيه: سيتم أيضاً حذف {count} فئة فرعية.",
@@ -504,13 +524,13 @@ export const translations = {
     storePolicyTitle: "الإرجاع والتوصيل",
     storePolicyIntro: "تعرض هذه الصفحة سياستنا للإرجاع والاستبدال والتوصيل. النص أدناه مؤقت، وسيتم استبداله بالنص النهائي الخاص بالعميل.",
     storePolicyDeliveryTitle: "التوصيل",
-    storePolicyDeliveryText: "نوصل إلى 69 ولاية في الجزائر، إلى المنزل أو إلى نقطة استلام، مع الدفع عند الاستلام. تتراوح مدة التوصيل عادة بين 2 و7 أيام عمل حسب الولاية. [نص مؤقت — سيتم استبداله.]",
+    storePolicyDeliveryText: "نوصل إلى 69 ولاية في الجزائر، إلى المنزل أو إلى نقطة استلام، مع الدفع عند الاستلام. تتراوح مدة التوصيل عادة بين 2 و7 أيام عمل حسب الولاية.",
     storePolicyReturnsTitle: "الإرجاع والاستبدال",
-    storePolicyReturnsText: "لديك مهلة 3 أيام بعد الاستلام لطلب إرجاع أو استبدال، شرط أن تكون القطعة في حالتها الأصلية، غير مستعملة ومع تغليفها. [نص مؤقت — سيتم استبداله.]",
+    storePolicyReturnsText: "لديك مهلة 3 أيام بعد الاستلام لطلب إرجاع أو استبدال، شرط أن تكون القطعة في حالتها الأصلية، غير مستعملة ومع تغليفها.",
     storePolicyRefundTitle: "الاسترجاع المالي",
-    storePolicyRefundText: "بعد استلام المرتجع والتحقق منه، يتم رد المبلغ وفق الطريقة المتفق عليها مع خدمة العملاء. [نص مؤقت — سيتم استبداله.]",
+    storePolicyRefundText: "بعد استلام المرتجع والتحقق منه، يتم رد المبلغ وفق الطريقة المتفق عليها مع خدمة العملاء.",
     storePolicyContactTitle: "لديك سؤال؟",
-    storePolicyContactText: "فريقنا في خدمتكم لأي استفسار بخصوص طلبكم أو الإرجاع أو الاستبدال. [نص مؤقت — سيتم استبداله.]",
+    storePolicyContactText: "فريقنا في خدمتكم لأي استفسار بخصوص طلبكم أو الإرجاع أو الاستبدال.",
 
     newsletterTitle: "ابقي على اطلاع",
     newsletterSubtitle: "احصلي على أحدث منتجاتنا وعروضنا الحصرية قبل الجميع.",
