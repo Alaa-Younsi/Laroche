@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
+import { invalidateProductCaches } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/db";
 
@@ -95,8 +96,7 @@ export default function Products() {
       return;
     }
     setPendingDelete(null);
-    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-    queryClient.invalidateQueries({ queryKey: ["products"] });
+    invalidateProductCaches(queryClient);
   }
 
   return (

@@ -17,6 +17,8 @@ import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { useAdminToast } from "@/components/admin/AdminToast";
+import { invalidateTaxonomyCaches } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
 
 const DEPTH_INDENT = ["", "ms-6", "ms-12", "ms-[4.5rem]"] as const;
@@ -39,6 +41,7 @@ function CategoryImagePicker({
   onChange: (url: string | null) => void;
 }) {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +53,9 @@ function CategoryImagePicker({
     const { data, error } = await supabase.storage
       .from("product-images")
       .upload(path, compressed, { cacheControl: "31536000" });
-    if (!error && data) {
+    if (error || !data) {
+      toast.error(t("adminUploadError"));
+    } else {
       onChange(supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl);
     }
     setUploading(false);
@@ -343,6 +348,7 @@ function DeleteCategoryModal({
 
 function CategoriesTab({ lang }: { lang: string }) {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data: tree = [] } = useCategoryGroups();
   const queryClient = useQueryClient();
   const [nameFr, setNameFr] = useState("");
@@ -354,18 +360,35 @@ function CategoriesTab({ lang }: { lang: string }) {
   const flatOptions = flattenCategoryTree(tree);
 
   function invalidate() {
-    return queryClient.invalidateQueries({ queryKey: ["categories"] });
+    invalidateTaxonomyCaches(queryClient);
+  }
+
+  // A row from FALLBACK_TREE has no database row behind it, and its synthetic
+  // `slug:` id isn't even a valid uuid — writing to one can only fail. Say so
+  // instead of firing a request that comes back with a cast error.
+  function rejectFallback(id: string): boolean {
+    if (isPersisted(id)) return false;
+    toast.error(t("adminCategoryNotSaved"));
+    return true;
   }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!nameFr.trim() || !nameAr.trim()) return;
-    await supabase.from("categories").insert({
+    const parent = parentId || null;
+    if (parent && rejectFallback(parent)) return;
+
+    const { error } = await supabase.from("categories").insert({
       slug: slugify(nameFr) + "-" + Math.random().toString(36).slice(2, 6),
       name_fr: nameFr.trim(),
       name_ar: nameAr.trim(),
-      parent_id: parentId || null,
+      parent_id: parent,
     });
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
+
     setNameFr("");
     setNameAr("");
     setParentId("");
@@ -376,19 +399,40 @@ function CategoriesTab({ lang }: { lang: string }) {
     id: string,
     values: { name_fr: string; name_ar: string; parent_id: string | null },
   ) {
-    await supabase.from("categories").update(values).eq("id", id);
+    if (rejectFallback(id)) return;
+    if (values.parent_id && rejectFallback(values.parent_id)) return;
+
+    const { error } = await supabase.from("categories").update(values).eq("id", id);
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     setEditingId(null);
     invalidate();
   }
 
   async function saveImage(id: string, image_url: string | null) {
-    await supabase.from("categories").update({ image_url }).eq("id", id);
+    if (rejectFallback(id)) return;
+    const { error } = await supabase.from("categories").update({ image_url }).eq("id", id);
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     invalidate();
   }
 
   async function confirmDelete() {
     if (!pendingDelete) return;
-    await supabase.from("categories").delete().eq("id", pendingDelete.id);
+    if (rejectFallback(pendingDelete.id)) {
+      setPendingDelete(null);
+      return;
+    }
+
+    const { error } = await supabase.from("categories").delete().eq("id", pendingDelete.id);
+    if (error) {
+      toast.error(t("adminDeleteError"));
+      return;
+    }
     setPendingDelete(null);
     invalidate();
   }
@@ -448,6 +492,7 @@ function CategoriesTab({ lang }: { lang: string }) {
 
 function CollectionsTab({ lang }: { lang: string }) {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data: collections = [] } = useCollections();
   const queryClient = useQueryClient();
   const [nameFr, setNameFr] = useState("");
@@ -457,17 +502,21 @@ function CollectionsTab({ lang }: { lang: string }) {
   const [editAr, setEditAr] = useState("");
 
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    invalidateTaxonomyCaches(queryClient);
   }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!nameFr.trim() || !nameAr.trim()) return;
-    await supabase.from("collections").insert({
+    const { error } = await supabase.from("collections").insert({
       slug: slugify(nameFr) + "-" + Math.random().toString(36).slice(2, 6),
       name_fr: nameFr.trim(),
       name_ar: nameAr.trim(),
     });
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     setNameFr("");
     setNameAr("");
     invalidate();
@@ -481,13 +530,24 @@ function CollectionsTab({ lang }: { lang: string }) {
 
   async function saveEdit(id: string) {
     if (!editFr.trim() || !editAr.trim()) return;
-    await supabase.from("collections").update({ name_fr: editFr.trim(), name_ar: editAr.trim() }).eq("id", id);
+    const { error } = await supabase
+      .from("collections")
+      .update({ name_fr: editFr.trim(), name_ar: editAr.trim() })
+      .eq("id", id);
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     setEditingId(null);
     invalidate();
   }
 
   async function remove(id: string) {
-    await supabase.from("collections").delete().eq("id", id);
+    const { error } = await supabase.from("collections").delete().eq("id", id);
+    if (error) {
+      toast.error(t("adminDeleteError"));
+      return;
+    }
     invalidate();
   }
 
@@ -545,6 +605,7 @@ function CollectionsTab({ lang }: { lang: string }) {
 
 function BrandsTab() {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data: brands = [] } = useBrands();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -552,29 +613,41 @@ function BrandsTab() {
   const [editName, setEditName] = useState("");
 
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ["brands"] });
+    invalidateTaxonomyCaches(queryClient);
   }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    await supabase.from("brands").insert({
+    const { error } = await supabase.from("brands").insert({
       slug: slugify(name) + "-" + Math.random().toString(36).slice(2, 6),
       name: name.trim(),
     });
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     setName("");
     invalidate();
   }
 
   async function saveEdit(id: string) {
     if (!editName.trim()) return;
-    await supabase.from("brands").update({ name: editName.trim() }).eq("id", id);
+    const { error } = await supabase.from("brands").update({ name: editName.trim() }).eq("id", id);
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     setEditingId(null);
     invalidate();
   }
 
   async function remove(id: string) {
-    await supabase.from("brands").delete().eq("id", id);
+    const { error } = await supabase.from("brands").delete().eq("id", id);
+    if (error) {
+      toast.error(t("adminDeleteError"));
+      return;
+    }
     invalidate();
   }
 

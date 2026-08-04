@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import type { ProductImage } from "@/types/db";
 
 export function ImagesEditor({
@@ -11,6 +13,8 @@ export function ImagesEditor({
   images: ProductImage[];
   onChange: (next: ProductImage[]) => void;
 }) {
+  const { t } = useLanguage();
+  const toast = useAdminToast();
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -19,25 +23,31 @@ export function ImagesEditor({
     setUploading(true);
 
     const uploaded: ProductImage[] = [];
+    let failed = 0;
     for (const file of Array.from(files)) {
       const compressed = await compressImage(file);
       const path = `${crypto.randomUUID()}-${compressed.name}`;
       const { data, error } = await supabase.storage
         .from("product-images")
         .upload(path, compressed, { cacheControl: "31536000" });
-      if (!error && data) {
-        const url = supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl;
-        uploaded.push({
-          id: crypto.randomUUID(),
-          product_id: "",
-          url,
-          alt: null,
-          sort_order: images.length + uploaded.length,
-        });
+      if (error || !data) {
+        failed++;
+        continue;
       }
+      const url = supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl;
+      uploaded.push({
+        id: crypto.randomUUID(),
+        product_id: "",
+        url,
+        alt: null,
+        sort_order: images.length + uploaded.length,
+      });
     }
 
-    onChange([...images, ...uploaded]);
+    // Keep whatever did upload — dropping the successful ones because one file
+    // failed would be worse — but never let a silent gap in the batch pass.
+    if (uploaded.length > 0) onChange([...images, ...uploaded]);
+    if (failed > 0) toast.error(t("adminUploadError"));
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";
   }

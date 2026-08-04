@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/lib/supabase";
 import { exportOrdersToExcel } from "@/lib/exportOrders";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import { Button } from "@/components/ui/Button";
 import type { Order } from "@/types/db";
 
@@ -16,12 +17,19 @@ interface Props {
 
 export function DeleteAllOrdersModal({ open, onClose, orders, onDeleted }: Props) {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
     setDeleting(true);
-    await supabase.from("orders").delete().not("id", "is", null);
+    const { error } = await supabase.from("orders").delete().not("id", "is", null);
     setDeleting(false);
+    // Closing on a refused delete would leave the list looking wiped until the
+    // next refetch put every order back.
+    if (error) {
+      toast.error(t("adminDeleteError"));
+      return;
+    }
     onDeleted();
     onClose();
   }

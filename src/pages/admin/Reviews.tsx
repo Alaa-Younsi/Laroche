@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Star, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useReviews } from "@/hooks/useReviews";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 export default function Reviews() {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data: reviews = [], isLoading } = useReviews(false);
   const queryClient = useQueryClient();
 
@@ -20,6 +22,7 @@ export default function Reviews() {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function invalidate() {
     return queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -34,37 +37,58 @@ export default function Reviews() {
     if (file) {
       const compressed = await compressImage(file);
       const path = `${crypto.randomUUID()}-${compressed.name}`;
-      const { data } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from("product-images")
         .upload(path, compressed, { cacheControl: "31536000" });
-      if (data) {
-        image_url = supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl;
+      // The photo is the point of a review card — don't save a text-only row
+      // as if the upload had worked.
+      if (error || !data) {
+        toast.error(t("adminUploadError"));
+        setSubmitting(false);
+        return;
       }
+      image_url = supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl;
     }
 
-    await supabase.from("client_reviews").insert({
+    const { error } = await supabase.from("client_reviews").insert({
       client_name: clientName.trim(),
       stars,
       review_text: text.trim(),
       image_url,
       active: true,
     });
+    if (error) {
+      toast.error(t("adminSaveError"));
+      setSubmitting(false);
+      return;
+    }
 
     setClientName("");
     setText("");
     setStars(5);
     setFile(null);
+    // Clearing the state doesn't clear the input's own value — without this the
+    // form still shows the previous filename and re-submits the same photo.
+    if (fileRef.current) fileRef.current.value = "";
     setSubmitting(false);
     invalidate();
   }
 
   async function toggleActive(id: string, active: boolean) {
-    await supabase.from("client_reviews").update({ active: !active }).eq("id", id);
+    const { error } = await supabase.from("client_reviews").update({ active: !active }).eq("id", id);
+    if (error) {
+      toast.error(t("adminSaveError"));
+      return;
+    }
     invalidate();
   }
 
   async function remove(id: string) {
-    await supabase.from("client_reviews").delete().eq("id", id);
+    const { error } = await supabase.from("client_reviews").delete().eq("id", id);
+    if (error) {
+      toast.error(t("adminDeleteError"));
+      return;
+    }
     invalidate();
   }
 
@@ -94,6 +118,7 @@ export default function Reviews() {
             onChange={(e) => setText(e.target.value)}
           />
           <input
+            ref={fileRef}
             type="file"
             accept="image/*"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}

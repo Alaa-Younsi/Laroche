@@ -48,6 +48,7 @@ export default [
       "src/theme/ThemeProvider.tsx",
       "src/i18n/LanguageProvider.tsx",
       "src/components/MetaPixelProvider.tsx",
+      "src/components/admin/AdminToast.tsx",
     ],
     rules: {
       "react-refresh/only-export-components": "off",

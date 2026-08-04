@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useOrder } from "@/hooks/useOrders";
 import { supabase } from "@/lib/supabase";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
@@ -19,10 +20,18 @@ export default function OrderDetail() {
   const { t, lang } = useLanguage();
   const { data: order, isLoading } = useOrder(id);
   const queryClient = useQueryClient();
+  const toast = useAdminToast();
 
   async function updateStatus(status: OrderStatus) {
     if (!id) return;
-    await supabase.from("orders").update({ status }).eq("id", id);
+    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+    if (error) {
+      // The <Select> renders straight off `order.status`, so refetching puts
+      // the dropdown back on the status the order actually has.
+      toast.error(t("adminSaveError"));
+      queryClient.invalidateQueries({ queryKey: ["order", id] });
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ["order", id] });
     queryClient.invalidateQueries({ queryKey: ["orders"] });
   }

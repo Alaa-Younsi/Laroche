@@ -3,20 +3,33 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useDeliveryPrices } from "@/hooks/useDeliveryPrices";
 import { supabase } from "@/lib/supabase";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { cn } from "@/lib/utils";
 
 export default function DeliveryPrices() {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data: wilayas = [], isLoading } = useDeliveryPrices();
   const queryClient = useQueryClient();
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  async function updateRow(id: string, patch: { home_price?: number; office_price?: number; active?: boolean }) {
+  async function updateRow(
+    id: string,
+    patch: { home_price?: number; office_price?: number; active?: boolean },
+    revert?: () => void,
+  ) {
     setSavingId(id);
-    await supabase.from("delivery_prices").update(patch).eq("id", id);
-    await queryClient.invalidateQueries({ queryKey: ["delivery-prices"] });
+    const { error } = await supabase.from("delivery_prices").update(patch).eq("id", id);
     setSavingId(null);
+    if (error) {
+      // The price inputs are uncontrolled, so a refused write would otherwise
+      // leave the typed number sitting on screen as if it had been saved.
+      revert?.();
+      toast.error(t("adminSaveError"));
+      return;
+    }
+    await queryClient.invalidateQueries({ queryKey: ["delivery-prices"] });
   }
 
   return (
@@ -51,8 +64,13 @@ export default function DeliveryPrices() {
                       defaultValue={w.home_price}
                       disabled={savingId === w.id}
                       onBlur={(e) => {
-                        const value = Number(e.target.value);
-                        if (value !== w.home_price) updateRow(w.id, { home_price: value });
+                        const input = e.target;
+                        const value = Number(input.value);
+                        if (value !== w.home_price) {
+                          updateRow(w.id, { home_price: value }, () => {
+                            input.value = String(w.home_price);
+                          });
+                        }
                       }}
                     />
                   </td>
@@ -63,8 +81,13 @@ export default function DeliveryPrices() {
                       defaultValue={w.office_price}
                       disabled={savingId === w.id}
                       onBlur={(e) => {
-                        const value = Number(e.target.value);
-                        if (value !== w.office_price) updateRow(w.id, { office_price: value });
+                        const input = e.target;
+                        const value = Number(input.value);
+                        if (value !== w.office_price) {
+                          updateRow(w.id, { office_price: value }, () => {
+                            input.value = String(w.office_price);
+                          });
+                        }
                       }}
                     />
                   </td>

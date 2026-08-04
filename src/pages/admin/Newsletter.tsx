@@ -5,24 +5,35 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useNewsletterSubscribers } from "@/hooks/useNewsletter";
 import { exportNewsletterToExcel } from "@/lib/exportNewsletter";
 import { supabase } from "@/lib/supabase";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 
 export default function Newsletter() {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data: subscribers = [], isLoading } = useNewsletterSubscribers();
   const queryClient = useQueryClient();
   const [exporting, setExporting] = useState(false);
 
   async function remove(id: string) {
-    await supabase.from("newsletter_subscribers").delete().eq("id", id);
+    const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
+    if (error) {
+      toast.error(t("adminDeleteError"));
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ["newsletter-subscribers"] });
   }
 
   async function handleExport() {
     setExporting(true);
-    await exportNewsletterToExcel(subscribers);
-    setExporting(false);
+    try {
+      await exportNewsletterToExcel(subscribers);
+    } catch {
+      toast.error(t("adminExportError"));
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (

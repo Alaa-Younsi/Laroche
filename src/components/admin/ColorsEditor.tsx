@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import { Input } from "@/components/ui/Input";
 import type { ProductColor } from "@/types/db";
 
@@ -51,6 +53,8 @@ function ColorRow({
   onChange: (patch: Partial<ProductColor>) => void;
   onRemove: () => void;
 }) {
+  const { t } = useLanguage();
+  const toast = useAdminToast();
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,7 +66,9 @@ function ColorRow({
     const { data, error } = await supabase.storage
       .from("product-images")
       .upload(path, compressed, { cacheControl: "31536000" });
-    if (!error && data) {
+    if (error || !data) {
+      toast.error(t("adminUploadError"));
+    } else {
       const url = supabase.storage.from("product-images").getPublicUrl(data.path).data.publicUrl;
       onChange({ image_url: url });
     }

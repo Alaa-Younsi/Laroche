@@ -153,6 +153,18 @@ export const translations = {
     // WhatsApp
     whatsappContact: "Contactez-nous sur WhatsApp",
 
+    // Write feedback (admin) — shown by the toast in AdminToast.tsx whenever a
+    // Supabase write is refused, so nothing ever looks saved when it isn't.
+    adminSaved: "Modifications enregistrées.",
+    adminSaveError: "L'enregistrement a échoué. Vos modifications n'ont pas été sauvegardées.",
+    adminDeleteError: "La suppression a échoué. Réessayez.",
+    adminLoadError: "Chargement impossible. Vérifiez votre connexion et réessayez.",
+    adminUploadError: "L'envoi de l'image a échoué. Réessayez.",
+    adminExportError: "L'export a échoué. Réessayez.",
+    adminVideoUploadError: "L'envoi de la vidéo a échoué. Le reste n'a pas été enregistré.",
+    adminCategoryNotSaved:
+      "Cette catégorie de démonstration n'existe pas encore dans la base de données — créez-la d'abord avec le formulaire ci-dessus.",
+
     // Product admin
     productDeleteTitle: "Supprimer le produit",
     productDeleteConfirm: "Voulez-vous vraiment supprimer « {name} » ?",
@@ -472,6 +484,16 @@ export const translations = {
     orderRetryPayment: "إعادة محاولة الدفع",
 
     whatsappContact: "تواصل معنا عبر واتساب",
+
+    adminSaved: "تم حفظ التعديلات.",
+    adminSaveError: "فشل الحفظ. لم يتم حفظ تعديلاتك.",
+    adminDeleteError: "فشل الحذف. حاول مرة أخرى.",
+    adminLoadError: "تعذّر التحميل. تحقق من اتصالك وحاول مرة أخرى.",
+    adminUploadError: "فشل رفع الصورة. حاول مرة أخرى.",
+    adminExportError: "فشل التصدير. حاول مرة أخرى.",
+    adminVideoUploadError: "فشل رفع الفيديو. لم يتم حفظ باقي التعديلات.",
+    adminCategoryNotSaved:
+      "هذه فئة تجريبية غير موجودة في قاعدة البيانات — أنشئها أولاً من النموذج أعلاه.",
 
     productDeleteTitle: "حذف المنتج",
     productDeleteConfirm: "هل تريد فعلاً حذف « {name} »؟",

@@ -10,6 +10,7 @@ import { uniqueSlug } from "@/lib/utils";
 import { flattenCategoryTree } from "@/lib/categoryTree";
 import { sanitizeOffers } from "@/lib/sanitizeOffers";
 import { isPlayableVideoUrl } from "@/lib/video";
+import { invalidateProductCaches } from "@/lib/queryCache";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -19,9 +20,15 @@ import { ColorsEditor } from "@/components/admin/ColorsEditor";
 import { CustomVariantsEditor } from "@/components/admin/CustomVariantsEditor";
 import { OffersEditor } from "@/components/admin/OffersEditor";
 import { ImagesEditor } from "@/components/admin/ImagesEditor";
+import { useAdminToast } from "@/components/admin/AdminToast";
 import type { Product, ProductColor, ProductImage, VariantGroup, QuantityOffer } from "@/types/db";
 
-const EMPTY: Omit<Product, "id" | "created_at" | "updated_at" | "category" | "product_images"> = {
+type ProductFormState = Omit<
+  Product,
+  "id" | "created_at" | "updated_at" | "category" | "product_images"
+>;
+
+const EMPTY: ProductFormState = {
   slug: "",
   name_fr: "",
   name_ar: "",
@@ -46,12 +53,85 @@ const EMPTY: Omit<Product, "id" | "created_at" | "updated_at" | "category" | "pr
   status: "draft",
 };
 
+// Keep the editable columns and everything else the row carries strictly
+// apart. `select("*, product_images(*)")` hands back the generated columns
+// (id, created_at, updated_at) AND the embedded product_images array; feeding
+// that straight into the write payload made PostgREST reject the whole UPDATE
+// ("Could not find the 'product_images' column of 'products'"), so every edit
+// silently did nothing. Copying field by field means a future column added to
+// the SELECT can never leak into a write again.
+function toFormState(row: Product): ProductFormState {
+  return {
+    slug: row.slug,
+    name_fr: row.name_fr,
+    name_ar: row.name_ar,
+    description_fr: row.description_fr ?? "",
+    description_ar: row.description_ar ?? "",
+    details_fr: row.details_fr ?? [],
+    details_ar: row.details_ar ?? [],
+    price: row.price,
+    compare_at_price: row.compare_at_price,
+    category_id: row.category_id ?? "",
+    stock: row.stock,
+    style_code: row.style_code,
+    material: row.material,
+    warranty_fr: row.warranty_fr,
+    warranty_ar: row.warranty_ar,
+    colors: row.colors ?? [],
+    sizes: row.sizes ?? [],
+    variants: row.variants ?? [],
+    quantity_offers: row.quantity_offers ?? [],
+    video_url: row.video_url,
+    featured: row.featured,
+    status: row.status,
+  };
+}
+
+/** Full replace of a product's gallery rows. False if any leg was refused. */
+async function replaceProductImages(productId: string, images: ProductImage[]): Promise<boolean> {
+  const { error: deleteError } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("product_id", productId);
+  if (deleteError) return false;
+  if (images.length === 0) return true;
+
+  const { error } = await supabase.from("product_images").insert(
+    images.map((img, i) => ({
+      product_id: productId,
+      url: img.url,
+      alt: img.alt,
+      sort_order: i,
+    })),
+  );
+  return !error;
+}
+
+/** Full replace of a product's collection links. False if any leg was refused. */
+async function replaceProductCollections(
+  productId: string,
+  collectionIds: string[],
+): Promise<boolean> {
+  const { error: deleteError } = await supabase
+    .from("product_collections")
+    .delete()
+    .eq("product_id", productId);
+  if (deleteError) return false;
+  if (collectionIds.length === 0) return true;
+
+  const { error } = await supabase
+    .from("product_collections")
+    .insert(collectionIds.map((collection_id) => ({ product_id: productId, collection_id })));
+  return !error;
+}
+
 export default function ProductForm() {
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const toast = useAdminToast();
   const { data: categoryTree = [] } = useCategoryGroups();
   const { data: collections = [] } = useCollections();
   const { data: brands = [] } = useBrands();
@@ -62,26 +142,46 @@ export default function ProductForm() {
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isEdit) return;
     (async () => {
-      const { data: product } = await supabase
+      const { data: product, error } = await supabase
         .from("products")
         .select("*, product_images(*)")
         .eq("id", id)
         .single();
-      if (product) {
-        setForm(product);
-        setImages((product.product_images ?? []).sort((a: ProductImage, b: ProductImage) => a.sort_order - b.sort_order));
+
+      // Editing a row we never loaded would save a blank form over it, so a
+      // failed load has to stop the form rather than fall through to EMPTY.
+      if (error || !product) {
+        toast.error(t("adminLoadError"));
+        setLoadFailed(true);
+        setLoading(false);
+        return;
       }
-      const { data: link } = await supabase.from("products").select("brand_id").eq("id", id).single();
-      if (link?.brand_id) setBrandId(link.brand_id);
-      const { data: pc } = await supabase.from("product_collections").select("collection_id").eq("product_id", id);
+
+      setForm(toFormState(product as Product));
+      setImages(
+        ((product.product_images ?? []) as ProductImage[])
+          .slice()
+          .sort((a, b) => a.sort_order - b.sort_order),
+      );
+      setBrandId(product.brand_id ?? "");
+
+      const { data: pc, error: pcError } = await supabase
+        .from("product_collections")
+        .select("collection_id")
+        .eq("product_id", id);
+      if (pcError) toast.error(t("adminLoadError"));
       setCollectionIds((pc ?? []).map((r) => r.collection_id));
       setLoading(false);
     })();
+    // `toast` and `t` are stable for the life of the page; re-running this on
+    // an identity change would refetch and stomp unsaved edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEdit]);
 
   // Flagged, not blocked: the field is optional and a bad link only costs the
@@ -100,12 +200,17 @@ export default function ProductForm() {
     let videoUrl = form.video_url;
     if (videoFile) {
       const path = `${crypto.randomUUID()}-${videoFile.name}`;
-      const { data } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from("product-videos")
         .upload(path, videoFile, { cacheControl: "31536000" });
-      if (data) {
-        videoUrl = supabase.storage.from("product-videos").getPublicUrl(data.path).data.publicUrl;
+      // Saving on regardless would quietly drop the clip the admin just picked
+      // — better to stop and let them retry than to "succeed" without it.
+      if (error || !data) {
+        toast.error(t("adminVideoUploadError"));
+        setSaving(false);
+        return;
       }
+      videoUrl = supabase.storage.from("product-videos").getPublicUrl(data.path).data.publicUrl;
     }
 
     const slug = isEdit
@@ -126,41 +231,47 @@ export default function ProductForm() {
       compare_at_price: form.compare_at_price || null,
     };
 
-    let productId = id;
-    if (isEdit) {
-      await supabase.from("products").update(payload).eq("id", id);
+    let productId: string;
+    if (isEdit && id) {
+      const { error } = await supabase.from("products").update(payload).eq("id", id);
+      if (error) {
+        toast.error(t("adminSaveError"));
+        setSaving(false);
+        return;
+      }
+      productId = id;
     } else {
-      const { data } = await supabase.from("products").insert(payload).select("id").single();
-      productId = data?.id;
+      const { data, error } = await supabase.from("products").insert(payload).select("id").single();
+      if (error || !data) {
+        toast.error(t("adminSaveError"));
+        setSaving(false);
+        return;
+      }
+      productId = data.id;
     }
 
-    if (productId) {
-      await supabase.from("product_images").delete().eq("product_id", productId);
-      if (images.length > 0) {
-        await supabase.from("product_images").insert(
-          images.map((img, i) => ({
-            product_id: productId,
-            url: img.url,
-            alt: img.alt,
-            sort_order: i,
-          })),
-        );
-      }
+    // Images and collections are stored as a full replace. The product row is
+    // saved by this point, so a failure here has to be reported and the form
+    // kept open — leaving would hide that the gallery is now out of sync.
+    const linksSaved =
+      (await replaceProductImages(productId, images)) &&
+      (await replaceProductCollections(productId, collectionIds));
 
-      await supabase.from("product_collections").delete().eq("product_id", productId);
-      if (collectionIds.length > 0) {
-        await supabase.from("product_collections").insert(
-          collectionIds.map((collection_id) => ({ product_id: productId, collection_id })),
-        );
-      }
+    if (!linksSaved) {
+      toast.error(t("adminSaveError"));
+      setSaving(false);
+      invalidateProductCaches(queryClient);
+      return;
     }
 
     setSaving(false);
-    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    invalidateProductCaches(queryClient);
+    toast.success(t("adminSaved"));
     navigate("/admin/produits");
   }
 
   if (loading) return <p className="text-muted">{t("loading")}</p>;
+  if (loadFailed) return <p className="text-red-500">{t("adminLoadError")}</p>;
 
   return (
     <form onSubmit={handleSave}>

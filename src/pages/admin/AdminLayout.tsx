@@ -6,6 +6,7 @@ import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { Drawer } from "@/components/ui/Drawer";
+import { AdminToastProvider } from "@/components/admin/AdminToast";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { Button } from "@/components/ui/Button";
 import { ADMIN_SECTIONS, routeToSection, type AdminSection } from "@/lib/adminSections";
@@ -148,40 +149,42 @@ export function AdminLayout(): ReactNode {
   // The sidebar therefore stays full-height and fixed no matter how long the
   // page under it gets — a 300-row orders table scrolls inside <main> alone.
   return (
-    <div className="flex h-dvh overflow-hidden bg-bg">
-      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-e border-line bg-panel p-5 lg:flex">
-        <Wordmark className="mb-8 shrink-0 items-start" />
-        {/* Only the links scroll: min-h-0 lets this flex child shrink below its
-            content height, which is what confines the scrollbar to this box and
-            keeps the wordmark and footer pinned. */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <NavItems sections={visibleSections} />
-        </div>
-        <SidebarFooter />
-      </aside>
-
-      <div className="flex h-full min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
-          <button onClick={() => setMobileOpen(true)} aria-label="menu">
-            <Menu size={22} />
-          </button>
-          <Wordmark />
-          <div className="w-6" />
-        </div>
-
-        <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} side={mobileSide}>
-          <div className="flex h-full flex-col overflow-hidden p-5">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <NavItems sections={visibleSections} onNavigate={() => setMobileOpen(false)} />
-            </div>
-            <SidebarFooter />
+    <AdminToastProvider>
+      <div className="flex h-dvh overflow-hidden bg-bg">
+        <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-e border-line bg-panel p-5 lg:flex">
+          <Wordmark className="mb-8 shrink-0 items-start" />
+          {/* Only the links scroll: min-h-0 lets this flex child shrink below its
+              content height, which is what confines the scrollbar to this box and
+              keeps the wordmark and footer pinned. */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <NavItems sections={visibleSections} />
           </div>
-        </Drawer>
+          <SidebarFooter />
+        </aside>
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 md:p-8">
-          <Outlet />
-        </main>
+        <div className="flex h-full min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center justify-between border-b border-line bg-panel px-4 py-3 lg:hidden">
+            <button onClick={() => setMobileOpen(true)} aria-label="menu">
+              <Menu size={22} />
+            </button>
+            <Wordmark />
+            <div className="w-6" />
+          </div>
+
+          <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} side={mobileSide}>
+            <div className="flex h-full flex-col overflow-hidden p-5">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <NavItems sections={visibleSections} onNavigate={() => setMobileOpen(false)} />
+              </div>
+              <SidebarFooter />
+            </div>
+          </Drawer>
+
+          <main ref={mainRef} className="flex-1 overflow-y-auto p-4 md:p-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </AdminToastProvider>
   );
 }
