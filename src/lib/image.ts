@@ -1,5 +1,6 @@
 const MAX_EDGE = 1400;
 const WEBP_QUALITY = 0.82;
+const JPEG_QUALITY = 0.82;
 
 const SRCSET_WIDTHS = [400, 700, 1000, 1400];
 
@@ -25,6 +26,44 @@ export function unsplashSrcSet(src: string): string | undefined {
     .join(", ");
 }
 
+const EXTENSION_BY_TYPE: Record<string, string> = {
+  "image/webp": "webp",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+};
+
+/**
+ * canvas.toBlob does NOT fail when it can't encode the requested type — the
+ * spec makes it silently produce PNG instead. Safari did exactly that for
+ * image/webp until 17, so uploads from the client's iPhone were 1400px lossless
+ * PNGs stored under a .webp name with a webp content-type: ~10x the bytes, and
+ * invisible because PNG decodes fine in every browser.
+ *
+ * Returning null unless the blob is really the type we asked for lets the
+ * caller fall through to the next candidate instead of shipping that.
+ */
+async function encodeAs(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number,
+): Promise<Blob | null> {
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, type, quality),
+  );
+  return blob && blob.type === type ? blob : null;
+}
+
+// JPEG has no alpha channel — flattening a transparent PNG onto it turns the
+// transparent pixels black. Only worth checking when the source could have
+// alpha at all.
+function hasTransparency(ctx: CanvasRenderingContext2D, w: number, h: number): boolean {
+  const { data } = ctx.getImageData(0, 0, w, h);
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 255) return true;
+  }
+  return false;
+}
+
 export async function compressImage(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
@@ -39,13 +78,19 @@ export async function compressImage(file: File): Promise<File> {
     if (!ctx) return file;
     ctx.drawImage(bitmap, 0, 0, width, height);
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/webp", WEBP_QUALITY),
-    );
+    // WebP first; JPEG is the fallback every engine can encode, and unlike the
+    // browser's own PNG fallback it actually shrinks a photo.
+    let blob = await encodeAs(canvas, "image/webp", WEBP_QUALITY);
+    if (!blob && !hasTransparency(ctx, width, height)) {
+      blob = await encodeAs(canvas, "image/jpeg", JPEG_QUALITY);
+    }
     if (!blob || blob.size >= file.size) return file;
 
-    const webpName = file.name.replace(/\.[^.]+$/, "") + ".webp";
-    return new File([blob], webpName, { type: "image/webp" });
+    // Name and type from what was actually encoded, never from what was asked.
+    const extension = EXTENSION_BY_TYPE[blob.type];
+    if (!extension) return file;
+    const name = file.name.replace(/\.[^.]+$/, "") + "." + extension;
+    return new File([blob], name, { type: blob.type });
   } catch {
     return file;
   }

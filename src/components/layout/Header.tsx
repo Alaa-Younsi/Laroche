@@ -18,6 +18,8 @@ import { useCartStore } from "@/store/cart";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { cn } from "@/lib/utils";
 import type { CategoryNode } from "@/lib/categoryTree";
+// PHONE PREVIEW — temporary recording rig, delete with the folder it points at
+import { PhonePreviewButton } from "@/devtools/phone-preview/PhonePreviewButton";
 
 const DESKTOP_DEPTH_PADDING = ["ps-4", "ps-7", "ps-10"] as const;
 const MOBILE_DEPTH_PADDING = ["ps-8", "ps-11", "ps-14"] as const;
@@ -228,6 +230,9 @@ export function Header() {
             <Languages size={17} />
             {t("toggleLang")}
           </button>
+          {/* PHONE PREVIEW — temporary recording rig. Delete this line, its
+              import, and src/devtools/phone-preview/ to remove. */}
+          <PhonePreviewButton />
           <button
             className="relative rounded-full p-2 text-ink hover:bg-panel-2"
             onClick={openCart}

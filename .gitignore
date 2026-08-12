@@ -11,8 +11,13 @@ node_modules
 dist
 dist-ssr
 *.local
+
+# Originals saved by scripts/reencode-storage-images.py before it overwrites
+# the Supabase objects — local safety net, not source.
+.image-backup
 .env
 .env.local
+.env.bak
 
 # Editor directories and files
 .vscode/*
