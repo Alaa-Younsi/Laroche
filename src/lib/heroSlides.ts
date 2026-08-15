@@ -5,7 +5,11 @@
 //
 // `to` targets are real slugs from the live `categories` / `collections`
 // tables — change one here and the slide re-points, nothing else to touch.
-import { HERO_MAIN } from "@/lib/editorialImages";
+//
+// The .webp files are generated from the .png sources by
+// `python scripts/optimize-hero-slider.py` — re-run it whenever the client
+// replaces a poster. The PNGs are the editable source; the site loads the
+// WebP (roughly 1/20th the bytes, which is what keeps the phone smooth).
 
 const poster = (file: string) => `/hero-slider/${file}`;
 
@@ -23,16 +27,18 @@ export interface HeroSlide {
 export const HERO_SLIDES: HeroSlide[] = [
   {
     id: "boutique",
-    src: HERO_MAIN,
+    // the editorial hero shot, pre-cropped to the 3:4 frame (the original is
+    // a 1376x768 landscape PNG — we were shipping 1.1 MB to show this sliver)
+    src: poster("00_Boutique.webp"),
     to: "/boutique",
-    width: 900,
-    height: 1125,
+    width: 576,
+    height: 768,
     labelFr: "Toute la boutique",
     labelAr: "كل المتجر",
   },
   {
     id: "bagues",
-    src: poster("01_Rings-2.png"),
+    src: poster("01_Rings-2.webp"),
     to: "/boutique?categorie=bagues-argent",
     width: 484,
     height: 510,
@@ -41,7 +47,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "colliers",
-    src: poster("02_Necklaces-1.png"),
+    src: poster("02_Necklaces-1.webp"),
     to: "/boutique?categorie=colliers-argent",
     width: 365,
     height: 510,
@@ -50,7 +56,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "bracelets",
-    src: poster("03_Bracelets-2.png"),
+    src: poster("03_Bracelets-2.webp"),
     to: "/boutique?categorie=bracelets-argent",
     width: 356,
     height: 510,
@@ -59,7 +65,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "boucles",
-    src: poster("04_Earrings.png"),
+    src: poster("04_Earrings.webp"),
     to: "/boutique?categorie=boucles-argent",
     width: 331,
     height: 510,
@@ -68,7 +74,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "montres",
-    src: poster("05_Watches.png"),
+    src: poster("05_Watches.webp"),
     to: "/boutique?categorie=montres",
     width: 359,
     height: 514,
@@ -77,7 +83,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "parures",
-    src: poster("06_Sets.png"),
+    src: poster("06_Sets.webp"),
     to: "/boutique?categorie=parures-argent",
     width: 410,
     height: 514,
@@ -86,7 +92,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "accessoires",
-    src: poster("07_Accessories.png"),
+    src: poster("07_Accessories.webp"),
     to: "/boutique?collection=bijoux-homme",
     width: 379,
     height: 514,
@@ -95,7 +101,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "cadeaux",
-    src: poster("08_Gifts.png"),
+    src: poster("08_Gifts.webp"),
     to: "/boutique?collection=cadeaux",
     width: 388,
     height: 514,

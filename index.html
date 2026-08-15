@@ -14,9 +14,9 @@
     <!-- Supabase serves the catalogue query + product photos on every route -->
     <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
     <!-- landing hero = LCP; start it during HTML parse instead of after the JS bundle.
-         href must stay identical to what SmartImage renders for HERO_MAIN
-         or the browser fetches the image twice. -->
-    <link rel="preload" as="image" fetchpriority="high" href="/images/1785266218128.png" />
+         href must stay identical to what the carousel renders for its FIRST
+         slide (src/lib/heroSlides.ts) or the browser fetches the image twice. -->
+    <link rel="preload" as="image" fetchpriority="high" href="/hero-slider/00_Boutique.webp" />
 
     <title>Laroche Bijoux — Bijouterie & Horlogerie de Luxe en Algérie</title>
     <meta

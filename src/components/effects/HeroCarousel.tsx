@@ -26,11 +26,13 @@ import { cn } from "@/lib/utils";
  * no rotation, no parallax and no auto-advance surprises.
  */
 
-/** Where a slide sits relative to the active one. */
-const DEPTH = {
-  active: { x: "0%", z: 0, rotateY: 0, scale: 1, opacity: 1, blur: 0 },
-  side: { x: 68, z: -170, rotateY: 34, scale: 0.82, opacity: 0.4, blur: 1.5 },
-};
+/** Where a slide sits relative to the active one. Transform + opacity only:
+ * both are composited on the GPU, so the stage stays smooth on phones. An
+ * animated `filter: blur()` here looked good and cost ~15fps on mobile. */
+const SIDE = { x: 68, z: -170, rotateY: 34, scale: 0.82, opacity: 0.4 };
+
+const ARROW =
+  "absolute top-1/2 z-40 -mt-5 flex h-10 w-10 items-center justify-center rounded-full border border-brand/40 text-brand transition-all duration-300 hover:scale-110 hover:bg-bg";
 
 export function HeroCarousel() {
   const { lang } = useLanguage();
@@ -55,7 +57,11 @@ export function HeroCarousel() {
   const spring = { stiffness: 150, damping: 20, mass: 0.6 };
   const tiltX = useSpring(useTransform(py, [0, 1], [7, -7]), spring);
   const tiltY = useSpring(useTransform(px, [0, 1], [-9, 9]), spring);
-  const tilting = canHover && !reducedMotion;
+  // `rich` gates the effects that cost real frames on a phone GPU — the shine
+  // sweep, the ken-burns zoom, the backdrop blurs and the full sparkle field.
+  // Desktop keeps all of it; touch devices get the 3D stage without the paint.
+  const rich = canHover && !reducedMotion;
+  const tilting = rich;
 
   const go = useCallback(
     (next: number) => setIndex(((next % count) + count) % count),
@@ -93,24 +99,15 @@ export function HeroCarousel() {
 
   function targetFor(offset: number) {
     if (offset === 0 || reducedMotion) {
-      return {
-        x: DEPTH.active.x,
-        z: DEPTH.active.z,
-        rotateY: DEPTH.active.rotateY,
-        scale: DEPTH.active.scale,
-        opacity: offset === 0 ? 1 : 0,
-        filter: "blur(0px)",
-      };
+      return { x: "0%", z: 0, rotateY: 0, scale: 1, opacity: offset === 0 ? 1 : 0 };
     }
-    const side = DEPTH.side;
     return {
-      x: `${offset * side.x}%`,
-      z: side.z,
+      x: `${offset * SIDE.x}%`,
+      z: SIDE.z,
       // left slide turns its face toward the centre, right slide mirrors it
-      rotateY: -offset * side.rotateY,
-      scale: side.scale,
-      opacity: side.opacity,
-      filter: `blur(${side.blur}px)`,
+      rotateY: -offset * SIDE.rotateY,
+      scale: SIDE.scale,
+      opacity: SIDE.opacity,
     };
   }
 
@@ -160,7 +157,7 @@ export function HeroCarousel() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
         style={tilting ? { rotateX: tiltX, rotateY: tiltY } : undefined}
-        className="relative w-[84vw] max-w-[22rem] [aspect-ratio:3/4] [perspective:1500px] [transform-style:preserve-3d] sm:w-[21rem] md:w-[23rem] lg:w-[25rem]"
+        className="relative w-[72vw] max-w-[19rem] [aspect-ratio:3/4] [perspective:1500px] [transform-style:preserve-3d] sm:w-[19rem] md:w-[20.5rem] lg:w-[22rem]"
         onTouchStart={(e) => {
           const touch = e.touches[0];
           touchStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -187,13 +184,16 @@ export function HeroCarousel() {
             <motion.div
               key={slide.id}
               animate={targetFor(offset)}
-              transition={{ duration: reducedMotion ? 0.35 : 0.8, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reducedMotion ? 0.35 : 0.7, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformStyle: "preserve-3d", zIndex: isActive ? 30 : 10 }}
-              className="absolute inset-0 will-change-transform"
+              className={cn("absolute inset-0", isActive && "will-change-transform")}
               aria-hidden={!isActive}
             >
-              {/* soft contact shadow grounding the card */}
-              <div className="pointer-events-none absolute -bottom-5 left-1/2 h-8 w-[72%] -translate-x-1/2 rounded-[50%] bg-black/25 blur-xl" />
+              {/* soft contact shadow grounding the card — active only: a blurred
+                  layer inside a scaling element gets re-rastered every frame */}
+              {isActive && (
+                <div className="pointer-events-none absolute -bottom-5 left-1/2 h-8 w-[72%] -translate-x-1/2 rounded-[50%] bg-black/25 blur-xl" />
+              )}
 
               <Link
                 to={slide.to}
@@ -222,9 +222,11 @@ export function HeroCarousel() {
                   fetchPriority={isActive ? "high" : undefined}
                   sizes="(max-width: 640px) 84vw, 25rem"
                   className={cn(
-                    "h-full w-full object-cover transition-transform duration-700",
-                    isActive && !reducedMotion && "fx-kenburns",
-                    isActive && "group-hover:scale-105",
+                    // object-bottom, not centre: the posters carry their caption
+                    // and CTA across the bottom edge, and they are narrower than
+                    // the 3:4 frame — a centred crop shaves the button off
+                    "h-full w-full object-cover object-bottom transition-transform duration-700",
+                    isActive && rich && "fx-kenburns group-hover:scale-105",
                   )}
                 />
 
@@ -237,7 +239,7 @@ export function HeroCarousel() {
                 />
 
                 {/* slow diagonal shine pass across the active poster */}
-                {isActive && !reducedMotion && (
+                {isActive && rich && (
                   <motion.span
                     aria-hidden
                     initial={{ x: "-140%" }}
@@ -264,7 +266,10 @@ export function HeroCarousel() {
         {/* rotating circular stamp, floating above the plane in 3D */}
         <div
           style={{ transform: "translateZ(70px)" }}
-          className="pointer-events-none absolute -top-5 end-[-1.5rem] z-40 flex h-16 w-16 items-center justify-center rounded-full border border-brand/40 bg-bg/85 backdrop-blur-sm sm:h-20 sm:w-20"
+          className={cn(
+            "pointer-events-none absolute -top-5 end-[-1.5rem] z-40 flex h-16 w-16 items-center justify-center rounded-full border border-brand/40 sm:h-20 sm:w-20",
+            rich ? "bg-bg/85 backdrop-blur-sm" : "bg-bg",
+          )}
         >
           <svg
             viewBox="0 0 100 100"
@@ -286,7 +291,7 @@ export function HeroCarousel() {
           onClick={prev}
           aria-label={lang === "ar" ? "السابق" : "Précédent"}
           style={{ transform: "translateZ(70px)" }}
-          className="absolute left-1 top-1/2 z-40 -mt-5 flex h-10 w-10 items-center justify-center rounded-full border border-brand/40 bg-bg/75 text-brand backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-bg"
+          className={cn(ARROW, "left-1", rich ? "bg-bg/75 backdrop-blur-sm" : "bg-bg/90")}
         >
           <ChevronLeft size={17} strokeWidth={1.5} />
         </button>
@@ -295,7 +300,7 @@ export function HeroCarousel() {
           onClick={next}
           aria-label={lang === "ar" ? "التالي" : "Suivant"}
           style={{ transform: "translateZ(70px)" }}
-          className="absolute right-1 top-1/2 z-40 -mt-5 flex h-10 w-10 items-center justify-center rounded-full border border-brand/40 bg-bg/75 text-brand backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-bg"
+          className={cn(ARROW, "right-1", rich ? "bg-bg/75 backdrop-blur-sm" : "bg-bg/90")}
         >
           <ChevronRight size={17} strokeWidth={1.5} />
         </button>
@@ -318,9 +323,9 @@ export function HeroCarousel() {
         ))}
       </div>
 
-      {/* sparkle field */}
+      {/* sparkle field — thinned out on phones, each one is its own layer */}
       {!reducedMotion &&
-        [...Array(12)].map((_, i) => (
+        [...Array(rich ? 12 : 5)].map((_, i) => (
           <span
             key={i}
             className="pointer-events-none absolute h-1 w-1 rounded-full bg-brand animate-sparkle"
