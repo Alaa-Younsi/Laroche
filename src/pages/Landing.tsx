@@ -260,7 +260,9 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          <div className="relative order-1 h-[28rem] sm:h-[32rem] md:order-2 md:h-[34rem]">
+          {/* the carousel sizes itself off its own width — no fixed height, so
+              the 3D stage can grow on phones without cropping */}
+          <div className="relative order-1 flex items-center justify-center md:order-2">
             <HeroCarousel />
           </div>
         </div>
