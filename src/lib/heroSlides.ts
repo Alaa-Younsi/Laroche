@@ -7,9 +7,9 @@
 // tables — change one here and the slide re-points, nothing else to touch.
 //
 // The .webp files are generated from the .png sources by
-// `python scripts/optimize-hero-slider.py` — re-run it whenever the client
-// replaces a poster. The PNGs are the editable source; the site loads the
-// WebP (roughly 1/20th the bytes, which is what keeps the phone smooth).
+// `python scripts/optimize-images.py` — re-run it whenever the client replaces
+// a poster. The PNGs are the editable source; the site loads the WebP (roughly
+// 1/20th the bytes, which is what keeps the phone smooth).
 
 const poster = (file: string) => `/hero-slider/${file}`;
 

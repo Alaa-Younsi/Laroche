@@ -1,6 +1,12 @@
 // Client-supplied Laroche Bijoux photography, served from /public/images.
+//
+// The constants below keep the original .png filenames so each one still maps
+// to the file the client delivered, but the site loads the .webp built from it
+// by `python scripts/optimize-images.py` — the PNGs are ~20x heavier and were
+// costing the landing page about 6 MB per visit. Re-run that script after
+// adding or replacing any photo here.
 
-const img = (file: string) => `/images/${file}`;
+const img = (file: string) => `/images/${file.replace(/\.png$/, ".webp")}`;
 
 /** Hero main plane: model wearing layered gold necklaces, moody light. */
 export const HERO_MAIN = img("1785266218128.png");
