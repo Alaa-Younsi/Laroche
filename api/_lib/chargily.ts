@@ -7,11 +7,17 @@
 // always read back from the database (orders.total), never trusted from the
 // client — a customer can't pay a price they invented.
 
-const CHARGILY_API_BASE = "https://pay.chargily.com/api/v2";
+// Chargily Pay v2 serves test mode from a SEPARATE base path — a `test_sk_`
+// key sent to the live base is rejected with a bare 401 "Unauthenticated",
+// which reads exactly like a bad key and cost a full debugging session.
+// The mode is picked from the key prefix so swapping test → live keys needs
+// no other change.
+const CHARGILY_API_LIVE = "https://pay.chargily.com/api/v2";
+const CHARGILY_API_TEST = "https://pay.chargily.com/test/api/v2";
 
 export interface ChargilyEnv {
   secretKey: string; // test_sk_… or live_sk_…
-  apiBase: string; // override of CHARGILY_API_BASE (rarely needed)
+  apiBase: string; // CHARGILY_API_URL override; else derived from the key mode
   siteUrl: string; // public origin for success/failure/webhook URLs (optional)
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -21,9 +27,12 @@ export interface ChargilyEnv {
 export function readChargilyEnv(
   get: (k: string) => string | undefined,
 ): ChargilyEnv {
+  const secretKey = get("CHARGILY_SECRET_KEY") ?? "";
   return {
-    secretKey: get("CHARGILY_SECRET_KEY") ?? "",
-    apiBase: get("CHARGILY_API_URL") ?? CHARGILY_API_BASE,
+    secretKey,
+    apiBase:
+      get("CHARGILY_API_URL") ??
+      (secretKey.startsWith("test_") ? CHARGILY_API_TEST : CHARGILY_API_LIVE),
     siteUrl: get("PUBLIC_SITE_URL") ?? get("VITE_SITE_URL") ?? "",
     supabaseUrl: get("SUPABASE_URL") ?? get("VITE_SUPABASE_URL") ?? "",
     supabaseAnonKey: get("SUPABASE_ANON_KEY") ?? get("VITE_SUPABASE_ANON_KEY") ?? "",

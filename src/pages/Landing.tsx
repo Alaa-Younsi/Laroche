@@ -25,7 +25,7 @@ import { useBrands } from "@/hooks/useCollectionsAndBrands";
 import { useSeo } from "@/hooks/useSeo";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/product/ProductCard";
-import { HeroShowcase } from "@/components/effects/HeroShowcase";
+import { HeroCarousel } from "@/components/effects/HeroCarousel";
 import { Reveal } from "@/components/effects/Reveal";
 import { Marquee } from "@/components/effects/Marquee";
 import { CountUp } from "@/components/effects/CountUp";
@@ -260,8 +260,8 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          <div className="relative order-1 h-[24rem] sm:h-[28rem] md:order-2 md:h-[32rem]">
-            <HeroShowcase />
+          <div className="relative order-1 h-[28rem] sm:h-[32rem] md:order-2 md:h-[34rem]">
+            <HeroCarousel />
           </div>
         </div>
 
