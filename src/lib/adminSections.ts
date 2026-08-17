@@ -9,6 +9,8 @@ import {
   Target,
   Users,
   UserCog,
+  TrendingUp,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations";
@@ -50,6 +52,8 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { key: "reviews", route: "/admin/avis", labelKey: "adminReviews", icon: Star },
   { key: "newsletter", route: "/admin/newsletter", labelKey: "adminNewsletter", icon: Mail },
   { key: "pixels", route: "/admin/pixels", labelKey: "adminPixels", icon: Target },
+  { key: "finance", route: "/admin/finances", labelKey: "adminFinance", icon: TrendingUp },
+  { key: "store", route: "/admin/magasin", labelKey: "adminStore", icon: Store },
   {
     key: "team",
     route: "/admin/equipe",

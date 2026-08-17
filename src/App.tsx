@@ -30,6 +30,8 @@ const AdminNewsletter = lazy(() => import("@/pages/admin/Newsletter"));
 const AdminAccount = lazy(() => import("@/pages/admin/Account"));
 const AdminPixels = lazy(() => import("@/pages/admin/Pixels"));
 const AdminTeam = lazy(() => import("@/pages/admin/Team"));
+const AdminFinance = lazy(() => import("@/pages/admin/Finance"));
+const AdminStoreLedger = lazy(() => import("@/pages/admin/StoreLedger"));
 
 function RouteFallback() {
   const { t } = useLanguage();
@@ -73,6 +75,8 @@ function App() {
             <Route path="compte" element={<AdminAccount />} />
             <Route path="pixels" element={<AdminPixels />} />
             <Route path="equipe" element={<AdminTeam />} />
+            <Route path="finances" element={<AdminFinance />} />
+            <Route path="magasin" element={<AdminStoreLedger />} />
           </Route>
         </Routes>
       </Suspense>

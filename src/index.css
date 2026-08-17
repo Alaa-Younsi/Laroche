@@ -17,6 +17,12 @@ html[data-theme="dark"] {
 
   --font-display: "Cormorant Garamond", "Amiri", serif;
   --font-sans: "Jost", "Almarai", sans-serif;
+
+  /* Trend-chart series. Tokens per theme rather than hardcoded hexes, so the
+     chart follows the dashboard's light/dark switch like everything else. */
+  --viz-revenue: #d4af37;
+  --viz-profit: #4ade80;
+  --viz-expense: #f87171;
 }
 
 html[data-theme="light"] {
@@ -30,6 +36,39 @@ html[data-theme="light"] {
   --c-brand: 180 140 40;
   --c-brand-soft: 214 175 148;
   --c-brand-ink: 255 255 255;
+
+  /* Darkened for light mode: the dark-theme greens/reds sit under 3:1 against
+     a white panel. */
+  --viz-revenue: #a37d10;
+  --viz-profit: #15803d;
+  --viz-expense: #b91c1c;
+}
+
+/* The receipt and the barcode sheet are the only things that ever go to a
+   printer, so printing hides the dashboard chrome entirely and lets the
+   document own the page. */
+@media print {
+  body {
+    background: #fff;
+  }
+  .print-hide {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: visible;
+    background: #fff;
+    color: #000;
+  }
+}
+
+.print-only {
+  display: none;
 }
 
 * {

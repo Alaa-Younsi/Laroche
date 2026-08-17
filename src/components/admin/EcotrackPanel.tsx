@@ -22,6 +22,7 @@ import {
   getLabel,
   getTrackingInfo,
   isEcotrackError,
+  type EcotrackError,
 } from "@/lib/ecotrack";
 import type { Order } from "@/types/db";
 
@@ -109,12 +110,25 @@ export function EcotrackPanel({ order }: { order: Order }) {
           raw: result,
         };
       }
-      await saveOrder({
-        ecotrack_tracking: trackingNo,
-        ecotrack_status: "created",
-        ecotrack_synced_at: new Date().toISOString(),
-        status: "shipped",
-      });
+      // The parcel now exists at ECOTRACK. If persisting the tracking number
+      // fails we must NOT let the operator retry blind — a second click would
+      // create a duplicate parcel. Surface the number so it can be pasted back.
+      try {
+        await saveOrder({
+          ecotrack_tracking: trackingNo,
+          ecotrack_status: "created",
+          ecotrack_synced_at: new Date().toISOString(),
+          status: "shipped",
+        });
+      } catch (saveErr) {
+        throw {
+          status: 0,
+          message:
+            `Colis créé chez ECOTRACK (suivi ${trackingNo}) mais l'enregistrement ` +
+            `a échoué : ${errText(saveErr)}. Ne pas réexpédier — notez ce numéro.`,
+          raw: saveErr,
+        } satisfies EcotrackError;
+      }
       setFeedback({ kind: "ok", text: `Expédié — suivi ${trackingNo}` });
       refresh();
     } catch (err) {

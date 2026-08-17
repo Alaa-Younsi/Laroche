@@ -26,9 +26,18 @@ function ecotrackDevProxy(env: EcotrackEnv): Plugin {
       server.middlewares.use(
         '/api/ecotrack',
         async (req: Connect.IncomingMessage, res: ServerResponse) => {
-          // connect strips the mount prefix, so req.url starts at the subpath
+          // Mirrors api/ecotrack/proxy.ts: the endpoint arrives as ?path=…
+          // (connect strips the mount prefix, so req.url starts after
+          // /api/ecotrack). The pathname is still honoured as a fallback so an
+          // old cached bundle keeps working against a fresh dev server.
           const parsed = new URL(req.url ?? '/', 'http://localhost')
-          const subpath = parsed.pathname.replace(/^\/+/, '').replace(/\/+$/, '')
+          const search = new URLSearchParams(parsed.searchParams)
+          const subpath = (
+            search.get('path') ?? parsed.pathname.replace(/^\/proxy$/, '')
+          )
+            .replace(/^\/+/, '')
+            .replace(/\/+$/, '')
+          search.delete('path')
           const jwt =
             (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '') || undefined
 
@@ -42,7 +51,7 @@ function ecotrackDevProxy(env: EcotrackEnv): Plugin {
           }
 
           const result = await proxyEcotrack(
-            { method: req.method ?? 'GET', subpath, search: parsed.searchParams, body, jwt },
+            { method: req.method ?? 'GET', subpath, search, body, jwt },
             env,
           )
           res.statusCode = result.status

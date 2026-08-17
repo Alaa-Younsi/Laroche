@@ -32,14 +32,18 @@ async function raw(subpath: string, opts: CallOptions = {}): Promise<Response> {
       params.set(key, String(value));
     }
   }
-  const qs = params.toString();
+  // The ECOTRACK endpoint travels as the `path` query param, not as extra URL
+  // segments: the `[...path]` catch-all this used to call was never registered
+  // as a function on Vercel, so in production every call landed on the SPA's
+  // index.html instead of the proxy. See api/ecotrack/proxy.ts.
+  params.set("path", subpath);
   const headers: Record<string, string> = { ...(await authHeaders()) };
   const init: RequestInit = { method: opts.method ?? "GET", headers };
   if (opts.body !== undefined) {
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(opts.body);
   }
-  return fetch(`/api/ecotrack/${subpath}${qs ? `?${qs}` : ""}`, init);
+  return fetch(`/api/ecotrack/proxy?${params.toString()}`, init);
 }
 
 function messageOf(raw: unknown, fallback: string): string {
@@ -171,12 +175,58 @@ function normalize(value: string): string {
 }
 
 /**
+ * The 11 wilayas Algeria's 2026 reorganization (law n°26-06) split out of
+ * existing ones, mapped to the PARENT wilaya they were carved from.
+ *
+ * Checkout offers all 69 (0007_wilayas_69.sql) but ECOTRACK's /get/wilayas
+ * still returns the classic 58 — verified live against this tenant, ids 1‑58.
+ * Without this fallback every order from one of these towns died at
+ * "Code wilaya introuvable" and could never be shipped, which is the shape of
+ * the failure the client reported.
+ *
+ * Mapped by real geography (where the parcel actually has to travel), not by
+ * the "ex …" comments in 0007, two of which name the wrong parent. The town
+ * itself still rides along as the `commune`, so the courier keeps the precise
+ * destination. Parents are NAMES, resolved through ECOTRACK's own live list —
+ * numeric codes differ per deployment, so hardcoding them would rot.
+ */
+const REORG_PARENT_WILAYA: Record<string, string> = {
+  aflou: "Laghouat",
+  barika: "Batna",
+  "el kantara": "Biskra",
+  "bir el ater": "Tébessa",
+  "el aricha": "Tlemcen",
+  "ksar chellala": "Tiaret",
+  "ain oussara": "Djelfa",
+  messaad: "Djelfa",
+  "ksar el boukhari": "Médéa",
+  "bou saada": "M'Sila",
+  "el abiodh sidi cheikh": "El Bayadh",
+};
+
+/** The parent wilaya an unknown post-reorg wilaya should ship through, if any. */
+export function parentWilayaFor(wilayaName: string): string | null {
+  return REORG_PARENT_WILAYA[normalize(wilayaName)] ?? null;
+}
+
+/**
  * Resolve an ECOTRACK numeric wilaya code from a wilaya name, using ECOTRACK's
  * own /get/wilayas list as the source of truth (codes differ per deployment
  * and Algeria's 2026 reorg added 59–69). Handles both response shapes seen in
  * the wild: `{ "1": "Adrar", ... }` and `[{ id, wilaya_name }, ...]`.
+ *
+ * Falls back to the parent wilaya for the 11 post-reorg splits ECOTRACK does
+ * not carry yet.
  */
 export function resolveWilayaCode(wilayas: unknown, wilayaName: string): number | null {
+  const direct = matchWilayaCode(wilayas, wilayaName);
+  if (direct !== null) return direct;
+
+  const parent = parentWilayaFor(wilayaName);
+  return parent ? matchWilayaCode(wilayas, parent) : null;
+}
+
+function matchWilayaCode(wilayas: unknown, wilayaName: string): number | null {
   const target = normalize(wilayaName);
 
   if (Array.isArray(wilayas)) {
@@ -213,15 +263,28 @@ export function orderToPayload(order: Order, codeWilaya: number): CreateOrderPay
       .join(", ") || order.order_number;
   const quantite = (order.order_items ?? []).reduce((sum, item) => sum + item.quantity, 0) || 1;
 
+  // When the order's wilaya was carved out in the 2026 reorg the parcel ships
+  // through its parent wilaya, so name the real destination in the remark —
+  // otherwise the courier only ever sees the parent and the commune.
+  const parent = parentWilayaFor(order.wilaya);
+  const remarque = [parent ? `Wilaya : ${order.wilaya}` : "", order.notes ?? ""]
+    .filter(Boolean)
+    .join(" — ");
+
+  // ECOTRACK rejects a blank adresse/commune outright (422). Fall back through
+  // whatever the order does carry rather than posting an empty required field.
+  const adresse = order.address?.trim() || order.city?.trim() || order.wilaya;
+  const commune = order.city?.trim() || order.wilaya;
+
   return {
     reference: order.order_number,
     nom_client: order.customer_name,
-    telephone: order.customer_phone,
-    adresse: order.address ?? order.city,
-    commune: order.city,
+    telephone: order.customer_phone.replace(/[^\d+]/g, ""),
+    adresse,
+    commune,
     code_wilaya: codeWilaya,
     montant: order.total,
-    remarque: order.notes ?? "",
+    remarque,
     produit,
     quantite,
     // stop_desk = 1 → office/desk pickup; 0 → home delivery

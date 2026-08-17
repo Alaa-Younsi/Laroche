@@ -24,6 +24,8 @@ export const ALLOWED_SECTIONS = [
   "reviews",
   "newsletter",
   "pixels",
+  "finance",
+  "store",
 ] as const;
 
 const MIN_PASSWORD_LENGTH = 8;
