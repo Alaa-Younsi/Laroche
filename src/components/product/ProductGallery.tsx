@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { SmartImage } from "@/components/ui/SmartImage";
+import { responsiveSrcSet } from "@/lib/image";
 
 export interface GalleryImage {
   key: string;
@@ -86,8 +87,14 @@ export function ProductGallery({
             transition={{ duration: reducedMotion ? 0.15 : 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
+            {/* Stays a raw <img> rather than a SmartImage: the zoom handler
+                drives `style` directly and must not fight SmartImage's fade.
+                It still gets the responsive srcset, which matters most here —
+                this is the largest image on the page. */}
             <img
               src={current.url}
+              srcSet={responsiveSrcSet(current.url)}
+              sizes="(max-width: 768px) 100vw, 600px"
               alt={current.alt ?? alt}
               width={800}
               height={800}
@@ -149,6 +156,7 @@ export function ProductGallery({
                 alt={img.alt ?? alt}
                 width={72}
                 height={72}
+                sizes="72px"
                 className="h-18 w-18 object-cover"
               />
               {i === activeIndex && (

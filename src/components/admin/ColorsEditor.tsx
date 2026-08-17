@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { compressImage } from "@/lib/image";
+import { compressImage, responsiveSrcSet } from "@/lib/image";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import { Input } from "@/components/ui/Input";
@@ -108,7 +108,7 @@ function ColorRow({
       <div className="flex shrink-0 items-center gap-2">
         {color.image_url ? (
           <div className="group relative h-11 w-11 overflow-hidden rounded-lg border border-line">
-            <img src={color.image_url} alt="" className="h-full w-full object-cover" />
+            <img src={color.image_url} srcSet={responsiveSrcSet(color.image_url)} sizes="44px" alt="" loading="lazy" className="h-full w-full object-cover" />
             <button
               type="button"
               onClick={() => onChange({ image_url: null })}

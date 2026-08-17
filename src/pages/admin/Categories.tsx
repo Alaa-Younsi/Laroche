@@ -5,7 +5,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
 import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { supabase } from "@/lib/supabase";
-import { compressImage } from "@/lib/image";
+import { compressImage, responsiveSrcSet } from "@/lib/image";
 import { slugify } from "@/lib/utils";
 import {
   flattenCategoryTree,
@@ -73,7 +73,7 @@ function CategoryImagePicker({
       />
       {imageUrl ? (
         <div className="group relative h-11 w-11 overflow-hidden rounded-lg border border-line">
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <img src={imageUrl} srcSet={responsiveSrcSet(imageUrl)} sizes="44px" alt="" loading="lazy" className="h-full w-full object-cover" />
           <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"

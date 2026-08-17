@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Minus, Plus, X, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { SmartImage } from "@/components/ui/SmartImage";
 import { useCartStore } from "@/store/cart";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
@@ -47,13 +48,12 @@ export function CartDrawer() {
 
               return (
                 <div key={key} className="flex gap-3 rounded-xl border border-line p-3">
-                  <img
+                  <SmartImage
                     src={item.image ?? ""}
                     alt={lang === "ar" ? item.name_ar : item.name_fr}
                     width={72}
                     height={72}
-                    loading="lazy"
-                    decoding="async"
+                    sizes="72px"
                     className="h-18 w-18 rounded-lg object-cover"
                   />
                   <div className="flex-1">

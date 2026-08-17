@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { compressImage } from "@/lib/image";
+import { compressImage, responsiveSrcSet } from "@/lib/image";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import type { ProductImage } from "@/types/db";
@@ -69,7 +69,7 @@ export function ImagesEditor({
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
         {images.map((img, i) => (
           <div key={img.id} className="group relative aspect-square overflow-hidden rounded-lg border border-line">
-            <img src={img.url} alt="" className="h-full w-full object-cover" />
+            <img src={img.url} srcSet={responsiveSrcSet(img.url)} sizes="(max-width: 640px) 33vw, 200px" alt="" loading="lazy" className="h-full w-full object-cover" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
               <button type="button" onClick={() => remove(img.id)} className="text-white">
                 <Trash2 size={16} />

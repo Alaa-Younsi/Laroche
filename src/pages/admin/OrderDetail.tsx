@@ -12,6 +12,7 @@ import { EcotrackPanel } from "@/components/admin/EcotrackPanel";
 import { PaymentBadge } from "@/components/admin/PaymentBadge";
 import { formatDate } from "@/lib/format";
 import type { OrderStatus } from "@/types/db";
+import { responsiveSrcSet } from "@/lib/image";
 
 const STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
@@ -83,9 +84,12 @@ export default function OrderDetail() {
                   {item.image_url && (
                     <img
                       src={item.image_url}
+                      srcSet={responsiveSrcSet(item.image_url)}
+                      sizes="56px"
                       alt=""
                       width={56}
                       height={56}
+                      loading="lazy"
                       className="h-14 w-14 rounded-lg object-cover"
                     />
                   )}

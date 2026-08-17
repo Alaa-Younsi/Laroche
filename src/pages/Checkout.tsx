@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { SmartImage } from "@/components/ui/SmartImage";
 import { useCartStore } from "@/store/cart";
 import { useStoreSettings, resolveShipping } from "@/hooks/useStoreSettings";
 import { useDeliveryPrices } from "@/hooks/useDeliveryPrices";
@@ -164,12 +165,12 @@ export default function Checkout() {
                 className="flex items-center justify-between gap-3 text-sm"
               >
                 <div className="flex items-center gap-3">
-                  <img
+                  <SmartImage
                     src={item.image ?? ""}
                     alt=""
                     width={48}
                     height={48}
-                    loading="lazy"
+                    sizes="48px"
                     className="h-12 w-12 rounded-lg object-cover"
                   />
                   <div>

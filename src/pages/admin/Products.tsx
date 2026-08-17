@@ -10,6 +10,7 @@ import { Price } from "@/components/ui/Price";
 import { invalidateProductCaches } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/db";
+import { responsiveSrcSet } from "@/lib/image";
 
 function useAllProducts() {
   return useQuery({
@@ -131,9 +132,12 @@ export default function Products() {
                     {product.product_images?.[0] && (
                       <img
                         src={product.product_images[0].url}
+                        srcSet={responsiveSrcSet(product.product_images[0].url)}
+                        sizes="40px"
                         alt=""
                         width={40}
                         height={40}
+                        loading="lazy"
                         className="h-10 w-10 rounded-lg object-cover"
                       />
                     )}

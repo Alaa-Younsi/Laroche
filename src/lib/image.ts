@@ -26,6 +26,51 @@ export function unsplashSrcSet(src: string): string | undefined {
     .join(", ");
 }
 
+// ---- Supabase Storage responsive delivery ---------------------------------
+//
+// Every product photo used to be served at its stored size no matter how small
+// it rendered: a card in a 3-column grid is ~350 CSS px but was pulling the
+// full 1024–1400px file. That is what burns the Supabase egress allowance,
+// because egress is billed on bytes SENT, not on bytes stored.
+//
+// Supabase's render/image endpoint resizes on the fly and negotiates WebP from
+// the Accept header. Measured on this project's own bucket:
+//   1024x1024 PNG   627 KB  ->  4 KB at 400px
+//   2190x2920 JPEG  750 KB  -> 16 KB at 400px, 41 KB at 800px
+//
+// ⚠ `resize=contain` is NOT optional. With `width` alone the endpoint returns
+// the requested width at the ORIGINAL height (400x2920 for that second file) —
+// a silently squashed image that still costs 38 KB.
+
+const SUPABASE_PUBLIC_MARKER = "/storage/v1/object/public/";
+const SUPABASE_RENDER_MARKER = "/storage/v1/render/image/public/";
+
+/** Widths capped at MAX_EDGE — the stored originals are never larger, and
+ *  asking for more just re-encodes an upscale. */
+const STORAGE_SRCSET_WIDTHS = [200, 400, 600, 900, 1400];
+const STORAGE_QUALITY = 70;
+
+export function isSupabaseStorageUrl(src: string): boolean {
+  return src.includes(SUPABASE_PUBLIC_MARKER);
+}
+
+/** One resized variant of a public Storage object. */
+export function supabaseRenderUrl(src: string, width: number): string {
+  const base = src.replace(SUPABASE_PUBLIC_MARKER, SUPABASE_RENDER_MARKER);
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}width=${width}&resize=contain&quality=${STORAGE_QUALITY}`;
+}
+
+export function supabaseSrcSet(src: string): string | undefined {
+  if (!isSupabaseStorageUrl(src)) return undefined;
+  return STORAGE_SRCSET_WIDTHS.map((w) => `${supabaseRenderUrl(src, w)} ${w}w`).join(", ");
+}
+
+/** srcset for whichever host this image lives on, or undefined for neither. */
+export function responsiveSrcSet(src: string): string | undefined {
+  return unsplashSrcSet(src) ?? supabaseSrcSet(src);
+}
+
 const EXTENSION_BY_TYPE: Record<string, string> = {
   "image/webp": "webp",
   "image/jpeg": "jpg",
