@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Pencil, Check, X, AlertTriangle, ImagePlus, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
@@ -22,8 +22,10 @@ import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { Price } from "@/components/ui/Price";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import { invalidateTaxonomyCaches } from "@/lib/queryCache";
+import { promoPrice } from "@/lib/promo";
 import { cn } from "@/lib/utils";
 
 const DEPTH_INDENT = ["", "ms-6", "ms-12", "ms-[4.5rem]"] as const;
@@ -506,11 +508,41 @@ function toLocalInput(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function PromoPreviewLine({
+  preview,
+  t,
+}: {
+  preview: { count: number; min: number; max: number };
+  t: (k: "promoAppliesTo") => string;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-panel-2/40 px-3 py-2 text-xs text-muted">
+      <span>{t("promoAppliesTo").replace("{n}", String(preview.count))}</span>
+      {preview.count > 0 && (
+        <span className="text-ink">
+          <Price value={preview.min} />
+          {preview.max !== preview.min && (
+            <>
+              {" – "}
+              <Price value={preview.max} />
+            </>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function promoStatus(p: { starts_at: string; ends_at: string }): "active" | "scheduled" | "ended" {
   const now = Date.now();
   if (now < new Date(p.starts_at).getTime()) return "scheduled";
   if (now >= new Date(p.ends_at).getTime()) return "ended";
   return "active";
+}
+
+interface PromoProduct {
+  price: number;
+  category_id: string | null;
 }
 
 function PromotionsTab({ lang }: { lang: string }) {
@@ -521,7 +553,33 @@ function PromotionsTab({ lang }: { lang: string }) {
   const savePromo = useSaveCategoryPromotion();
   const deletePromo = useDeleteCategoryPromotion();
 
+  // Lightweight — only what the "applies to N products, X → Y DA" preview needs.
+  const { data: products = [] } = useQuery({
+    queryKey: ["promo-preview-products"],
+    queryFn: async (): Promise<PromoProduct[]> => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("price, category_id")
+        .eq("status", "active");
+      if (error) throw error;
+      return (data ?? []) as PromoProduct[];
+    },
+  });
+
   const flat = flattenCategoryTree(tree).filter(({ node }) => !node.id.startsWith("slug:"));
+
+  // For a promo's category (+ its subtree): how many active products it covers
+  // and the discounted price span.
+  const previewFor = useMemo(() => {
+    return (categoryId: string, percent: number) => {
+      const node = findCategoryNode(tree, categoryId);
+      const ids = new Set(node ? collectDescendantIds(node) : [categoryId]);
+      const hit = products.filter((p) => p.category_id && ids.has(p.category_id));
+      if (hit.length === 0) return { count: 0, min: 0, max: 0 };
+      const prices = hit.map((p) => promoPrice(p.price, percent));
+      return { count: hit.length, min: Math.min(...prices), max: Math.max(...prices) };
+    };
+  }, [tree, products]);
 
   const [categoryId, setCategoryId] = useState("");
   const [percent, setPercent] = useState("10");
@@ -613,6 +671,12 @@ function PromotionsTab({ lang }: { lang: string }) {
             </Button>
           </div>
         </form>
+        {categoryId && Number(percent) > 0 && (
+          <PromoPreviewLine
+            preview={previewFor(categoryId, Number(percent))}
+            t={t}
+          />
+        )}
         <p className="mt-3 text-xs text-muted">{t("promoHint")}</p>
       </BentoPanel>
 
@@ -646,6 +710,26 @@ function PromotionsTab({ lang }: { lang: string }) {
                   {new Date(p.ends_at).toLocaleDateString("fr-DZ")}
                 </span>
                 {p.label && <span className="text-xs text-muted">· {p.label}</span>}
+                {(() => {
+                  const pv = previewFor(p.category_id, p.percent);
+                  return (
+                    <span className="text-xs text-muted">
+                      · {t("promoAppliesTo").replace("{n}", String(pv.count))}
+                      {pv.count > 0 && (
+                        <>
+                          {" · "}
+                          <Price value={pv.min} />
+                          {pv.max !== pv.min && (
+                            <>
+                              {" – "}
+                              <Price value={pv.max} />
+                            </>
+                          )}
+                        </>
+                      )}
+                    </span>
+                  );
+                })()}
                 <button
                   onClick={() => remove(p.id)}
                   className="ms-auto text-muted hover:text-red-500"

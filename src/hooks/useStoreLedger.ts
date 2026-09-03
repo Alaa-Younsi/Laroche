@@ -244,7 +244,8 @@ export function useStoreSales() {
         .from("store_sales")
         .select("*, store_sale_items(*)")
         .order("sold_at", { ascending: false })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(2000);
       if (error) throw error;
       return (data ?? []).map((row) => ({
         ...row,

@@ -79,7 +79,7 @@ begin
   end if;
 
   v_order_number := 'LB-' || to_char(now(), 'YYYYMMDD') || '-' ||
-    upper(substr(md5(random()::text), 1, 5));
+    upper(substr(md5(random()::text || clock_timestamp()::text), 1, 10));
 
   insert into orders (
     order_number, customer_name, customer_phone, wilaya, city, address, notes,

@@ -2,18 +2,49 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { DeliveryType, Order, OrderStatus, PaymentMethod } from "@/types/db";
 
-export function useOrders(statusFilter?: OrderStatus) {
+/** Most-recent orders. Capped (default 300) so the admin list/dashboard never
+ * pull an unbounded table with every line joined — see useOrdersLedger's note
+ * for the eventual server-side-pagination path. */
+export function useOrders(statusFilter?: OrderStatus, limit = 300) {
   return useQuery({
-    queryKey: ["orders", statusFilter],
+    queryKey: ["orders", statusFilter, limit],
     queryFn: async (): Promise<Order[]> => {
       let query = supabase
         .from("orders")
         .select("*, order_items(*)")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(limit);
       if (statusFilter) query = query.eq("status", statusFilter);
       const { data, error } = await query;
       if (error) throw error;
       return normalizeOrders(data ?? []);
+    },
+  });
+}
+
+export interface AdminOrderStats {
+  orders_today: number;
+  pending: number;
+  revenue_total: number;
+  revenue_30d: number;
+}
+
+/** Dashboard KPI cards — aggregated in SQL (get_admin_order_stats), not by
+ * summing every row in the browser. */
+export function useAdminOrderStats() {
+  return useQuery({
+    queryKey: ["admin-order-stats"],
+    staleTime: 30_000,
+    queryFn: async (): Promise<AdminOrderStats> => {
+      const { data, error } = await supabase.rpc("get_admin_order_stats");
+      if (error) throw error;
+      const d = (data ?? {}) as Partial<AdminOrderStats>;
+      return {
+        orders_today: Number(d.orders_today ?? 0),
+        pending: Number(d.pending ?? 0),
+        revenue_total: Number(d.revenue_total ?? 0),
+        revenue_30d: Number(d.revenue_30d ?? 0),
+      };
     },
   });
 }

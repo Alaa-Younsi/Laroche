@@ -2,6 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { StoreSettings } from "@/types/db";
 
+const FALLBACK_SETTINGS: StoreSettings = {
+  id: 1,
+  shipping_fee: 0,
+  free_ship_threshold: null,
+};
+
 export function useStoreSettings() {
   return useQuery({
     queryKey: ["store-settings"],
@@ -10,9 +16,11 @@ export function useStoreSettings() {
         .from("store_settings")
         .select("*")
         .eq("id", 1)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data;
+      // Row 0001 seeds is normally always present; fall back rather than crash
+      // the whole storefront if it's ever missing.
+      return data ?? FALLBACK_SETTINGS;
     },
     staleTime: 5 * 60 * 1000,
   });

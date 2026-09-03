@@ -12,6 +12,10 @@ import { cn } from "@/lib/utils";
 import type { Product } from "@/types/db";
 import { responsiveSrcSet } from "@/lib/image";
 
+// Below this, the product list flags the row so the owner restocks before it
+// sells out. 0 renders as a distinct "rupture" state.
+const LOW_STOCK_THRESHOLD = 3;
+
 function useAllProducts() {
   return useQuery({
     queryKey: ["admin-products"],
@@ -82,6 +86,9 @@ export default function Products() {
   const { t, lang } = useLanguage();
   const { data: products = [], isLoading } = useAllProducts();
   const queryClient = useQueryClient();
+  const lowStockCount = products.filter(
+    (p) => p.status === "active" && p.stock <= LOW_STOCK_THRESHOLD,
+  ).length;
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -103,7 +110,15 @@ export default function Products() {
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-3xl text-ink">{t("adminProducts")}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-3xl text-ink">{t("adminProducts")}</h1>
+          {lowStockCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+              <AlertTriangle size={13} />
+              {t("adminLowStockCount").replace("{n}", String(lowStockCount))}
+            </span>
+          )}
+        </div>
         <Button asChild>
           <Link to="/admin/produits/nouveau">
             <Plus size={14} /> {t("adminAddProduct")}
@@ -157,7 +172,19 @@ export default function Products() {
                   <td className="whitespace-nowrap px-5 py-2.5">
                     <Price value={product.price} />
                   </td>
-                  <td className="whitespace-nowrap px-5 py-2.5">{product.stock}</td>
+                  <td className="whitespace-nowrap px-5 py-2.5">
+                    {product.stock === 0 ? (
+                      <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[0.65rem] font-medium uppercase text-red-500">
+                        {t("adminOutOfStock")}
+                      </span>
+                    ) : product.stock <= LOW_STOCK_THRESHOLD ? (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        {product.stock}
+                      </span>
+                    ) : (
+                      product.stock
+                    )}
+                  </td>
                   <td className="whitespace-nowrap px-5 py-2.5">
                     <span
                       className={cn(

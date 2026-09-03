@@ -1,7 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
 Disallow: /admin
 Disallow: /checkout
+Disallow: /commande/
 Disallow: /commande
 
 Sitemap: https://www.larochebijoux.com/sitemap.xml

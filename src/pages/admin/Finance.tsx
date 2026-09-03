@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/lib/supabase";
-import { useOrdersLedger } from "@/hooks/useFinance";
+import { useOrdersLedger, ORDERS_LEDGER_CAP } from "@/hooks/useFinance";
 import { useExpenses, usePurchases } from "@/hooks/useFinance";
 import { LedgerSummary } from "@/components/admin/LedgerSummary";
 import { RangeFilter } from "@/components/admin/RangeFilter";
@@ -186,6 +186,12 @@ export default function Finance() {
           <Download size={14} /> CSV
         </Button>
       </div>
+
+      {orders.length >= ORDERS_LEDGER_CAP && (
+        <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
+          {t("finLedgerCapped").replace("{n}", String(ORDERS_LEDGER_CAP))}
+        </p>
+      )}
 
       <RangeFilter range={range} onChange={setRange} />
 

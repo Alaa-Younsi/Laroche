@@ -127,6 +127,12 @@ export default function Orders() {
         </div>
       )}
 
+      {orders.length >= 300 && (
+        <p className="mb-3 text-xs text-muted">
+          {t("adminOrdersCapped").replace("{n}", "300")}
+        </p>
+      )}
+
       <BentoPanel className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

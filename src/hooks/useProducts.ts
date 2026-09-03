@@ -62,7 +62,7 @@ export function useProducts(filters: ProductFilters = {}) {
           .from("collections")
           .select("id")
           .eq("slug", filters.collectionSlug)
-          .single();
+          .maybeSingle();
         if (!collection) return [];
         const { data: links } = await supabase
           .from("product_collections")
@@ -102,13 +102,16 @@ export function useRelatedProducts(categoryId: string | undefined, excludeId: st
     queryKey: ["related-products", categoryId, excludeId],
     enabled: !!categoryId,
     queryFn: async (): Promise<Product[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select(PRODUCT_SELECT)
         .eq("status", "active")
         .eq("category_id", categoryId)
-        .neq("id", excludeId ?? "")
         .limit(4);
+      // `id` is a uuid column — passing "" would be a 400. Only filter when we
+      // actually have a product to exclude.
+      if (excludeId) query = query.neq("id", excludeId);
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as unknown as Product[];
     },

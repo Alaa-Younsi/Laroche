@@ -180,6 +180,11 @@ export function useDeleteExpense() {
  * Revisit past a few thousand orders — at that point paginate server-side and
  * aggregate in SQL instead.
  */
+/** Hard ceiling on the client-side ledger fetch. Past this the P&L page should
+ * move to SQL aggregation; until then the UI shows a banner rather than
+ * silently dropping old orders from the totals. */
+export const ORDERS_LEDGER_CAP = 5000;
+
 export function useOrdersLedger() {
   return useQuery({
     queryKey: ["orders-ledger"],
@@ -188,7 +193,8 @@ export function useOrdersLedger() {
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*)")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(ORDERS_LEDGER_CAP);
       if (error) throw error;
       return data ?? [];
     },

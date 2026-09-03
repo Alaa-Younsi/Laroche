@@ -164,6 +164,18 @@ begin
     raise exception 'ERR_RATE_LIMIT: too many orders today';
   end if;
 
+  -- 1b. global circuit breaker — the per-phone limit does nothing against a
+  --     bot rotating fake numbers, so also cap total order volume. A real shop
+  --     never legitimately books 20 orders in a minute from the storefront.
+  select count(*) into v_recent_count from orders where created_at > now() - interval '1 minute';
+  if v_recent_count >= 20 then
+    raise exception 'ERR_RATE_LIMIT: system busy, retry shortly';
+  end if;
+  select count(*) into v_recent_count from orders where created_at > now() - interval '1 hour';
+  if v_recent_count >= 200 then
+    raise exception 'ERR_RATE_LIMIT: system busy, retry shortly';
+  end if;
+
   -- 2. cart shape ---------------------------------------------------------
   if items is null or jsonb_array_length(items) = 0 then
     raise exception 'ERR_CART_EMPTY: cart is empty';
@@ -273,8 +285,10 @@ begin
   end if;
 
   -- 4. insert order -----------------------------------------------------
+  -- 10 hex chars (~1.1e12 space) instead of 5: the old width was small enough
+  -- to enumerate, and get_order_by_number is anon-readable by number.
   v_order_number := 'LB-' || to_char(now(), 'YYYYMMDD') || '-' ||
-    upper(substr(md5(random()::text), 1, 5));
+    upper(substr(md5(random()::text || clock_timestamp()::text), 1, 10));
 
   insert into orders (
     order_number, customer_name, customer_phone, wilaya, city, address, notes,

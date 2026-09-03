@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useOrder } from "@/hooks/useOrders";
 import { supabase } from "@/lib/supabase";
@@ -10,11 +10,30 @@ import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
 import { EcotrackPanel } from "@/components/admin/EcotrackPanel";
 import { PaymentBadge } from "@/components/admin/PaymentBadge";
-import { formatDate } from "@/lib/format";
-import type { OrderStatus } from "@/types/db";
+import { formatDate, formatPrice } from "@/lib/format";
+import type { Order, OrderStatus } from "@/types/db";
 import { responsiveSrcSet } from "@/lib/image";
 
 const STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+
+const STATUS_FR: Record<OrderStatus, string> = {
+  pending: "en attente de confirmation",
+  confirmed: "confirmée",
+  shipped: "expédiée",
+  delivered: "livrée",
+  cancelled: "annulée",
+};
+
+/** wa.me needs an international number with no +/0. Algerian mobiles are
+ * 0[5-7]xxxxxxxx → 213[5-7]xxxxxxxx. Falls back to the raw digits otherwise. */
+function whatsappLink(order: Order): string {
+  const digits = order.customer_phone.replace(/\D/g, "");
+  const intl = digits.startsWith("0") ? `213${digits.slice(1)}` : digits;
+  const text =
+    `Bonjour ${order.customer_name}, votre commande ${order.order_number} chez Laroche Bijoux ` +
+    `est ${STATUS_FR[order.status]}. Total : ${formatPrice(order.total)}.`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+}
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -130,7 +149,17 @@ export default function OrderDetail() {
         </BentoPanel>
 
         <BentoPanel className="p-6">
-          <h3 className="mb-4 font-display text-lg text-ink">Client</h3>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h3 className="font-display text-lg text-ink">Client</h3>
+            <a
+              href={whatsappLink(order)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+            >
+              <MessageCircle size={14} /> WhatsApp
+            </a>
+          </div>
           <dl className="space-y-3 text-sm">
             <div>
               <dt className="text-xs uppercase tracking-wide2 text-muted">{t("checkoutName")}</dt>

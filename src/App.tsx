@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { GaPageView } from "@/components/layout/GaPageView";
 import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import { StorefrontLayout } from "@/components/layout/StorefrontLayout";
+import { ErrorBoundary } from "@/components/effects/ErrorBoundary";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -43,12 +44,35 @@ function RouteFallback() {
   );
 }
 
+function RouteError() {
+  const { t } = useLanguage();
+  return (
+    <div className="flex flex-col items-center gap-4 py-32 text-center">
+      <span className="text-2xl text-brand">✦</span>
+      <p className="text-sm text-muted">{t("errorGeneric")}</p>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="rounded-full bg-brand px-5 py-2 text-sm text-brand-ink"
+        >
+          {t("retry")}
+        </button>
+        <Link to="/" className="rounded-full border border-line px-5 py-2 text-sm text-ink">
+          {t("navHome")}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
     <MetaPixelProvider>
       <ScrollToTop />
       <GaPageView />
-      <Suspense fallback={<RouteFallback />}>
+      <ErrorBoundary scope="route" fallback={<RouteError />}>
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route element={<StorefrontLayout />}>
             <Route path="/" element={<Landing />} />
@@ -79,7 +103,8 @@ function App() {
             <Route path="magasin" element={<AdminStoreLedger />} />
           </Route>
         </Routes>
-      </Suspense>
+        </Suspense>
+      </ErrorBoundary>
     </MetaPixelProvider>
   );
 }

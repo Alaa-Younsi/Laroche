@@ -21,7 +21,16 @@ export default function Login() {
     setSubmitting(true);
     setError(null);
     const { error } = await signIn(email, password);
-    if (error) setError(error.message);
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid login") || msg.includes("credentials")) {
+        setError(t("adminLoginBadCredentials"));
+      } else if (msg.includes("rate") || msg.includes("too many")) {
+        setError(t("adminLoginRateLimited"));
+      } else {
+        setError(t("errorGeneric"));
+      }
+    }
     setSubmitting(false);
   }
 
@@ -33,6 +42,7 @@ export default function Login() {
         <form onSubmit={onSubmit} className="space-y-4">
           <Input
             type="email"
+            autoComplete="username"
             placeholder={t("adminEmail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -40,6 +50,7 @@ export default function Login() {
           />
           <Input
             type="password"
+            autoComplete="current-password"
             placeholder={t("adminPassword")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}

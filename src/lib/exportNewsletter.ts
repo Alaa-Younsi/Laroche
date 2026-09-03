@@ -1,25 +1,26 @@
+import writeXlsxFile from "write-excel-file/browser";
 import type { NewsletterSubscriber } from "@/types/db";
 
-// Same formula-injection guard as exportOrders.ts — the DB's email check
-// constraint allows a leading +/- (`[A-Za-z0-9._%+-]+@...`), so a value like
-// "-evil@x.co" is a valid stored email that would still execute as a formula
-// if opened raw in Excel/Sheets.
+// The DB's email check constraint allows a leading +/- (`[A-Za-z0-9._%+-]+@…`),
+// so "-evil@x.co" is a valid stored email; some apps still treat a leading
+// =/+/-/@ as a formula on paste.
 function excelSafe(value: string): string {
   return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
-export async function exportNewsletterToExcel(subscribers: NewsletterSubscriber[]): Promise<void> {
-  const XLSX = await import("xlsx");
-  const rows = subscribers.map((s) => ({
-    Email: excelSafe(s.email),
-    Statut: s.active ? "Actif" : "Inactif",
-    Date: new Date(s.created_at).toLocaleDateString("fr-DZ"),
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Newsletter");
-
+export async function exportNewsletterToExcel(
+  subscribers: NewsletterSubscriber[],
+): Promise<void> {
+  const schema = [
+    { column: "Email", type: String, value: (s: NewsletterSubscriber) => excelSafe(s.email), width: 32 },
+    { column: "Statut", type: String, value: (s: NewsletterSubscriber) => (s.active ? "Actif" : "Inactif"), width: 12 },
+    {
+      column: "Date",
+      type: String,
+      value: (s: NewsletterSubscriber) => new Date(s.created_at).toLocaleDateString("fr-DZ"),
+      width: 14,
+    },
+  ];
   const today = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(workbook, `newsletter-${today}.xlsx`);
+  await writeXlsxFile(subscribers, { schema, fileName: `newsletter-${today}.xlsx` });
 }

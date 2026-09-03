@@ -13,7 +13,7 @@ type Status = "idle" | "submitting" | "success" | "already" | "invalid" | "error
 
 export function Newsletter() {
   const { t } = useLanguage();
-  const { isSpam } = useHoneypot();
+  const { isSpam, elapsedMs } = useHoneypot();
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -29,15 +29,19 @@ export function Newsletter() {
     }
 
     setStatus("submitting");
-    const { error } = await supabase.from("newsletter_subscribers").insert({ email: parsed.data });
+    // Writes go through a SECURITY DEFINER RPC (0025) — anon can no longer
+    // INSERT into the table directly, so the timing/flood checks can't be
+    // skipped by hitting PostgREST straight.
+    const { data, error } = await supabase.rpc("subscribe_newsletter", {
+      p: { email: parsed.data, elapsed_ms: elapsedMs() },
+    });
 
-    if (!error) {
-      setStatus("success");
-      setEmail("");
+    if (error) {
+      setStatus("error");
       return;
     }
-    // unique-index violation on lower(email) — duplicate subscriber, not a failure
-    setStatus(error.code === "23505" ? "already" : "error");
+    setStatus(data === "ok" ? "success" : data === "already" ? "already" : "invalid");
+    if (data === "ok") setEmail("");
   }
 
   const message =

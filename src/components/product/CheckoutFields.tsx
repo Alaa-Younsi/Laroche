@@ -66,6 +66,20 @@ export function CheckoutFields({ register, errors, watch, setValue }: CheckoutFi
       </div>
 
       <div>
+        <Input placeholder={t("checkoutAddress")} {...register("address")} />
+        {errors.address && <p className="mt-1 text-xs text-red-500">{t("errorInvalidInput")}</p>}
+      </div>
+
+      <div>
+        <textarea
+          rows={2}
+          placeholder={t("checkoutNotes")}
+          className="w-full rounded-lg border border-line bg-panel px-4 py-3 text-sm text-ink placeholder:text-muted outline-none transition-colors focus:border-brand"
+          {...register("notes")}
+        />
+      </div>
+
+      <div>
         <p className="mb-2 text-xs uppercase tracking-wide2 text-muted">
           {t("checkoutDeliveryType")}
         </p>
