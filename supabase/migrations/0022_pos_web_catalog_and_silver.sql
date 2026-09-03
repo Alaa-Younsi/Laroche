@@ -50,10 +50,13 @@ alter table store_products
   add column if not exists price_custom boolean not null default false,
   add column if not exists is_silver_pool boolean not null default false;
 
--- One mirror row per website product. Partial unique so the many shop-only
--- rows (product_id null) are unaffected.
-create unique index if not exists store_products_product_id_key
-  on store_products (product_id) where product_id is not null;
+-- One mirror row per website product. A plain (non-partial) unique index:
+-- Postgres already treats NULLs as distinct, so the many shop-only rows
+-- (product_id null) coexist freely, and ON CONFLICT (product_id) can use it as
+-- its arbiter — a partial index can't be inferred without repeating its WHERE.
+drop index if exists store_products_product_id_key;
+create unique index store_products_product_id_key
+  on store_products (product_id);
 
 -- Only ever one bulk-silver catalogue row.
 create unique index if not exists store_products_one_silver_pool
