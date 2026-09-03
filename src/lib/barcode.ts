@@ -50,6 +50,14 @@ export function generateEan13(): string {
   return body + ean13CheckDigit(body);
 }
 
+/** EAN-13 symbol geometry, in modules. */
+export const EAN13_MODULES = 95;
+/** GS1 minimum quiet zones for EAN-13: 11 modules left of the symbol, 7 right.
+ * The old value (9 each side) was under spec on the left and is a real reason a
+ * cheap scanner refuses to read a printed label. */
+export const EAN13_QUIET_LEFT = 11;
+export const EAN13_QUIET_RIGHT = 7;
+
 /**
  * The 95-module bit string for a valid EAN-13, or null if the code is not one.
  * "1" is a bar, "0" a space.

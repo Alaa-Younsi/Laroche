@@ -7,6 +7,9 @@ import {
   useSaveStoreProduct,
   useDeleteStoreProduct,
   useSetStoreStock,
+  useSilverPool,
+  useSilverPurchases,
+  useAddSilverPurchase,
   storeErrorKey,
 } from "@/hooks/useStoreLedger";
 import { useSuppliers } from "@/hooks/useFinance";
@@ -51,6 +54,176 @@ function effective(draft: Draft): { cost: number; price: number } {
   return { cost: draft.cost_price ?? 0, price: draft.price ?? 0 };
 }
 
+/**
+ * Bulk silver 925. The owner buys silver by total weight, not as pieces, so the
+ * shop keeps one running gram balance (weighted-average cost) instead of a
+ * catalogue row per piece. Every gram-priced sale of "Argent 925 (vrac)" at the
+ * till draws grams out of this pool.
+ */
+function SilverPoolCard({
+  storeId,
+  silverRow,
+}: {
+  storeId: string;
+  silverRow: StoreProduct | undefined;
+}) {
+  const { t } = useLanguage();
+  const toast = useAdminToast();
+  const { data: pool } = useSilverPool(storeId);
+  const { data: purchases = [] } = useSilverPurchases(storeId);
+  const addPurchase = useAddSilverPurchase();
+  const saveProduct = useSaveStoreProduct();
+
+  const [grams, setGrams] = useState("");
+  const [totalPaid, setTotalPaid] = useState("");
+  const [note, setNote] = useState("");
+  const [rate, setRate] = useState<string>("");
+
+  const gramsOnHand = pool?.grams ?? 0;
+  const avgCost = pool?.avg_cost_per_gram ?? 0;
+  const effectiveRate = rate !== "" ? Number(rate) : (silverRow?.price_per_gram ?? 0);
+
+  async function submitPurchase() {
+    const g = Number(grams);
+    if (!g || g <= 0) {
+      toast.error(t("posSilverGramsRequired"));
+      return;
+    }
+    try {
+      await addPurchase.mutateAsync({
+        store_id: storeId,
+        grams: g,
+        total_cost: Number(totalPaid) || 0,
+        note: note.trim() || undefined,
+      });
+      toast.success(t("posSilverPurchaseAdded"));
+      setGrams("");
+      setTotalPaid("");
+      setNote("");
+    } catch (err) {
+      toast.error(t(storeErrorKey(err)));
+    }
+  }
+
+  async function saveRate() {
+    if (!silverRow || rate === "" || Number(rate) === silverRow.price_per_gram) return;
+    try {
+      await saveProduct.mutateAsync({ id: silverRow.id, name: silverRow.name, price_per_gram: Number(rate) });
+      toast.success(t("adminSaved"));
+    } catch (err) {
+      toast.error(t(storeErrorKey(err)));
+    }
+  }
+
+  return (
+    <div className="print-hide space-y-4 rounded-xl border border-brand/30 bg-panel p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-lg text-ink">{t("posSilverPool")}</h3>
+        <span className="rounded bg-brand/10 px-2 py-0.5 text-[0.65rem] uppercase tracking-wide2 text-brand">
+          925
+        </span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div className="rounded-lg border border-line bg-panel-2/40 px-3 py-2">
+          <div className="text-xs text-muted">{t("posSilverGramsOnHand")}</div>
+          <div dir="ltr" className="text-lg font-medium tabular-nums text-ink">
+            {gramsOnHand.toLocaleString("fr-DZ", { maximumFractionDigits: 2 })} g
+          </div>
+        </div>
+        <div className="rounded-lg border border-line bg-panel-2/40 px-3 py-2">
+          <div className="text-xs text-muted">{t("posSilverAvgCost")}</div>
+          <Price value={avgCost} className="text-lg text-ink" />
+        </div>
+        <div className="rounded-lg border border-line bg-panel-2/40 px-3 py-2">
+          <div className="text-xs text-muted">{t("posSilverValue")}</div>
+          <Price value={Math.round(gramsOnHand * avgCost)} className="text-lg text-ink" />
+        </div>
+        <label className="rounded-lg border border-line bg-panel-2/40 px-3 py-2">
+          <span className="text-xs text-muted">{t("posSilverRate")}</span>
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            dir="ltr"
+            className="mt-1 px-2 py-1"
+            value={rate === "" ? String(silverRow?.price_per_gram ?? 0) : rate}
+            onChange={(e) => setRate(e.target.value)}
+            onBlur={saveRate}
+            disabled={!silverRow}
+          />
+        </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1.5fr_auto]">
+        <label className="space-y-1">
+          <span className="text-xs text-muted">{t("posSilverGramsBought")}</span>
+          <Input type="number" min={0} step="0.001" dir="ltr" value={grams}
+            onChange={(e) => setGrams(e.target.value)} />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs text-muted">{t("posSilverTotalPaid")}</span>
+          <Input type="number" min={0} step="0.01" dir="ltr" value={totalPaid}
+            onChange={(e) => setTotalPaid(e.target.value)} />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs text-muted">{t("posSilverNote")}</span>
+          <Input value={note} onChange={(e) => setNote(e.target.value)} />
+        </label>
+        <div className="flex items-end">
+          <Button size="sm" disabled={addPurchase.isPending} onClick={submitPurchase}>
+            <Plus size={14} /> {t("posSilverAddPurchase")}
+          </Button>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted">{t("posSilverHint")}</p>
+
+      {effectiveRate > 0 && avgCost > 0 && (
+        <p className="text-xs text-muted">
+          {t("finMargin")}:{" "}
+          <span className={effectiveRate < avgCost ? "text-red-500" : "text-emerald-500"}>
+            {(((effectiveRate - avgCost) / effectiveRate) * 100).toFixed(0)} %
+          </span>
+        </p>
+      )}
+
+      {purchases.length > 0 ? (
+        <div className="overflow-x-auto rounded-lg border border-line">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs uppercase tracking-wide2 text-muted">
+                <th className="px-3 py-2 text-start">{t("finDate")}</th>
+                <th className="px-3 py-2 text-end">{t("posSilverGramsBought")}</th>
+                <th className="px-3 py-2 text-end">{t("posSilverTotalPaid")}</th>
+                <th className="px-3 py-2 text-end">{t("posSilverAvgCost")}</th>
+                <th className="px-3 py-2 text-start">{t("posSilverNote")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchases.slice(0, 8).map((p) => (
+                <tr key={p.id} className="border-b border-line last:border-0">
+                  <td className="px-3 py-2 text-muted" dir="ltr">{p.purchased_at}</td>
+                  <td className="px-3 py-2 text-end tabular-nums text-ink" dir="ltr">{p.grams} g</td>
+                  <td className="px-3 py-2 text-end tabular-nums text-ink">
+                    <Price value={p.total_cost} />
+                  </td>
+                  <td className="px-3 py-2 text-end tabular-nums text-muted">
+                    <Price value={p.cost_per_gram} />
+                  </td>
+                  <td className="px-3 py-2 text-muted">{p.note ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-xs text-muted">{t("posSilverEmpty")}</p>
+      )}
+    </div>
+  );
+}
+
 export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeId: string }) {
   const { t } = useLanguage();
   const toast = useAdminToast();
@@ -63,14 +236,17 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
   const [search, setSearch] = useState("");
   const [labels, setLabels] = useState<LabelSpec[]>([]);
 
+  const silverRow = useMemo(() => products.find((p) => p.is_silver_pool), [products]);
+
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return products.filter(
       (product) =>
-        !needle ||
-        product.name.toLowerCase().includes(needle) ||
-        (product.barcode ?? "").includes(needle) ||
-        (product.sku ?? "").toLowerCase().includes(needle),
+        !product.is_silver_pool && // the bulk-silver row lives in its own card
+        (!needle ||
+          product.name.toLowerCase().includes(needle) ||
+          (product.barcode ?? "").includes(needle) ||
+          (product.sku ?? "").toLowerCase().includes(needle)),
     );
   }, [products, search]);
 
@@ -158,9 +334,14 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
   const live = draft ? effective(draft) : null;
   const storeName = stores.find((s) => s.id === storeId)?.name ?? "";
 
+  const linkedOf = (draftRow: Draft | null) =>
+    !!draftRow && (!!draftRow.product_id || !!draftRow.is_silver_pool);
+
   return (
     <div className="space-y-4">
       <BarcodeSheet labels={labels} />
+
+      <SilverPoolCard storeId={storeId} silverRow={silverRow} />
 
       <div className="print-hide flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-display text-xl text-ink">{t("posCatalogue")}</h3>
@@ -188,13 +369,37 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
 
       {draft && (
         <div className="print-hide space-y-3 rounded-xl border border-brand/40 bg-panel p-4">
+          {linkedOf(draft) && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs text-muted">
+              <span className="rounded bg-brand/15 px-2 py-0.5 font-semibold uppercase tracking-wide2 text-brand">
+                {draft.is_silver_pool ? t("posSilverBadge") : t("posLinkedWeb")}
+              </span>
+              <span>{draft.is_silver_pool ? t("posSilverHint") : t("posLinkedWebHint")}</span>
+              {draft.product_id && (
+                <label className="ms-auto flex items-center gap-2 text-ink">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-brand"
+                    checked={draft.price_custom ?? false}
+                    onChange={(e) => setDraft({ ...draft, price_custom: e.target.checked })}
+                  />
+                  {t("posPriceCustom")}
+                </label>
+              )}
+            </div>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <Input
               placeholder={t("posItemName")}
               value={draft.name}
+              disabled={linkedOf(draft)}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             />
-            <Select value={draft.kind ?? "product"} onChange={(e) => setKind(e.target.value as StoreProductKind)}>
+            <Select
+              value={draft.kind ?? "product"}
+              disabled={linkedOf(draft)}
+              onChange={(e) => setKind(e.target.value as StoreProductKind)}
+            >
               <option value="product">{t("posKindProduct")}</option>
               <option value="service">{t("posKindService")}</option>
             </Select>
@@ -379,6 +584,16 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
                 <tr key={product.id} className="border-b border-line last:border-0">
                   <td className="px-4 py-2.5">
                     <span className="text-ink">{product.name}</span>
+                    {product.product_id && (
+                      <span className="ms-2 rounded bg-brand/10 px-1.5 py-0.5 text-[0.6rem] uppercase text-brand">
+                        {t("posLinkedWeb")}
+                      </span>
+                    )}
+                    {product.product_id && product.price_custom && (
+                      <span className="ms-1 rounded bg-panel-2 px-1.5 py-0.5 text-[0.6rem] uppercase text-muted">
+                        {t("posPriceCustom")}
+                      </span>
+                    )}
                     {!product.active && (
                       <span className="ms-2 rounded bg-panel-2 px-1.5 py-0.5 text-[0.6rem] uppercase text-muted">
                         {t("pixelPaused")}

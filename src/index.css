@@ -48,6 +48,20 @@ html[data-theme="light"] {
    printer, so printing hides the dashboard chrome entirely and lets the
    document own the page. */
 @media print {
+  @page {
+    margin: 0;
+  }
+  /* The ticket goes on a 58 mm thermal roll; the barcode sheet is an A4 grid of
+     labels. A named page lets only the receipt claim the narrow roll — without
+     it the driver fits the ticket to A4 and the right-aligned amounts walk off
+     the paper (which is why prints came out with blank Total / Sous-total). */
+  @page receipt {
+    size: 58mm auto;
+    margin: 0;
+  }
+  .receipt-page {
+    page: receipt;
+  }
   body {
     background: #fff;
   }
@@ -73,6 +87,47 @@ html[data-theme="light"] {
 
 * {
   border-color: rgb(var(--c-line));
+}
+
+/* Scrollbars — themed to the dashboard/site palette rather than the OS default.
+   Firefox gets the two-keyword form; WebKit/Blink get the pseudo-elements. The
+   thumb is a translucent brand tint so it reads on both the light and dark
+   grounds, and darkens on hover. `.no-scrollbar` opts a strip out entirely
+   (used by horizontal chip rows that scroll by drag). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--c-brand) / 0.4) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--c-brand) / 0.35);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--c-brand) / 0.6);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 html {

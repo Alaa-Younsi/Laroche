@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Trash2, X } from "lucide-react";
+import { Download, Plus, Trash2, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useOrders } from "@/hooks/useOrders";
 import { exportOrdersToExcel } from "@/lib/exportOrders";
 import { DeleteOrdersModal, type DeleteScope } from "@/components/admin/DeleteOrdersModal";
+import { ManualOrderModal } from "@/components/admin/ManualOrderModal";
 import { PaymentBadge } from "@/components/admin/PaymentBadge";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
@@ -22,6 +23,7 @@ export default function Orders() {
   const { data: orders = [], isLoading } = useOrders(statusFilter || undefined);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState<{ scope: DeleteScope; orders: Order[] } | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Rows can leave the list when the status filter changes, so intersect rather
@@ -62,6 +64,9 @@ export default function Orders() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl text-ink">{t("adminOrders")}</h1>
         <div className="flex items-center gap-3">
+          <Button size="sm" onClick={() => setManualOpen(true)}>
+            <Plus size={14} /> {t("adminAddOrder")}
+          </Button>
           <Select
             value={statusFilter}
             onChange={(e) => {
@@ -174,6 +179,11 @@ export default function Orders() {
                     <Link to={`/admin/commandes/${order.id}`} className="text-brand hover:underline">
                       {order.order_number}
                     </Link>
+                    {order.source === "manual" && (
+                      <span className="ms-2 rounded bg-brand/10 px-1.5 py-0.5 text-[0.6rem] uppercase tracking-wide2 text-brand">
+                        {t("orderSourceManual")}
+                      </span>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-5 py-3">{order.customer_name}</td>
                   <td className="whitespace-nowrap px-5 py-3">{order.wilaya}</td>
@@ -227,6 +237,12 @@ export default function Orders() {
         orders={pending?.orders ?? []}
         onClose={() => setPending(null)}
         onDeleted={afterDelete}
+      />
+
+      <ManualOrderModal
+        open={manualOpen}
+        onClose={() => setManualOpen(false)}
+        onCreated={() => queryClient.invalidateQueries({ queryKey: ["orders"] })}
       />
     </div>
   );

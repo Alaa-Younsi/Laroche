@@ -3,6 +3,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Pencil, Check, X, AlertTriangle, ImagePlus, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
+import {
+  useCategoryPromotions,
+  useSaveCategoryPromotion,
+  useDeleteCategoryPromotion,
+} from "@/hooks/useCategoryPromotions";
 import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { supabase } from "@/lib/supabase";
 import { compressImage, responsiveSrcSet } from "@/lib/image";
@@ -23,7 +28,7 @@ import { cn } from "@/lib/utils";
 
 const DEPTH_INDENT = ["", "ms-6", "ms-12", "ms-[4.5rem]"] as const;
 
-type Tab = "categories" | "collections" | "brands";
+type Tab = "categories" | "promotions" | "collections" | "brands";
 
 // Categories rendered from the FALLBACK_TREE in useCategories carry synthetic
 // `slug:` ids — there is no row behind them, so any write silently no-ops.
@@ -118,6 +123,7 @@ export default function Categories() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "categories", label: t("adminCategories") },
+    { key: "promotions", label: t("adminPromotions") },
     { key: "collections", label: t("navCollections") },
     { key: "brands", label: t("navBrands") },
   ];
@@ -142,6 +148,7 @@ export default function Categories() {
       </div>
 
       {tab === "categories" && <CategoriesTab lang={lang} />}
+      {tab === "promotions" && <PromotionsTab lang={lang} />}
       {tab === "collections" && <CollectionsTab lang={lang} />}
       {tab === "brands" && <BrandsTab />}
     </div>
@@ -485,6 +492,171 @@ function CategoriesTab({ lang }: { lang: string }) {
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}
         />
+      )}
+    </div>
+  );
+}
+
+// Time-boxed % discounts on a whole category + its sub-categories. The
+// reduction is applied on read (storefront) and re-applied in place_order — see
+// supabase/migrations/0023_category_promotions.sql.
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function promoStatus(p: { starts_at: string; ends_at: string }): "active" | "scheduled" | "ended" {
+  const now = Date.now();
+  if (now < new Date(p.starts_at).getTime()) return "scheduled";
+  if (now >= new Date(p.ends_at).getTime()) return "ended";
+  return "active";
+}
+
+function PromotionsTab({ lang }: { lang: string }) {
+  const { t } = useLanguage();
+  const toast = useAdminToast();
+  const { data: tree = [] } = useCategoryGroups();
+  const { data: promotions = [] } = useCategoryPromotions();
+  const savePromo = useSaveCategoryPromotion();
+  const deletePromo = useDeleteCategoryPromotion();
+
+  const flat = flattenCategoryTree(tree).filter(({ node }) => !node.id.startsWith("slug:"));
+
+  const [categoryId, setCategoryId] = useState("");
+  const [percent, setPercent] = useState("10");
+  const [start, setStart] = useState(() => toLocalInput(new Date().toISOString()));
+  const [end, setEnd] = useState(() =>
+    toLocalInput(new Date(Date.now() + 7 * 86_400_000).toISOString()),
+  );
+  const [label, setLabel] = useState("");
+
+  const nameOf = (id: string) => {
+    const node = findCategoryNode(tree, id);
+    return node ? (lang === "ar" ? node.name_ar : node.name_fr) : id;
+  };
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    const pct = Number(percent);
+    const startIso = new Date(start).toISOString();
+    const endIso = new Date(end).toISOString();
+    if (!categoryId || !(pct > 0 && pct <= 90) || !(new Date(endIso) > new Date(startIso))) {
+      toast.error(t("promoInvalid"));
+      return;
+    }
+    try {
+      await savePromo.mutateAsync({
+        category_id: categoryId,
+        percent: pct,
+        starts_at: startIso,
+        ends_at: endIso,
+        label: label.trim() || null,
+      });
+      toast.success(t("promoSaved"));
+      setLabel("");
+    } catch {
+      toast.error(t("adminSaveError"));
+    }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deletePromo.mutateAsync(id);
+      toast.success(t("promoDeleted"));
+    } catch {
+      toast.error(t("adminDeleteError"));
+    }
+  }
+
+  return (
+    <div>
+      <BentoPanel className="mb-4 p-6">
+        <form onSubmit={add} className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <label className="space-y-1">
+            <span className="text-xs text-muted">{t("promoCategory")}</span>
+            <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+              <option value="">—</option>
+              {flat.map(({ node, depth }) => (
+                <option key={node.id} value={node.id}>
+                  {"— ".repeat(depth)}
+                  {lang === "ar" ? node.name_ar : node.name_fr}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-muted">{t("promoPercent")}</span>
+            <Input
+              type="number"
+              min={1}
+              max={90}
+              value={percent}
+              onChange={(e) => setPercent(e.target.value)}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-muted">{t("promoLabel")}</span>
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-muted">{t("promoStart")}</span>
+            <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-muted">{t("promoEnd")}</span>
+            <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+          </label>
+          <div className="flex items-end">
+            <Button type="submit" disabled={savePromo.isPending}>
+              <Plus size={14} /> {t("promoAdd")}
+            </Button>
+          </div>
+        </form>
+        <p className="mt-3 text-xs text-muted">{t("promoHint")}</p>
+      </BentoPanel>
+
+      {promotions.length === 0 ? (
+        <p className="text-sm text-muted">{t("promoNone")}</p>
+      ) : (
+        <div className="space-y-2">
+          {promotions.map((p) => {
+            const status = promoStatus(p);
+            const badge =
+              status === "active"
+                ? "bg-emerald-500/10 text-emerald-500"
+                : status === "scheduled"
+                  ? "bg-brand/10 text-brand"
+                  : "bg-panel-2 text-muted";
+            return (
+              <BentoPanel key={p.id} className="flex flex-wrap items-center gap-3 p-4">
+                <span className={cn("rounded px-2 py-0.5 text-[0.65rem] uppercase tracking-wide2", badge)}>
+                  {t(
+                    status === "active"
+                      ? "promoStatusActive"
+                      : status === "scheduled"
+                        ? "promoStatusScheduled"
+                        : "promoStatusEnded",
+                  )}
+                </span>
+                <span className="font-medium text-ink">{nameOf(p.category_id)}</span>
+                <span className="text-brand">−{p.percent}%</span>
+                <span className="text-xs text-muted" dir="ltr">
+                  {new Date(p.starts_at).toLocaleDateString("fr-DZ")} →{" "}
+                  {new Date(p.ends_at).toLocaleDateString("fr-DZ")}
+                </span>
+                {p.label && <span className="text-xs text-muted">· {p.label}</span>}
+                <button
+                  onClick={() => remove(p.id)}
+                  className="ms-auto text-muted hover:text-red-500"
+                  aria-label="delete"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </BentoPanel>
+            );
+          })}
+        </div>
       )}
     </div>
   );

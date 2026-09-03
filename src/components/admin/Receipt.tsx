@@ -5,13 +5,18 @@ import { formatPrice } from "@/lib/format";
 import type { Store, StoreSale } from "@/types/db";
 
 /**
- * Ticket de caisse, sized for an 80 mm thermal roll.
+ * Ticket de caisse, sized for a 58 mm thermal roll (the width the shop's
+ * printer actually takes). `.receipt-page` pins it to a named @page in
+ * index.css so the driver prints it at 1:1 on the roll instead of scaling it to
+ * fit A4 — the scaling is what was pushing the right-aligned amounts off the
+ * paper and leaving Total / Sous-total blank on the print.
  *
  * Deliberately plain inline styles rather than the app's Tailwind tokens: this
  * is the one surface that leaves the screen for a printer, where the dark
  * theme's palette would come out as a black rectangle and the brand fonts are
  * not installed.
  */
+const PAPER_MM = 58;
 export function Receipt({
   sale,
   store,
@@ -30,45 +35,49 @@ export function Receipt({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 print:bg-white print:p-0">
-      <div className="my-8 w-full max-w-sm print-sheet">
+      <div className="receipt-page my-8 w-full max-w-[280px] print-sheet">
         <div
           id="receipt"
           dir={lang === "ar" ? "rtl" : "ltr"}
           style={{
             background: "#fff",
             color: "#000",
-            padding: "6mm",
+            padding: "3mm",
             fontFamily: "monospace",
-            fontSize: "11px",
-            lineHeight: 1.5,
-            width: "80mm",
+            fontSize: "10px",
+            lineHeight: 1.4,
+            width: `${PAPER_MM}mm`,
+            maxWidth: "100%",
             margin: "0 auto",
           }}
         >
           <div style={{ textAlign: "center", marginBottom: "3mm" }}>
-            <div style={{ fontSize: "15px", fontWeight: 700 }}>{t("siteName")}</div>
+            <div style={{ fontSize: "13px", fontWeight: 700 }}>{t("siteName")}</div>
             {store && <div>{store.name}</div>}
             {store?.address && <div>{store.address}</div>}
             {store?.phone && <div dir="ltr">{store.phone}</div>}
           </div>
 
           <div style={{ borderTop: "1px dashed #000", borderBottom: "1px dashed #000", padding: "2mm 0" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "3mm" }}>
               <span>{t("posReceiptNo")}</span>
-              <span dir="ltr">{sale.sale_number}</span>
+              <span dir="ltr" style={{ textAlign: "end" }}>{sale.sale_number}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "3mm" }}>
               <span>{t("finDate")}</span>
-              <span dir="ltr">
+              <span dir="ltr" style={{ textAlign: "end" }}>
                 {sale.sold_at} {new Date(sale.created_at).toLocaleTimeString("fr-DZ")}
               </span>
             </div>
-            {sale.customer_name && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>{t("finCustomer")}</span>
-                <span>{sale.customer_name}</span>
-              </div>
-            )}
+            {/* Always print the customer row — the client asked for the name on
+                the ticket, and an empty dash reads clearer than a missing line
+                when it was left blank. */}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "3mm" }}>
+              <span>{t("finCustomer")}</span>
+              <span style={{ textAlign: "end", wordBreak: "break-word" }}>
+                {sale.customer_name?.trim() || "—"}
+              </span>
+            </div>
           </div>
 
           <table style={{ width: "100%", margin: "2mm 0" }}>
@@ -96,31 +105,32 @@ export function Receipt({
           </table>
 
           <div style={{ borderTop: "1px dashed #000", paddingTop: "2mm" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "3mm" }}>
               <span>{t("cartSubtotal")}</span>
-              <span dir="ltr">{formatPrice(sale.subtotal)}</span>
+              <span dir="ltr" style={{ whiteSpace: "nowrap" }}>{formatPrice(sale.subtotal)}</span>
             </div>
             {sale.discount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "3mm" }}>
                 <span>{t("posDiscount")}</span>
-                <span dir="ltr">−{formatPrice(sale.discount)}</span>
+                <span dir="ltr" style={{ whiteSpace: "nowrap" }}>−{formatPrice(sale.discount)}</span>
               </div>
             )}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                fontSize: "14px",
+                gap: "3mm",
+                fontSize: "12px",
                 fontWeight: 700,
                 marginTop: "1mm",
               }}
             >
               <span>{t("cartTotal")}</span>
-              <span dir="ltr">{formatPrice(sale.total)}</span>
+              <span dir="ltr" style={{ whiteSpace: "nowrap" }}>{formatPrice(sale.total)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1mm" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "3mm", marginTop: "1mm" }}>
               <span>{t("posPayment")}</span>
-              <span>{t(`posPay_${sale.payment_method}` as "posPay_cash")}</span>
+              <span style={{ textAlign: "end" }}>{t(`posPay_${sale.payment_method}` as "posPay_cash")}</span>
             </div>
           </div>
 

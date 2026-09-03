@@ -18,13 +18,22 @@ import type { Product, VariantPick } from "@/types/db";
 
 interface InlineCheckoutProps {
   product: Product;
+  /** Unit price after any active category promo. Defaults to product.price. */
+  unitPrice?: number;
   color: string | null;
   size: string | null;
   variants: VariantPick[];
   quantity: number;
 }
 
-export function InlineCheckout({ product, color, size, variants, quantity }: InlineCheckoutProps) {
+export function InlineCheckout({
+  product,
+  unitPrice,
+  color,
+  size,
+  variants,
+  quantity,
+}: InlineCheckoutProps) {
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const { data: settings } = useStoreSettings();
@@ -58,7 +67,7 @@ export function InlineCheckout({ product, color, size, variants, quantity }: Inl
 
   // Number(): a Postgres numeric can arrive over PostgREST as a string, and
   // "1200" * qty silently NaNs — which the pixel guard would then drop.
-  const lineTotal = Number(product.price) * quantity;
+  const lineTotal = Number(unitPrice ?? product.price) * quantity;
   const shipping = resolveShipping(wilayaFee, lineTotal, settings);
   const total = lineTotal + (shipping ?? 0);
 

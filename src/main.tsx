@@ -7,8 +7,6 @@ import App from "./App.tsx";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { initAnalytics } from "@/lib/analytics";
-// PHONE PREVIEW — temporary recording rig, delete with the folder it points at
-import { PhonePreview } from "@/devtools/phone-preview/PhonePreview";
 
 // the wishlist feature was removed — drop the persisted state of returning visitors
 localStorage.removeItem("laroche-wishlist");
@@ -37,16 +35,9 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <LanguageProvider>
-          {/* PHONE PREVIEW — temporary recording rig. Delete this wrapper, its
-              import, and src/devtools/phone-preview/ to remove. It must stay
-              OUTSIDE BrowserRouter: the rig replaces the whole routed tree
-              while it is up, and a rig inside the router would remount on
-              every navigation. */}
-          <PhonePreview>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </PhonePreview>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>

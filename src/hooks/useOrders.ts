@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Order, OrderStatus } from "@/types/db";
+import type { DeliveryType, Order, OrderStatus, PaymentMethod } from "@/types/db";
 
 export function useOrders(statusFilter?: OrderStatus) {
   return useQuery({
@@ -30,6 +30,44 @@ export function useOrder(id: string | undefined) {
         .maybeSingle();
       if (error) throw error;
       return data ? normalizeOrders([data])[0] : null;
+    },
+  });
+}
+
+export interface ManualOrderInput {
+  customer_name: string;
+  customer_phone: string;
+  wilaya: string;
+  city: string;
+  address?: string;
+  notes?: string;
+  delivery_type: DeliveryType;
+  language: "fr" | "ar";
+  payment_method: PaymentMethod;
+  status: OrderStatus;
+  /** Left blank → filled from the wilaya delivery grid server-side. */
+  shipping?: number;
+  discount?: number;
+  items: Array<{ product_id: string; quantity: number; unit_price?: number }>;
+}
+
+/** Records an order taken off the website (Facebook, phone). Admin-only RPC —
+ * server prices it, snapshots cost, decrements stock. */
+export function useCreateManualOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ManualOrderInput): Promise<string> => {
+      const { items, ...order } = input;
+      const { data, error } = await supabase.rpc("create_manual_order", {
+        p_order: order,
+        p_items: items,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 }

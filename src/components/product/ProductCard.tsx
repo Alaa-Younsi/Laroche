@@ -3,14 +3,25 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { Price } from "@/components/ui/Price";
 import { TiltCard } from "@/components/effects/TiltCard";
 import { SmartImage } from "@/components/ui/SmartImage";
+import { useCategoryPromoResolver } from "@/hooks/useCategoryPromotions";
+import { promoPrice } from "@/lib/promo";
 import type { Product } from "@/types/db";
 
 export function ProductCard({ product }: { product: Product }) {
   const { t, lang } = useLanguage();
+  const { resolve } = useCategoryPromoResolver();
 
   const image = product.product_images?.[0]?.url;
   const name = lang === "ar" ? product.name_ar : product.name_fr;
-  const onSale = product.compare_at_price != null && product.compare_at_price > product.price;
+  // A running category promo takes precedence over a static compare-at price.
+  const promo = resolve(product.category_id);
+  const price = promo ? promoPrice(product.price, promo.percent) : product.price;
+  const wasPrice = promo
+    ? product.price
+    : product.compare_at_price != null && product.compare_at_price > product.price
+      ? product.compare_at_price
+      : null;
+  const onSale = wasPrice != null;
   const outOfStock = product.stock <= 0;
 
   return (
@@ -37,7 +48,7 @@ export function ProductCard({ product }: { product: Product }) {
               )}
               {onSale && (
                 <span className="bg-bg px-2.5 py-1 text-[0.55rem] font-semibold uppercase tracking-wide2 text-brand">
-                  {t("productOnSale")}
+                  {promo ? `−${promo.percent}%` : t("productOnSale")}
                 </span>
               )}
             </div>
@@ -54,10 +65,10 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="space-y-1.5 border-t border-line p-4">
           <h3 className="truncate font-display text-lg text-ink">{name}</h3>
           <div className="flex items-center gap-2">
-            <Price value={product.price} className="text-sm text-brand" />
+            <Price value={price} className="text-sm text-brand" />
             {onSale && (
               <Price
-                value={product.compare_at_price as number}
+                value={wasPrice as number}
                 className="text-xs text-muted line-through"
               />
             )}

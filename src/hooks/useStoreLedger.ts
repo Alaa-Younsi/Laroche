@@ -10,6 +10,8 @@ import type {
   StoreProduct,
   StoreReturn,
   StoreSale,
+  StoreSilverPool,
+  StoreSilverPurchase,
   StoreStock,
   StoreTransfer,
 } from "@/types/db";
@@ -174,6 +176,63 @@ export function useSetStoreStock() {
   });
 }
 
+// Bulk silver (0022) -------------------------------------------------------
+
+/** The running gram balance + weighted-avg cost for one shop. */
+export function useSilverPool(storeId: string | undefined) {
+  return useQuery({
+    queryKey: ["store-silver-pool", storeId],
+    enabled: !!storeId,
+    queryFn: async (): Promise<StoreSilverPool | null> => {
+      const { data, error } = await supabase
+        .from("store_silver_pool")
+        .select("*")
+        .eq("store_id", storeId as string)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useSilverPurchases(storeId: string | undefined) {
+  return useQuery({
+    queryKey: ["store-silver-purchases", storeId],
+    enabled: !!storeId,
+    queryFn: async (): Promise<StoreSilverPurchase[]> => {
+      const { data, error } = await supabase
+        .from("store_silver_purchases")
+        .select("*")
+        .eq("store_id", storeId as string)
+        .order("purchased_at", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAddSilverPurchase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      store_id: string;
+      grams: number;
+      total_cost: number;
+      purchased_at?: string;
+      note?: string;
+    }) => {
+      const { data, error } = await supabase.rpc("add_silver_purchase", { p: input });
+      if (error) throw error;
+      return data as { grams: number; avg_cost_per_gram: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-purchases"] });
+    },
+  });
+}
+
 // Sales ----------------------------------------------------------------------
 
 export function useStoreSales() {
@@ -244,6 +303,7 @@ export function useCreateStoreSale() {
       queryClient.invalidateQueries({ queryKey: ["store-products"] });
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
       queryClient.invalidateQueries({ queryKey: ["store-cash"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
     },
   });
 }
@@ -261,6 +321,7 @@ export function useDeleteStoreSale() {
       queryClient.invalidateQueries({ queryKey: ["store-products"] });
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
       queryClient.invalidateQueries({ queryKey: ["store-cash"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
     },
   });
 }
@@ -320,6 +381,7 @@ export function useCreateStoreReturn() {
       queryClient.invalidateQueries({ queryKey: ["store-products"] });
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
       queryClient.invalidateQueries({ queryKey: ["store-cash"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
     },
   });
 }

@@ -6,6 +6,8 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 import { useSeo } from "@/hooks/useSeo";
 import { useCartStore } from "@/store/cart";
+import { useCategoryPromoResolver } from "@/hooks/useCategoryPromotions";
+import { promoPrice } from "@/lib/promo";
 import { Button } from "@/components/ui/Button";
 import { ProductGallery, type GalleryImage } from "@/components/product/ProductGallery";
 import { InlineCheckout } from "@/components/product/InlineCheckout";
@@ -85,6 +87,19 @@ export default function Product() {
   const { data: product, isLoading } = useProduct(slug);
   const { data: related = [] } = useRelatedProducts(product?.category_id, product?.id);
   const addItem = useCartStore((s) => s.addItem);
+  const { resolve: resolvePromo } = useCategoryPromoResolver();
+  const promo = product ? resolvePromo(product.category_id) : null;
+  // The unit price the customer actually pays, category promo applied.
+  const unitPrice =
+    product && promo ? promoPrice(product.price, promo.percent) : (product?.price ?? 0);
+  // What to strike through: the promo's "before" price wins over a static compare-at.
+  const wasPrice = product
+    ? promo
+      ? product.price
+      : product.compare_at_price != null && product.compare_at_price > product.price
+        ? product.compare_at_price
+        : null
+    : null;
 
   const [color, setColor] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
@@ -112,7 +127,8 @@ export default function Product() {
       // specific product pages only matches once the slug is registered.
       pixel.setContext({ productSlug: product.slug });
       // Number(): a Postgres numeric can arrive over PostgREST as a string, and
-      // "1200" * qty silently NaNs.
+      // "1200" * qty silently NaNs. List price here — the promo may not have
+      // resolved yet on first paint, and view_content tracks the shelf price.
       pixel.track("view_content", {
         value: Number(product.price),
         currency: "DZD",
@@ -190,7 +206,7 @@ export default function Product() {
           offers: {
             "@type": "Offer",
             priceCurrency: "DZD",
-            price: product.price,
+            price: unitPrice,
             availability:
               product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
           },
@@ -225,8 +241,8 @@ export default function Product() {
       slug: product.slug,
       name_fr: product.name_fr,
       name_ar: product.name_ar,
-      price: product.price,
-      compare_at_price: product.compare_at_price,
+      price: unitPrice,
+      compare_at_price: wasPrice,
       image: product.product_images?.[0]?.url ?? null,
       color,
       size,
@@ -236,7 +252,7 @@ export default function Product() {
       quantity_offers: product.quantity_offers,
     });
     pixel.track("add_to_cart", {
-      value: Number(product.price) * quantity,
+      value: Number(unitPrice) * quantity,
       currency: "DZD",
       content_ids: [product.id],
     });
@@ -286,9 +302,14 @@ export default function Product() {
           <h1 className="font-display text-3xl text-ink md:text-4xl">{name}</h1>
 
           <div className="mt-4 flex items-center gap-3">
-            <Price value={product.price} className="text-2xl font-medium text-brand" />
-            {product.compare_at_price != null && product.compare_at_price > product.price && (
-              <Price value={product.compare_at_price} className="text-muted line-through" />
+            <Price value={unitPrice} className="text-2xl font-medium text-brand" />
+            {wasPrice != null && (
+              <Price value={wasPrice} className="text-muted line-through" />
+            )}
+            {promo && (
+              <span className="rounded bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
+                −{promo.percent}%
+              </span>
             )}
           </div>
 
@@ -430,6 +451,7 @@ export default function Product() {
             <h3 className="mb-4 font-display text-xl text-ink">{t("checkoutQuickBuy")}</h3>
             <InlineCheckout
               product={product}
+              unitPrice={unitPrice}
               color={color}
               size={size}
               variants={variants}

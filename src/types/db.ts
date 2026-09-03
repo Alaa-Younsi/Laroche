@@ -37,6 +37,17 @@ export interface ProductImage {
   sort_order: number;
 }
 
+/** A time-boxed % discount on a whole category and its sub-categories (0023). */
+export interface CategoryPromotion {
+  id: string;
+  category_id: string;
+  percent: number;
+  starts_at: string;
+  ends_at: string;
+  label: string | null;
+  created_at: string;
+}
+
 export interface ProductColor {
   label_fr: string;
   label_ar: string;
@@ -127,6 +138,9 @@ export interface Order {
   language: Lang;
   delivery_type: DeliveryType;
   created_at: string;
+  /** 'website' (place_order) or 'manual' (owner-entered Facebook/phone order,
+   * 0024). Older rows default to 'website'. */
+  source?: "website" | "manual";
   // Payment (0015_chargily_payments.sql). Older rows default to cod/unpaid.
   payment_method?: PaymentMethod;
   payment_status?: PaymentStatus;
@@ -320,8 +334,35 @@ export interface StoreProduct {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Set when this row mirrors a website product (0022). Name/price follow the
+   * website unless `price_custom` is on; the shop still owns its stock count. */
+  product_id: string | null;
+  price_custom: boolean;
+  /** The single "Argent 925 (vrac)" row: sells from store_silver_pool by weight
+   * instead of from a store_stock quantity. */
+  is_silver_pool: boolean;
   /** Joined per-shop quantities, when the query asked for them. */
   store_stock?: StoreStock[];
+}
+
+/** Weighted-average bulk-silver balance for one shop (0022). */
+export interface StoreSilverPool {
+  store_id: string;
+  grams: number;
+  avg_cost_per_gram: number;
+  updated_at: string;
+}
+
+export interface StoreSilverPurchase {
+  id: string;
+  store_id: string;
+  grams: number;
+  total_cost: number;
+  cost_per_gram: number;
+  purchased_at: string;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
 }
 
 export interface StoreStock {

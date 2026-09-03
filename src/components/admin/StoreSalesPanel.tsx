@@ -72,7 +72,13 @@ export function StoreSalesPanel({
         weightGrams: product.weight_grams,
         pricingMode: product.pricing_mode,
         isService,
-        availableStock: isService ? Number.POSITIVE_INFINITY : stockOf(product),
+        // Bulk silver is weighed per sale and drawn from the shop's gram pool —
+        // there is no unit stock count to clamp against; the RPC guards grams
+        // and returns ERR_OUT_OF_STOCK if the pool runs dry.
+        availableStock:
+          isService || product.is_silver_pool
+            ? Number.POSITIVE_INFINITY
+            : stockOf(product),
       },
     ]);
   }
@@ -187,8 +193,13 @@ export function StoreSalesPanel({
               <option value="">{t("posPickItem")}</option>
               {active.map((product) => (
                 <option key={product.id} value={product.id}>
-                  {product.name} — {formatPrice(product.effective_price)}
-                  {product.kind === "product" ? ` (${stockOf(product)})` : ""}
+                  {product.name}
+                  {product.is_silver_pool
+                    ? ` — ${t("posPricePerGram")}`
+                    : ` — ${formatPrice(product.effective_price)}`}
+                  {product.kind === "product" && !product.is_silver_pool
+                    ? ` (${stockOf(product)})`
+                    : ""}
                 </option>
               ))}
             </Select>
