@@ -62,14 +62,33 @@ export function StoreLocations() {
                     </a>
                   </div>
                 </div>
-                <iframe
-                  title={`${t(store.cityKey)} — Google Maps`}
-                  src={`https://www.google.com/maps?q=${store.lat},${store.lng}&z=16&output=embed`}
-                  className={cn("h-64 w-full", theme === "dark" && "grayscale invert-[0.92] contrast-[0.9] filter")}
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                {/* The iframe sits over a styled placeholder: if Google ever
+                    refuses the keyless embed (or a strict CSP blocks it), the
+                    card degrades to an intentional-looking panel with the
+                    "voir sur Google Maps" link above still working, instead of
+                    a broken-image box. */}
+                <div className="relative h-64 w-full bg-panel-2">
+                  <a
+                    href={store.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted"
+                  >
+                    <MapPin size={28} className="text-brand/60" />
+                    <span className="text-xs uppercase tracking-wide2">{t("storesCta")}</span>
+                  </a>
+                  <iframe
+                    title={`${t(store.cityKey)} — Google Maps`}
+                    src={`https://www.google.com/maps?q=${store.lat},${store.lng}&z=16&output=embed`}
+                    className={cn(
+                      "absolute inset-0 h-full w-full",
+                      theme === "dark" && "grayscale invert-[0.92] contrast-[0.9] filter",
+                    )}
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </BentoPanel>
             </Reveal>
           ))}
