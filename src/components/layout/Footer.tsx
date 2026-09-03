@@ -99,8 +99,19 @@ export function Footer() {
         </Reveal>
       </div>
 
-      <div className="border-t border-line px-4 py-6 text-center text-[0.65rem] uppercase tracking-wide2 text-muted md:px-8">
-        © {new Date().getFullYear()} Laroche Bijoux — {t("footerRights")}
+      <div className="flex flex-col items-center gap-2 border-t border-line px-4 py-6 text-[0.65rem] uppercase tracking-wide2 text-muted sm:flex-row sm:justify-between md:px-8">
+        <span>© {new Date().getFullYear()} Laroche Bijoux — {t("footerRights")}</span>
+        <span>
+          {t("footerCreatedBy")}{" "}
+          <a
+            href="https://alaayounsi.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-ink transition-colors duration-300 hover:text-brand"
+          >
+            Alaa Younsi
+          </a>
+        </span>
       </div>
     </footer>
   );

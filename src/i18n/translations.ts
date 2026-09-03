@@ -219,6 +219,7 @@ export const translations = {
     footerContact: "Contact",
     footerFollow: "Suivez-nous",
     footerRights: "Tous droits réservés.",
+    footerCreatedBy: "Site web créé par",
     footerStorePolicy: "Retour & Livraison",
 
     // Store policy page (placeholder copy — to be replaced with the client's real text)
@@ -819,6 +820,7 @@ export const translations = {
     footerContact: "اتصل بنا",
     footerFollow: "تابعينا",
     footerRights: "جميع الحقوق محفوظة.",
+    footerCreatedBy: "الموقع من إنجاز",
     footerStorePolicy: "الإرجاع والتوصيل",
 
     storePolicyTitle: "الإرجاع والتوصيل",
