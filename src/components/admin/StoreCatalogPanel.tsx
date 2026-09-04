@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Trash2, Pencil, X, Printer, RefreshCw, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Printer, RefreshCw, Search, Check } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import {
@@ -10,17 +10,19 @@ import {
   useSilverPool,
   useSilverPurchases,
   useAddSilverPurchase,
+  useUpdateSilverPurchase,
+  useDeleteSilverPurchase,
   storeErrorKey,
 } from "@/hooks/useStoreLedger";
 import { useSuppliers } from "@/hooks/useFinance";
-import { generateEan13 } from "@/lib/barcode";
+import { generateEan13, isValidEan13 } from "@/lib/barcode";
 import { Barcode, BarcodeSheet, type LabelSpec } from "@/components/admin/Barcode";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
 import { formatPrice } from "@/lib/format";
-import type { PricingMode, Store, StoreProduct, StoreProductKind } from "@/types/db";
+import type { PricingMode, Store, StoreProduct, StoreProductKind, StoreSilverPurchase } from "@/types/db";
 
 type Draft = Partial<StoreProduct> & { name: string };
 
@@ -72,12 +74,18 @@ function SilverPoolCard({
   const { data: pool } = useSilverPool(storeId);
   const { data: purchases = [] } = useSilverPurchases(storeId);
   const addPurchase = useAddSilverPurchase();
+  const updatePurchase = useUpdateSilverPurchase();
+  const deletePurchase = useDeleteSilverPurchase();
   const saveProduct = useSaveStoreProduct();
 
   const [grams, setGrams] = useState("");
   const [totalPaid, setTotalPaid] = useState("");
   const [note, setNote] = useState("");
   const [rate, setRate] = useState<string>("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editGrams, setEditGrams] = useState("");
+  const [editTotalPaid, setEditTotalPaid] = useState("");
+  const [editNote, setEditNote] = useState("");
 
   const gramsOnHand = pool?.grams ?? 0;
   const avgCost = pool?.avg_cost_per_gram ?? 0;
@@ -100,6 +108,46 @@ function SilverPoolCard({
       setGrams("");
       setTotalPaid("");
       setNote("");
+    } catch (err) {
+      toast.error(t(storeErrorKey(err)));
+    }
+  }
+
+  function startEdit(p: StoreSilverPurchase) {
+    setEditingId(p.id);
+    setEditGrams(String(p.grams));
+    setEditTotalPaid(String(p.total_cost));
+    setEditNote(p.note ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit() {
+    if (!editingId) return;
+    const g = Number(editGrams);
+    if (!g || g <= 0) {
+      toast.error(t("posSilverGramsRequired"));
+      return;
+    }
+    try {
+      await updatePurchase.mutateAsync({
+        id: editingId,
+        grams: g,
+        total_cost: Number(editTotalPaid) || 0,
+        note: editNote.trim() || undefined,
+      });
+      toast.success(t("adminSaved"));
+      setEditingId(null);
+    } catch (err) {
+      toast.error(t(storeErrorKey(err)));
+    }
+  }
+
+  async function removePurchase(id: string) {
+    try {
+      await deletePurchase.mutateAsync(id);
     } catch (err) {
       toast.error(t(storeErrorKey(err)));
     }
@@ -198,22 +246,99 @@ function SilverPoolCard({
                 <th className="px-3 py-2 text-end">{t("posSilverTotalPaid")}</th>
                 <th className="px-3 py-2 text-end">{t("posSilverAvgCost")}</th>
                 <th className="px-3 py-2 text-start">{t("posSilverNote")}</th>
+                <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody>
-              {purchases.slice(0, 8).map((p) => (
-                <tr key={p.id} className="border-b border-line last:border-0">
-                  <td className="px-3 py-2 text-muted" dir="ltr">{p.purchased_at}</td>
-                  <td className="px-3 py-2 text-end tabular-nums text-ink" dir="ltr">{p.grams} g</td>
-                  <td className="px-3 py-2 text-end tabular-nums text-ink">
-                    <Price value={p.total_cost} />
-                  </td>
-                  <td className="px-3 py-2 text-end tabular-nums text-muted">
-                    <Price value={p.cost_per_gram} />
-                  </td>
-                  <td className="px-3 py-2 text-muted">{p.note ?? "—"}</td>
-                </tr>
-              ))}
+              {purchases.slice(0, 8).map((p) =>
+                editingId === p.id ? (
+                  <tr key={p.id} className="border-b border-line last:border-0">
+                    <td className="px-3 py-2 text-muted" dir="ltr">{p.purchased_at}</td>
+                    <td className="px-3 py-2 text-end">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        dir="ltr"
+                        className="text-end"
+                        value={editGrams}
+                        onChange={(e) => setEditGrams(e.target.value)}
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-end">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        dir="ltr"
+                        className="text-end"
+                        value={editTotalPaid}
+                        onChange={(e) => setEditTotalPaid(e.target.value)}
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-end tabular-nums text-muted">
+                      <Price value={p.cost_per_gram} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input value={editNote} onChange={(e) => setEditNote(e.target.value)} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={saveEdit}
+                          disabled={updatePurchase.isPending}
+                          aria-label={t("save")}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-2 hover:text-ink"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          aria-label={t("cancel")}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-2 hover:text-ink"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={p.id} className="border-b border-line last:border-0">
+                    <td className="px-3 py-2 text-muted" dir="ltr">{p.purchased_at}</td>
+                    <td className="px-3 py-2 text-end tabular-nums text-ink" dir="ltr">{p.grams} g</td>
+                    <td className="px-3 py-2 text-end tabular-nums text-ink">
+                      <Price value={p.total_cost} />
+                    </td>
+                    <td className="px-3 py-2 text-end tabular-nums text-muted">
+                      <Price value={p.cost_per_gram} />
+                    </td>
+                    <td className="px-3 py-2 text-muted">{p.note ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(p)}
+                          aria-label={t("edit")}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-2 hover:text-ink"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePurchase(p.id)}
+                          disabled={deletePurchase.isPending}
+                          aria-label={t("delete")}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ),
+              )}
             </tbody>
           </table>
         </div>
@@ -312,8 +437,14 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
   }
 
   function printLabels(list: StoreProduct[]) {
+    // A hand-edited barcode that fails EAN-13 validation renders as plain text
+    // (see Barcode.tsx), not bars — printing it produces a label with nothing
+    // for a scanner to read. Skip those rather than send an unscannable sheet.
+    const invalidCount = list.filter(
+      (product) => product.barcode && !isValidEan13(product.barcode),
+    ).length;
     const printable = list
-      .filter((product) => product.barcode)
+      .filter((product) => product.barcode && isValidEan13(product.barcode))
       .map((product) => ({
         code: product.barcode as string,
         name: product.name,
@@ -322,6 +453,9 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
     if (printable.length === 0) {
       toast.error(t("posNoBarcodes"));
       return;
+    }
+    if (invalidCount > 0) {
+      toast.error(t("posBarcodeInvalidSkipped").replace("{n}", String(invalidCount)));
     }
     setLabels(printable);
     // Let React paint the sheet before the print dialog snapshots the page.
@@ -515,6 +649,11 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
                   <RefreshCw size={14} />
                 </Button>
               </div>
+              {/* An invalid code renders as plain text with no bars (see Barcode.tsx) —
+                  a printed label from it has nothing for a scanner to read. */}
+              {draft.barcode && !isValidEan13(draft.barcode) && (
+                <span className="text-xs text-red-500">{t("posBarcodeInvalid")}</span>
+              )}
             </label>
             <label className="space-y-1">
               <span className="text-xs text-muted">{t("finSupplier")}</span>
@@ -600,7 +739,13 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
                       </span>
                     )}
                     {product.barcode && (
-                      <span dir="ltr" className="block font-mono text-[0.65rem] text-muted">
+                      <span
+                        dir="ltr"
+                        className={`block font-mono text-[0.65rem] ${
+                          isValidEan13(product.barcode) ? "text-muted" : "text-red-500"
+                        }`}
+                        title={isValidEan13(product.barcode) ? undefined : t("posBarcodeInvalid")}
+                      >
                         {product.barcode}
                       </span>
                     )}

@@ -481,6 +481,8 @@ export const translations = {
     posStockIn: "Stock —",
     posPrintLabels: "Imprimer étiquettes",
     posNoBarcodes: "Aucun article avec code-barres à imprimer",
+    posBarcodeInvalid: "Code-barres invalide — ne s'imprimera pas comme des barres lisibles.",
+    posBarcodeInvalidSkipped: "{n} étiquette(s) ignorée(s) : code-barres invalide.",
     posNameRequired: "Donnez un nom à cet article.",
 
     posSales: "Ventes",
@@ -1074,6 +1076,8 @@ export const translations = {
     posStockIn: "المخزون —",
     posPrintLabels: "طباعة الملصقات",
     posNoBarcodes: "لا يوجد منتج بباركود للطباعة",
+    posBarcodeInvalid: "باركود غير صالح — لن يُطبع كأشرطة قابلة للقراءة.",
+    posBarcodeInvalidSkipped: "تم تجاهل {n} ملصق(ات): باركود غير صالح.",
     posNameRequired: "أعطِ اسماً لهذا المنتج.",
 
     posSales: "المبيعات",

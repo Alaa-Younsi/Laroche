@@ -233,6 +233,40 @@ export function useAddSilverPurchase() {
   });
 }
 
+export function useUpdateSilverPurchase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      grams: number;
+      total_cost: number;
+      purchased_at?: string;
+      note?: string;
+    }) => {
+      const { error } = await supabase.rpc("update_silver_purchase", { p: input });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-purchases"] });
+    },
+  });
+}
+
+export function useDeleteSilverPurchase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("delete_silver_purchase", { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-purchases"] });
+    },
+  });
+}
+
 // Sales ----------------------------------------------------------------------
 
 export function useStoreSales() {
