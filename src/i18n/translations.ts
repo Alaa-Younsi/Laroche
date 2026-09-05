@@ -466,6 +466,12 @@ export const translations = {
     posPay_transfer: "Virement",
     posPay_other: "Autre",
 
+    posSellByWeight: "Vente au poids (argent)",
+    posWeightSold: "Poids vendu (g)",
+    posSalePriceTotal: "Prix de vente (DA)",
+    posAddWeightSale: "Ajouter à la vente",
+    posSilverRowMissing: "Aucun article \"argent au poids\" n'est configuré dans le catalogue.",
+
     posCatalogue: "Catalogue magasin",
     posKindProduct: "Produit",
     posKindService: "Service",
@@ -1060,6 +1066,12 @@ export const translations = {
     posPay_card: "بطاقة",
     posPay_transfer: "تحويل",
     posPay_other: "أخرى",
+
+    posSellByWeight: "بيع بالوزن (فضة)",
+    posWeightSold: "الوزن المباع (غ)",
+    posSalePriceTotal: "سعر البيع (دج)",
+    posAddWeightSale: "إضافة إلى البيع",
+    posSilverRowMissing: "لا يوجد منتج \"فضة بالوزن\" في الكتالوج.",
 
     posCatalogue: "كتالوج المحل",
     posKindProduct: "منتج",

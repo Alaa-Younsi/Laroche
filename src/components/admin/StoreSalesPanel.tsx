@@ -52,8 +52,11 @@ export function StoreSalesPanel({
   const [payment, setPayment] = useState<StorePaymentMethod>("cash");
   const [discount, setDiscount] = useState(0);
   const [pick, setPick] = useState("");
+  const [weightSold, setWeightSold] = useState("");
+  const [weightSalePrice, setWeightSalePrice] = useState("");
 
   const active = useMemo(() => products.filter((p) => p.active), [products]);
+  const silverRow = useMemo(() => products.find((p) => p.is_silver_pool), [products]);
 
   const stockOf = (product: StoreProduct) =>
     product.store_stock?.find((s) => s.store_id === store.id)?.quantity ?? 0;
@@ -99,6 +102,33 @@ export function StoreSalesPanel({
         availableStock: Number.POSITIVE_INFINITY,
       },
     ]);
+  }
+
+  function addWeightSale() {
+    if (!silverRow) {
+      toast.error(t("posSilverRowMissing"));
+      return;
+    }
+    const grams = Number(weightSold);
+    const price = Number(weightSalePrice);
+    if (!grams || grams <= 0) return;
+    setLines((prev) => [
+      ...prev,
+      {
+        key: `l${lineSeq++}`,
+        productId: silverRow.id,
+        name: silverRow.name,
+        quantity: 1,
+        unitPrice: price || 0,
+        unitCost: silverRow.effective_cost,
+        weightGrams: grams,
+        pricingMode: "gram",
+        isService: false,
+        availableStock: Number.POSITIVE_INFINITY,
+      },
+    ]);
+    setWeightSold("");
+    setWeightSalePrice("");
   }
 
   function onScan(code: string) {
@@ -208,6 +238,41 @@ export function StoreSalesPanel({
             </Button>
           </div>
         </div>
+
+        {silverRow && (
+          <div className="space-y-2 rounded-xl border border-brand/30 bg-panel p-3">
+            <h4 className="text-xs uppercase tracking-wide2 text-muted">{t("posSellByWeight")}</h4>
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <label className="space-y-1">
+                <span className="text-xs text-muted">{t("posWeightSold")}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.001"
+                  dir="ltr"
+                  value={weightSold}
+                  onChange={(e) => setWeightSold(e.target.value)}
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted">{t("posSalePriceTotal")}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  dir="ltr"
+                  value={weightSalePrice}
+                  onChange={(e) => setWeightSalePrice(e.target.value)}
+                />
+              </label>
+              <div className="flex items-end">
+                <Button size="sm" onClick={addWeightSale} disabled={!weightSold || Number(weightSold) <= 0}>
+                  <Plus size={14} /> {t("posAddWeightSale")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-xl border border-line bg-panel">
           <table className="w-full text-sm">
