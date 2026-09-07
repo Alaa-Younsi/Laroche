@@ -181,7 +181,10 @@ export function ManualOrderModal({
 
         <div className="mt-4 space-y-2">
           {lines.map((line) => (
-            <div key={line.key} className="grid grid-cols-[1fr_4rem_7rem_auto] items-center gap-2">
+            <div
+              key={line.key}
+              className="grid grid-cols-[minmax(0,1fr)_4rem_7rem_auto] items-center gap-2"
+            >
               <Select
                 value={line.productId}
                 onChange={(e) =>

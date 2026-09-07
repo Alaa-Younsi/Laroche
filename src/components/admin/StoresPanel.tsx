@@ -14,7 +14,18 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { Store } from "@/types/db";
 
-const EMPTY: StoreDraft = { name: "", code: "", address: "", phone: "", active: true };
+const EMPTY: StoreDraft = {
+  name: "",
+  code: "",
+  address: "",
+  phone: "",
+  active: true,
+  nif: "",
+  rc: "",
+  activity_number: "",
+  email: "",
+  website: "",
+};
 
 /**
  * Shops, and who works in which. Only the owner can write either — RLS enforces
@@ -41,6 +52,11 @@ export function StoresPanel({ stores, isOwner }: { stores: Store[]; isOwner: boo
         ...draft,
         name: draft.name.trim(),
         code: draft.code?.trim() || null,
+        nif: draft.nif?.trim() || null,
+        rc: draft.rc?.trim() || null,
+        activity_number: draft.activity_number?.trim() || null,
+        email: draft.email?.trim() || null,
+        website: draft.website?.trim() || null,
       });
       toast.success(t("adminSaved"));
       setDraft(null);
@@ -99,7 +115,38 @@ export function StoresPanel({ stores, isOwner }: { stores: Store[]; isOwner: boo
               value={draft.phone ?? ""}
               onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
             />
+            <Input
+              dir="ltr"
+              placeholder={t("posStoreEmail")}
+              value={draft.email ?? ""}
+              onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+            />
+            <Input
+              dir="ltr"
+              placeholder={t("posStoreWebsite")}
+              value={draft.website ?? ""}
+              onChange={(e) => setDraft({ ...draft, website: e.target.value })}
+            />
+            <Input
+              dir="ltr"
+              placeholder={t("posStoreNif")}
+              value={draft.nif ?? ""}
+              onChange={(e) => setDraft({ ...draft, nif: e.target.value })}
+            />
+            <Input
+              dir="ltr"
+              placeholder={t("posStoreRc")}
+              value={draft.rc ?? ""}
+              onChange={(e) => setDraft({ ...draft, rc: e.target.value })}
+            />
+            <Input
+              dir="ltr"
+              placeholder={t("posStoreActivity")}
+              value={draft.activity_number ?? ""}
+              onChange={(e) => setDraft({ ...draft, activity_number: e.target.value })}
+            />
           </div>
+          <p className="text-xs text-muted">{t("posStoreIdentityHint")}</p>
           <label className="flex items-center gap-2 text-sm text-ink">
             <input
               type="checkbox"

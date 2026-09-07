@@ -9,6 +9,7 @@ import type {
   StoreMember,
   StorePaymentMethod,
   StoreProduct,
+  StoreProforma,
   StoreReturn,
   StoreSale,
   StoreSilverPool,
@@ -481,6 +482,75 @@ export function useResolveStoreTransfer() {
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
       queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
     },
+  });
+}
+
+// Proforma invoices (Factures proforma, 0028) -------------------------------
+
+export function useStoreProformas() {
+  return useQuery({
+    queryKey: ["store-proformas"],
+    queryFn: async (): Promise<StoreProforma[]> => {
+      const { data, error } = await supabase
+        .from("store_proformas")
+        .select("*, store_proforma_items(*)")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        ...row,
+        store_proforma_items: (row.store_proforma_items ?? []).sort(
+          (a, b) => a.line_no - b.line_no,
+        ),
+      }));
+    },
+  });
+}
+
+export interface ProformaLinePayload {
+  name: string;
+  material?: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export function useCreateStoreProforma() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      doc: {
+        store_id: string;
+        customer_name?: string;
+        customer_address?: string;
+        customer_city?: string;
+        customer_phone?: string;
+        customer_email?: string;
+        payment_method?: string;
+        discount: number;
+        shipping: number;
+        notes?: string;
+      };
+      items: ProformaLinePayload[];
+    }): Promise<{ id: string; proforma_number: string }> => {
+      const { data, error } = await supabase.rpc("create_store_proforma", {
+        doc: input.doc,
+        items: input.items,
+      });
+      if (error) throw error;
+      return data as { id: string; proforma_number: string };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["store-proformas"] }),
+  });
+}
+
+export function useDeleteStoreProforma() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("store_proformas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["store-proformas"] }),
   });
 }
 

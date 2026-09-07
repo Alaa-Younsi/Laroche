@@ -83,7 +83,7 @@ export function CashPanel({ store, range }: { store: Store; range: DateRange }) 
         <StatTile label={t("posCashOut")} value={periodOut} invertDelta />
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-[1fr_1fr_auto_auto]">
+      <div className="grid gap-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
         <Input
           type="number"
           min={0}

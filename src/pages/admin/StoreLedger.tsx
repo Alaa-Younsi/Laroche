@@ -19,6 +19,7 @@ import { StoreSalesList } from "@/components/admin/StoreSalesList";
 import { StoreCatalogPanel } from "@/components/admin/StoreCatalogPanel";
 import { ReturnsPanel } from "@/components/admin/ReturnsPanel";
 import { TransfersPanel } from "@/components/admin/TransfersPanel";
+import { ProformasPanel } from "@/components/admin/ProformasPanel";
 import { CashPanel } from "@/components/admin/CashPanel";
 import { StoresPanel } from "@/components/admin/StoresPanel";
 import { PurchasesPanel } from "@/components/admin/PurchasesPanel";
@@ -52,6 +53,7 @@ type Tab =
   | "returns"
   | "catalogue"
   | "transfers"
+  | "proformas"
   | "cash"
   | "products"
   | "clients"
@@ -232,6 +234,7 @@ export default function StoreLedger() {
     { key: "returns", label: t("posReturns") },
     { key: "catalogue", label: t("posCatalogue") },
     { key: "transfers", label: t("posTransfers") },
+    { key: "proformas", label: t("posProformaTab") },
     { key: "cash", label: t("posTill") },
     { key: "products", label: t("finProducts") },
     { key: "clients", label: t("finClients") },
@@ -260,7 +263,7 @@ export default function StoreLedger() {
           <Select
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-auto"
+            className="w-full sm:w-auto"
           >
             {stores.map((option) => (
               <option key={option.id} value={option.id}>
@@ -294,6 +297,7 @@ export default function StoreLedger() {
           {tab === "transfers" && (
             <TransfersPanel store={store} stores={stores} products={products} />
           )}
+          {tab === "proformas" && <ProformasPanel store={store} />}
           {tab === "cash" && <CashPanel store={store} range={range} />}
           {tab === "products" && <ProductBreakdown rows={productRows} />}
           {tab === "clients" && <CustomerBreakdown rows={customerRows} />}

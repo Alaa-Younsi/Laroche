@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRightLeft, Check, Plus, Trash2, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import type { Store, StoreProduct } from "@/types/db";
+import { SILVER_TYPES, type Store, type StoreProduct } from "@/types/db";
 
 interface DraftLine {
   key: string;
@@ -44,10 +44,29 @@ export function TransfersPanel({
   const [toStore, setToStore] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<DraftLine[]>([]);
+  // The dedicated "silver by weight" row of the form.
+  const [silverType, setSilverType] = useState<string>(SILVER_TYPES[0]);
+  const [silverGrams, setSilverGrams] = useState("");
 
   const others = stores.filter((s) => s.id !== store.id);
   const nameOf = (id: string) => stores.find((s) => s.id === id)?.name ?? "—";
   const productOf = (productId: string) => products.find((p) => p.id === productId);
+
+  // The article dropdown lists ordinary pieces only — bulk silver moves through
+  // its own block below so the two never get confused.
+  const unitProducts = useMemo(
+    () => products.filter((p) => p.kind === "product" && !p.is_silver_pool),
+    [products],
+  );
+  // One catalogue row per silver grade that actually exists, in a stable order.
+  const silverRows = useMemo(
+    () =>
+      SILVER_TYPES.map((st) =>
+        products.find((p) => p.is_silver_pool && p.silver_type === st),
+      ).filter((p): p is StoreProduct => Boolean(p)),
+    [products],
+  );
+
   /** How much is on hand at the sending shop — a unit count, or pool grams for silver. */
   const availableOf = (productId: string) => {
     const product = productOf(productId);
@@ -56,12 +75,33 @@ export function TransfersPanel({
     }
     return product?.store_stock?.find((s) => s.store_id === store.id)?.quantity ?? 0;
   };
+  const gramsOfGrade = (type: string) =>
+    silverPools.find((pool) => pool.silver_type === type)?.grams ?? 0;
 
   function reset() {
     setOpen(false);
     setToStore("");
     setNotes("");
     setLines([]);
+    setSilverGrams("");
+  }
+
+  function addUnitLine() {
+    setLines((prev) => [
+      ...prev,
+      { key: `tr${seq++}`, productId: "", quantity: 1, weightGrams: 0 },
+    ]);
+  }
+
+  function addSilverLine() {
+    const row = silverRows.find((p) => p.silver_type === silverType);
+    const grams = Number(silverGrams);
+    if (!row || !grams || grams <= 0) return;
+    setLines((prev) => [
+      ...prev,
+      { key: `tr${seq++}`, productId: row.id, quantity: 1, weightGrams: grams },
+    ]);
+    setSilverGrams("");
   }
 
   async function submit() {
@@ -154,6 +194,48 @@ export function TransfersPanel({
             />
           </div>
 
+          {/* Bulk silver: its own picker, never mixed into the article list. */}
+          {silverRows.length > 0 && (
+            <div className="space-y-2 rounded-xl border border-brand/30 bg-panel-2/40 p-3">
+              <h4 className="text-xs uppercase tracking-wide2 text-muted">
+                {t("posTransferSilverTitle")}
+              </h4>
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <label className="space-y-1">
+                  <span className="text-xs text-muted">{t("posSilverType")}</span>
+                  <Select value={silverType} onChange={(e) => setSilverType(e.target.value)}>
+                    {silverRows.map((row) => (
+                      <option key={row.id} value={row.silver_type ?? ""}>
+                        {t(`silverType_${row.silver_type}` as "silverType_local")} —{" "}
+                        {gramsOfGrade(row.silver_type ?? "")} g
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs text-muted">{t("posTransferWeightG")}</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.001"
+                    dir="ltr"
+                    value={silverGrams}
+                    onChange={(e) => setSilverGrams(e.target.value)}
+                  />
+                </label>
+                <div className="flex items-end">
+                  <Button
+                    size="sm"
+                    onClick={addSilverLine}
+                    disabled={!silverGrams || Number(silverGrams) <= 0}
+                  >
+                    <Plus size={14} /> {t("add")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             {lines.map((line) => {
               const picked = productOf(line.productId);
@@ -164,24 +246,24 @@ export function TransfersPanel({
                   prev.map((l) => (l.key === line.key ? { ...l, ...changes } : l)),
                 );
               return (
-                <div key={line.key} className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
-                  <Select
-                    value={line.productId}
-                    onChange={(e) => patchLine({ productId: e.target.value })}
-                  >
-                    <option value="">{t("posPickItem")}</option>
-                    {products
-                      .filter((product) => product.kind === "product")
-                      .map((product) => (
+                <div key={line.key} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_auto]">
+                  {isSilver ? (
+                    <span className="flex h-9 items-center px-3 text-sm text-ink">
+                      {t(`silverType_${picked?.silver_type}` as "silverType_local")}
+                    </span>
+                  ) : (
+                    <Select
+                      value={line.productId}
+                      onChange={(e) => patchLine({ productId: e.target.value })}
+                    >
+                      <option value="">{t("posPickItem")}</option>
+                      {unitProducts.map((product) => (
                         <option key={product.id} value={product.id}>
-                          {product.name} (
-                          {product.is_silver_pool
-                            ? `${availableOf(product.id)} g`
-                            : availableOf(product.id)}
-                          )
+                          {product.name} ({availableOf(product.id)})
                         </option>
                       ))}
-                  </Select>
+                    </Select>
+                  )}
                   {isSilver ? (
                     <Input
                       type="number"
@@ -217,17 +299,8 @@ export function TransfersPanel({
                 </div>
               );
             })}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setLines((prev) => [
-                  ...prev,
-                  { key: `tr${seq++}`, productId: "", quantity: 1, weightGrams: 0 },
-                ])
-              }
-            >
-              <Plus size={14} /> {t("add")}
+            <Button size="sm" variant="outline" onClick={addUnitLine}>
+              <Plus size={14} /> {t("posTransferAddArticle")}
             </Button>
           </div>
 

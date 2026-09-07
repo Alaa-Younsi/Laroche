@@ -188,7 +188,10 @@ export function ReturnsPanel({
 
           <div className="space-y-2">
             {lines.map((line) => (
-              <div key={line.key} className="grid gap-2 sm:grid-cols-[1fr_5rem_7rem_auto_auto]">
+              <div
+                key={line.key}
+                className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_7rem_auto_auto]"
+              >
                 {line.productId ? (
                   <div className="flex items-center px-1 text-sm text-ink">{line.name}</div>
                 ) : (

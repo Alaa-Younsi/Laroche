@@ -300,6 +300,12 @@ export interface Store {
   active: boolean;
   notes: string | null;
   created_at: string;
+  /** Legal identity printed on the shop's Facture proforma (0028). */
+  nif: string | null;
+  rc: string | null;
+  activity_number: string | null;
+  email: string | null;
+  website: string | null;
 }
 
 export interface StoreMember {
@@ -475,6 +481,41 @@ export interface StoreTransfer {
   received_by: string | null;
   received_at: string | null;
   store_transfer_items?: StoreTransferItem[];
+}
+
+/** One line of a Facture proforma (0028). Free text — a proforma is a quote,
+ * not tied to a catalogue row. */
+export interface StoreProformaItem {
+  id: string;
+  proforma_id: string;
+  line_no: number;
+  name: string;
+  material: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+/** A printed quote handed to a customer from the counter. Reserves a document
+ * number and stores its lines for reprint; touches no stock, pool or till. */
+export interface StoreProforma {
+  id: string;
+  proforma_number: string;
+  store_id: string;
+  customer_name: string | null;
+  customer_address: string | null;
+  customer_city: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+  payment_method: string | null;
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  store_proforma_items?: StoreProformaItem[];
 }
 
 export type CashMovementKind =

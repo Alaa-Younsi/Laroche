@@ -63,7 +63,7 @@ export default function Orders() {
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl text-ink">{t("adminOrders")}</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button size="sm" onClick={() => setManualOpen(true)}>
             <Plus size={14} /> {t("adminAddOrder")}
           </Button>
@@ -73,7 +73,7 @@ export default function Orders() {
               setStatusFilter(e.target.value as OrderStatus | "");
               clearSelection();
             }}
-            className="w-auto"
+            className="w-full sm:w-auto"
           >
             <option value="">{t("viewAll")}</option>
             {STATUSES.map((s) => (

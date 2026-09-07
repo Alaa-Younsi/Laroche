@@ -134,13 +134,13 @@ export default function Categories() {
     <div>
       <h1 className="mb-6 font-display text-3xl text-ink">{t("adminCategories")}</h1>
 
-      <div className="mb-6 flex gap-2 border-b border-line">
+      <div className="-mx-1 mb-6 flex gap-2 overflow-x-auto border-b border-line px-1">
         {tabs.map((tb) => (
           <button
             key={tb.key}
             onClick={() => setTab(tb.key)}
             className={cn(
-              "border-b-2 px-4 py-2.5 text-sm",
+              "shrink-0 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm",
               tab === tb.key ? "border-brand text-brand" : "border-transparent text-muted",
             )}
           >
@@ -283,7 +283,10 @@ function CategoryEditForm({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+    <form
+      onSubmit={submit}
+      className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+    >
       <Input placeholder="Nom (FR)" value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
       <Input placeholder="الاسم (AR)" dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
       <Select value={parentId} onChange={(e) => setParentId(e.target.value)}>
@@ -823,7 +826,7 @@ function CollectionsTab({ lang }: { lang: string }) {
         {collections.map((c) =>
           editingId === c.id ? (
             <BentoPanel key={c.id} className="p-4">
-              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                 <Input value={editFr} onChange={(e) => setEditFr(e.target.value)} />
                 <Input value={editAr} dir="rtl" onChange={(e) => setEditAr(e.target.value)} />
                 <div className="flex items-center gap-2">

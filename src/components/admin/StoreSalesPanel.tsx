@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Minus, Plus, Trash2, ShoppingBag, Loader2 } from "lucide-react";
+import { FileText, Minus, Plus, Trash2, ShoppingBag, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import {
@@ -9,6 +9,7 @@ import {
   type SaleLinePayload,
 } from "@/hooks/useStoreLedger";
 import { ScannerInput } from "@/components/admin/ScannerInput";
+import { Proforma } from "@/components/admin/Proforma";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -53,6 +54,7 @@ export function StoreSalesPanel({
   const [payment, setPayment] = useState<StorePaymentMethod>("cash");
   const [discount, setDiscount] = useState(0);
   const [pick, setPick] = useState("");
+  const [proformaOpen, setProformaOpen] = useState(false);
   const [weightSold, setWeightSold] = useState("");
   const [weightSalePrice, setWeightSalePrice] = useState("");
   const [silverType, setSilverType] = useState<string>(SILVER_TYPES[0]);
@@ -232,7 +234,7 @@ export function StoreSalesPanel({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <ScannerInput onScan={onScan} />
@@ -267,7 +269,7 @@ export function StoreSalesPanel({
         {silverRows.length > 0 && (
           <div className="space-y-2 rounded-xl border border-brand/30 bg-panel p-3">
             <h4 className="text-xs uppercase tracking-wide2 text-muted">{t("posSellByWeight")}</h4>
-            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
               <label className="space-y-1">
                 <span className="text-xs text-muted">{t("posSilverType")}</span>
                 <Select value={silverType} onChange={(e) => setSilverType(e.target.value)}>
@@ -479,7 +481,33 @@ export function StoreSalesPanel({
           )}
           {t("posConfirmSale")}
         </Button>
+
+        <Button
+          variant="outline"
+          className="w-full"
+          disabled={lines.length === 0 || unnamed.length > 0}
+          onClick={() => setProformaOpen(true)}
+        >
+          <FileText size={15} /> {t("posProformaBtn")}
+        </Button>
       </div>
+
+      <Proforma
+        open={proformaOpen}
+        onClose={() => setProformaOpen(false)}
+        store={store}
+        discount={clampedDiscount}
+        defaultCustomer={{ name: customerName, phone: customerPhone }}
+        lines={lines.map((line) => ({
+          name: line.name.trim() || t("posItemName"),
+          material:
+            line.pricingMode === "gram" && line.weightGrams > 0
+              ? `${line.weightGrams} g`
+              : undefined,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+        }))}
+      />
     </div>
   );
 }

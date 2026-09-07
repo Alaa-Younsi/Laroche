@@ -637,6 +637,57 @@ export const translations = {
     manualOrderCreate: "Créer la commande",
     manualOrderCreated: "Commande créée",
     manualOrderNeedItem: "Ajoutez au moins un produit.",
+
+    // Transferts — bloc argent au poids (0027)
+    posTransferSilverTitle: "Transférer de l'argent au poids",
+    posTransferAddArticle: "Ajouter un article",
+
+    // Magasin — identité légale (0028)
+    posStoreEmail: "E-mail",
+    posStoreWebsite: "Site web",
+    posStoreNif: "NIF",
+    posStoreRc: "RC (Registre du commerce)",
+    posStoreActivity: "N° d'activité",
+    posStoreIdentityHint:
+      "Ces informations apparaissent sur les factures proforma de ce magasin.",
+
+    // Facture proforma (0028)
+    posShipping: "Livraison (DA)",
+    posProformaBtn: "Facture proforma",
+    posProformaTab: "Factures",
+    posProformaNo: "N°",
+    posProformaEmpty: "Aucune facture proforma pour ce magasin.",
+    posProformaHint:
+      "Une facture proforma est un devis : elle réserve un numéro et s'imprime, mais ne touche ni au stock, ni à l'argent au poids, ni à la caisse.",
+    pfEditTitle: "Détails de la facture proforma",
+    pfMissingIdentity:
+      "Renseignez le NIF et le RC du magasin dans l'onglet Magasins pour un document complet.",
+    pfSubtitle: "BIJOUX • HORLOGERIE • ACCESSOIRES",
+    pfHeading: "FACTURE PROFORMA",
+    pfNo: "N°",
+    pfClient: "CLIENT",
+    pfClientName: "Nom / Raison sociale",
+    pfClientCity: "Ville / Pays",
+    pfEmail: "E-mail",
+    pfNif: "NIF",
+    pfRc: "RC",
+    pfActivity: "N° d'activité",
+    pfColRef: "RÉF.",
+    pfColDesignation: "DÉSIGNATION",
+    pfColMaterial: "MATIÈRE / FINITION",
+    pfColQty: "QTÉ",
+    pfColUnitPrice: "PRIX UNIT.",
+    pfColTotal: "TOTAL",
+    pfShipping: "Livraison",
+    pfGrandTotal: "TOTAL À PAYER",
+    pfWarrantyTitle: "RETOUR & GARANTIE",
+    pfWarrantyText:
+      "Retour sous 48 h après réception, article non porté et dans son état d'origine. Articles personnalisés/gravés : non repris sauf défaut de fabrication. Garantie contre les défauts de fabrication. Sont exclus : usure normale, rayures, chocs, casse et dommages liés à l'eau, parfums ou produits chimiques. Toute intervention par un tiers annule la garantie. Facture ou preuve d'achat obligatoire.",
+    pfSignature: "SIGNATURE & CACHET",
+    pfDisclaimer:
+      "Document commercial proforma — ne constitue pas une preuve de paiement.",
+    pfGenerate: "Générer la facture",
+    pfCreated: "Facture proforma créée",
   },
   ar: {
     siteName: "لاروش بيجو",
@@ -1246,6 +1297,55 @@ export const translations = {
     manualOrderCreate: "إنشاء الطلب",
     manualOrderCreated: "تم إنشاء الطلب",
     manualOrderNeedItem: "أضف منتجاً واحداً على الأقل.",
+
+    // التحويلات — كتلة الفضة بالوزن (0027)
+    posTransferSilverTitle: "تحويل فضة بالوزن",
+    posTransferAddArticle: "إضافة منتج",
+
+    // المتجر — الهوية القانونية (0028)
+    posStoreEmail: "البريد الإلكتروني",
+    posStoreWebsite: "الموقع الإلكتروني",
+    posStoreNif: "الرقم الجبائي (NIF)",
+    posStoreRc: "السجل التجاري (RC)",
+    posStoreActivity: "رقم النشاط",
+    posStoreIdentityHint: "تظهر هذه المعلومات على الفواتير الأولية لهذا المتجر.",
+
+    // الفاتورة الأولية (0028)
+    posShipping: "التوصيل (دج)",
+    posProformaBtn: "فاتورة أولية",
+    posProformaTab: "الفواتير",
+    posProformaNo: "رقم",
+    posProformaEmpty: "لا توجد فاتورة أولية لهذا المتجر.",
+    posProformaHint:
+      "الفاتورة الأولية هي عرض سعر: تحجز رقماً وتُطبع، لكنها لا تمسّ المخزون ولا الفضة بالوزن ولا الصندوق.",
+    pfEditTitle: "تفاصيل الفاتورة الأولية",
+    pfMissingIdentity:
+      "أدخل الرقم الجبائي والسجل التجاري للمتجر في تبويب المتاجر للحصول على وثيقة كاملة.",
+    pfSubtitle: "مجوهرات • ساعات • إكسسوارات",
+    pfHeading: "فاتورة أولية",
+    pfNo: "رقم",
+    pfClient: "الزبون",
+    pfClientName: "الاسم / التسمية التجارية",
+    pfClientCity: "المدينة / البلد",
+    pfEmail: "البريد الإلكتروني",
+    pfNif: "الرقم الجبائي",
+    pfRc: "السجل التجاري",
+    pfActivity: "رقم النشاط",
+    pfColRef: "مرجع",
+    pfColDesignation: "التسمية",
+    pfColMaterial: "المادة / التشطيب",
+    pfColQty: "الكمية",
+    pfColUnitPrice: "سعر الوحدة",
+    pfColTotal: "المجموع",
+    pfShipping: "التوصيل",
+    pfGrandTotal: "المبلغ الإجمالي للدفع",
+    pfWarrantyTitle: "الإرجاع والضمان",
+    pfWarrantyText:
+      "الإرجاع خلال 48 ساعة بعد الاستلام، على أن يكون المنتج غير مستعمل وفي حالته الأصلية. المنتجات المخصّصة أو المنقوشة: لا تُسترجع إلا في حال عيب صناعي. ضمان ضدّ عيوب الصناعة. يُستثنى: الاستعمال العادي، الخدوش، الصدمات، الكسر والأضرار الناتجة عن الماء أو العطور أو المواد الكيميائية. أي تدخّل من طرف ثالث يُلغي الضمان. الفاتورة أو إثبات الشراء إلزامي.",
+    pfSignature: "التوقيع والختم",
+    pfDisclaimer: "وثيقة تجارية أولية — لا تُعدّ إثباتاً للدفع.",
+    pfGenerate: "إنشاء الفاتورة",
+    pfCreated: "تمّ إنشاء الفاتورة الأولية",
   },
 } as const;
 

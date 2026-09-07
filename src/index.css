@@ -62,6 +62,14 @@ html[data-theme="light"] {
   .receipt-page {
     page: receipt;
   }
+  /* The Facture proforma is a full A4 sheet with real page margins. */
+  @page proforma {
+    size: A4;
+    margin: 12mm;
+  }
+  .proforma-page {
+    page: proforma;
+  }
   body {
     background: #fff;
   }

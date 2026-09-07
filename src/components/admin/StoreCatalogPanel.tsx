@@ -252,7 +252,7 @@ function SilverPoolCard({
         </label>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1.5fr_auto]">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto]">
         <label className="space-y-1">
           <span className="text-xs text-muted">{t("posSilverGramsBought")}</span>
           <Input type="number" min={0} step="0.001" dir="ltr" value={grams}

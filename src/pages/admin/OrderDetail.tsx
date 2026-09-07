@@ -76,7 +76,7 @@ export default function OrderDetail() {
         <Select
           value={order.status}
           onChange={(e) => updateStatus(e.target.value as OrderStatus)}
-          className="w-auto"
+          className="w-full sm:w-auto"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
