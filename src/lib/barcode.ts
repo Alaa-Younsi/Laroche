@@ -50,6 +50,54 @@ export function generateEan13(): string {
   return body + ean13CheckDigit(body);
 }
 
+/**
+ * What a keyboard-wedge scanner actually types is at the mercy of two things
+ * outside our control, and both silently break an exact-string lookup even
+ * though the printed barcode is fine:
+ *
+ *  1. The OS keyboard layout. On a French AZERTY machine — every shop here —
+ *     the unshifted digit row is `& é " ' ( - è _ ç à`, so a scanner that
+ *     sends digits as top-row keys reads out `à&é"…` instead of `0123…`.
+ *     That is exactly the "it searches with letters" the client is seeing
+ *     (`é è ç à` are letters).
+ *  2. The scanner's own prefix setting. Left in "AIM code ID" mode it prepends
+ *     `]E0` (EAN-13), `]C1` (Code 128)… ahead of the digits.
+ *
+ * This turns one raw scan into the set of plausible real codes to try the
+ * lookup with. Match on whichever one hits.
+ */
+const AZERTY_DIGIT_ROW: Record<string, string> = {
+  "&": "1",
+  "é": "2",
+  '"': "3",
+  "'": "4",
+  "(": "5",
+  "-": "6",
+  "è": "7",
+  _: "8",
+  "ç": "9",
+  "à": "0",
+};
+
+export function scanCandidates(raw: string): string[] {
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  const out = new Set<string>([trimmed]);
+
+  const deAzerty = trimmed.replace(/[&é"'(\-è_çà]/g, (c) => AZERTY_DIGIT_ROW[c] ?? c);
+  out.add(deAzerty);
+  // Drop a leading AIM identifier: "]" + a letter + one more character.
+  out.add(deAzerty.replace(/^\][A-Za-z][0-9A-Za-z]/, ""));
+
+  const digits = deAzerty.replace(/\D/g, "");
+  if (digits) {
+    out.add(digits);
+    if (digits.length === 12) out.add(`0${digits}`); // UPC-A read without its leading zero
+    if (digits.length === 13 && digits[0] === "0") out.add(digits.slice(1));
+  }
+  return [...out].filter(Boolean);
+}
+
 /** EAN-13 symbol geometry, in modules. */
 export const EAN13_MODULES = 95;
 /** GS1 minimum quiet zones for EAN-13: 11 modules left of the symbol, 7 right.

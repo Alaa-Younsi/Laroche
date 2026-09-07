@@ -471,6 +471,10 @@ export const translations = {
     posSalePriceTotal: "Prix de vente (DA)",
     posAddWeightSale: "Ajouter à la vente",
     posSilverRowMissing: "Aucun article \"argent au poids\" n'est configuré dans le catalogue.",
+    posSilverType: "Type d'argent",
+    silverType_rhodie: "Argent rhodié",
+    silverType_bataille: "Argent bataille",
+    silverType_local: "Argent local",
 
     posCatalogue: "Catalogue magasin",
     posKindProduct: "Produit",
@@ -521,6 +525,9 @@ export const translations = {
     posNeedTwoStores: "Il faut au moins deux magasins",
     posTransferHint:
       "Le stock quitte le magasin d'origine dès la création du transfert et n'entre dans le magasin d'arrivée qu'à la réception.",
+    posTransferSilverNote:
+      "Pour l'argent au poids : choisissez le type et saisissez les grammes. Ils sortent du stock du magasin d'origine à la création et sont ajoutés au coût moyen du magasin d'arrivée à la réception.",
+    posTransferWeightG: "Poids (g)",
     posTransferCreated: "Transfert créé",
     posTransferReceived: "Transfert réceptionné",
     posTransferCancelled: "Transfert annulé",
@@ -574,10 +581,11 @@ export const translations = {
     posPriceCustom: "Prix perso",
     posPriceCustomHint: "Fixer un prix magasin qui ne suit plus le site.",
     posSilverBadge: "Vrac",
-    posSilverPool: "Stock argent (vrac)",
+    posSilverPool: "Stock argent (au poids)",
     posSilverGramsOnHand: "Grammes en stock",
     posSilverAvgCost: "Coût moyen / g",
     posSilverValue: "Valeur du stock",
+    posSilverValueAll: "Valeur totale (3 types)",
     posSilverRate: "Prix de vente / g",
     posSilverAddPurchase: "Ajouter un achat d'argent",
     posSilverGramsBought: "Grammes achetés",
@@ -588,7 +596,7 @@ export const translations = {
     posSilverEmpty: "Aucun achat d'argent enregistré.",
     posSilverGramsRequired: "Saisissez un poids en grammes.",
     posSilverHint:
-      "Saisissez le poids total et le prix payé à chaque achat d'argent. Chaque vente au gramme de « Argent 925 (vrac) » retire les grammes de ce stock, au coût moyen.",
+      "Chaque type d'argent a son propre stock, son prix de vente au gramme et son coût moyen. Saisissez le poids et le prix à chaque achat ; chaque vente au poids retire les grammes du stock du type choisi, au coût moyen.",
 
     // Promotions par catégorie (0023)
     adminPromotions: "Promotions",
@@ -1072,6 +1080,10 @@ export const translations = {
     posSalePriceTotal: "سعر البيع (دج)",
     posAddWeightSale: "إضافة إلى البيع",
     posSilverRowMissing: "لا يوجد منتج \"فضة بالوزن\" في الكتالوج.",
+    posSilverType: "نوع الفضة",
+    silverType_rhodie: "فضة مطلية بالروديوم",
+    silverType_bataille: "فضة باتاي",
+    silverType_local: "فضة محلية",
 
     posCatalogue: "كتالوج المحل",
     posKindProduct: "منتج",
@@ -1122,6 +1134,9 @@ export const translations = {
     posNeedTwoStores: "يلزم محلّان على الأقل",
     posTransferHint:
       "يخرج المخزون من المحل المُرسِل فور إنشاء التحويل، ولا يدخل المحل المستقبِل إلا عند الاستلام.",
+    posTransferSilverNote:
+      "بالنسبة للفضة بالوزن: اختر النوع وأدخل الغرامات. تخرج من مخزون المحل المُرسِل عند الإنشاء وتُضاف إلى متوسط تكلفة المحل المستقبِل عند الاستلام.",
+    posTransferWeightG: "الوزن (غ)",
     posTransferCreated: "تم إنشاء التحويل",
     posTransferReceived: "تم استلام التحويل",
     posTransferCancelled: "تم إلغاء التحويل",
@@ -1175,10 +1190,11 @@ export const translations = {
     posPriceCustom: "سعر خاص",
     posPriceCustomHint: "تحديد سعر للمحل لا يتبع الموقع.",
     posSilverBadge: "بالجملة",
-    posSilverPool: "مخزون الفضة (بالجملة)",
+    posSilverPool: "مخزون الفضة (بالوزن)",
     posSilverGramsOnHand: "الغرامات المتوفرة",
     posSilverAvgCost: "متوسط التكلفة / غ",
     posSilverValue: "قيمة المخزون",
+    posSilverValueAll: "القيمة الإجمالية (3 أنواع)",
     posSilverRate: "سعر البيع / غ",
     posSilverAddPurchase: "إضافة شراء فضة",
     posSilverGramsBought: "الغرامات المشتراة",
@@ -1189,7 +1205,7 @@ export const translations = {
     posSilverEmpty: "لا توجد مشتريات فضة مسجّلة.",
     posSilverGramsRequired: "أدخل وزناً بالغرام.",
     posSilverHint:
-      "أدخل الوزن الإجمالي والثمن المدفوع عند كل شراء فضة. كل بيع بالغرام لـ «فضة 925 (بالجملة)» يخصم الغرامات من هذا المخزون بمتوسط التكلفة.",
+      "لكل نوع من الفضة مخزونه الخاص وسعر بيعه بالغرام ومتوسط تكلفته. أدخل الوزن والثمن عند كل شراء؛ كل بيع بالوزن يخصم الغرامات من مخزون النوع المختار بمتوسط التكلفة.",
 
     // عروض حسب الفئة (0023)
     adminPromotions: "العروض",

@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { TranslationKey } from "@/i18n/translations";
 import type {
   RefundMethod,
+  SilverType,
   Store,
   StoreCashMovement,
   StoreMember,
@@ -178,19 +179,19 @@ export function useSetStoreStock() {
 
 // Bulk silver (0022) -------------------------------------------------------
 
-/** The running gram balance + weighted-avg cost for one shop. */
-export function useSilverPool(storeId: string | undefined) {
+/** The running gram balance + weighted-avg cost for one shop, one row per
+ * silver grade (0027). Grades with no history yet simply have no row. */
+export function useSilverPools(storeId: string | undefined) {
   return useQuery({
     queryKey: ["store-silver-pool", storeId],
     enabled: !!storeId,
-    queryFn: async (): Promise<StoreSilverPool | null> => {
+    queryFn: async (): Promise<StoreSilverPool[]> => {
       const { data, error } = await supabase
         .from("store_silver_pool")
         .select("*")
-        .eq("store_id", storeId as string)
-        .maybeSingle();
+        .eq("store_id", storeId as string);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 }
@@ -217,6 +218,7 @@ export function useAddSilverPurchase() {
   return useMutation({
     mutationFn: async (input: {
       store_id: string;
+      silver_type: SilverType;
       grams: number;
       total_cost: number;
       purchased_at?: string;
@@ -224,7 +226,7 @@ export function useAddSilverPurchase() {
     }) => {
       const { data, error } = await supabase.rpc("add_silver_purchase", { p: input });
       if (error) throw error;
-      return data as { grams: number; avg_cost_per_gram: number };
+      return data as { grams: number; avg_cost_per_gram: number; silver_type: SilverType };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
@@ -238,6 +240,7 @@ export function useUpdateSilverPurchase() {
   return useMutation({
     mutationFn: async (input: {
       id: string;
+      silver_type?: SilverType;
       grams: number;
       total_cost: number;
       purchased_at?: string;
@@ -445,7 +448,8 @@ export function useCreateStoreTransfer() {
   return useMutation({
     mutationFn: async (input: {
       tr: { from_store_id: string; to_store_id: string; notes?: string };
-      items: Array<{ store_product_id: string; quantity: number }>;
+      /** A silver line sends `weight_grams` and a placeholder `quantity: 1`. */
+      items: Array<{ store_product_id: string; quantity: number; weight_grams?: number }>;
     }) => {
       const { data, error } = await supabase.rpc("create_store_transfer", {
         tr: input.tr,
@@ -458,6 +462,7 @@ export function useCreateStoreTransfer() {
       queryClient.invalidateQueries({ queryKey: ["store-transfers"] });
       queryClient.invalidateQueries({ queryKey: ["store-products"] });
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
     },
   });
 }
@@ -474,6 +479,7 @@ export function useResolveStoreTransfer() {
       queryClient.invalidateQueries({ queryKey: ["store-transfers"] });
       queryClient.invalidateQueries({ queryKey: ["store-products"] });
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
     },
   });
 }

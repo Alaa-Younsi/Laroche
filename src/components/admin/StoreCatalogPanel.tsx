@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Pencil, X, Printer, RefreshCw, Search, Check } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
@@ -7,7 +7,7 @@ import {
   useSaveStoreProduct,
   useDeleteStoreProduct,
   useSetStoreStock,
-  useSilverPool,
+  useSilverPools,
   useSilverPurchases,
   useAddSilverPurchase,
   useUpdateSilverPurchase,
@@ -22,7 +22,15 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
 import { formatPrice } from "@/lib/format";
-import type { PricingMode, Store, StoreProduct, StoreProductKind, StoreSilverPurchase } from "@/types/db";
+import {
+  SILVER_TYPES,
+  type PricingMode,
+  type SilverType,
+  type Store,
+  type StoreProduct,
+  type StoreProductKind,
+  type StoreSilverPurchase,
+} from "@/types/db";
 
 type Draft = Partial<StoreProduct> & { name: string };
 
@@ -57,27 +65,29 @@ function effective(draft: Draft): { cost: number; price: number } {
 }
 
 /**
- * Bulk silver 925. The owner buys silver by total weight, not as pieces, so the
- * shop keeps one running gram balance (weighted-average cost) instead of a
- * catalogue row per piece. Every gram-priced sale of "Argent 925 (vrac)" at the
- * till draws grams out of this pool.
+ * Bulk silver, three grades (0027). The owner buys silver by total weight, not
+ * as pieces, so the shop keeps a running gram balance (weighted-average cost)
+ * per grade — Argent rhodié / Argent bataille / Argent local — instead of a
+ * catalogue row per piece. Every weight sale of a grade at the till draws grams
+ * out of that grade's pool. Pick a grade here to see and top up its stock.
  */
 function SilverPoolCard({
   storeId,
-  silverRow,
+  silverRows,
 }: {
   storeId: string;
-  silverRow: StoreProduct | undefined;
+  silverRows: StoreProduct[];
 }) {
   const { t } = useLanguage();
   const toast = useAdminToast();
-  const { data: pool } = useSilverPool(storeId);
+  const { data: pools = [] } = useSilverPools(storeId);
   const { data: purchases = [] } = useSilverPurchases(storeId);
   const addPurchase = useAddSilverPurchase();
   const updatePurchase = useUpdateSilverPurchase();
   const deletePurchase = useDeleteSilverPurchase();
   const saveProduct = useSaveStoreProduct();
 
+  const [grade, setGrade] = useState<SilverType>(SILVER_TYPES[0]);
   const [grams, setGrams] = useState("");
   const [totalPaid, setTotalPaid] = useState("");
   const [note, setNote] = useState("");
@@ -87,8 +97,18 @@ function SilverPoolCard({
   const [editTotalPaid, setEditTotalPaid] = useState("");
   const [editNote, setEditNote] = useState("");
 
+  // Switching grade shows that grade's own rate again.
+  useEffect(() => setRate(""), [grade]);
+
+  const silverRow = silverRows.find((r) => r.silver_type === grade);
+  const pool = pools.find((p) => p.silver_type === grade);
   const gramsOnHand = pool?.grams ?? 0;
   const avgCost = pool?.avg_cost_per_gram ?? 0;
+  const gradePurchases = useMemo(
+    () => purchases.filter((p) => p.silver_type === grade),
+    [purchases, grade],
+  );
+  const totalValueAll = pools.reduce((sum, p) => sum + p.grams * p.avg_cost_per_gram, 0);
   const effectiveRate = rate !== "" ? Number(rate) : (silverRow?.price_per_gram ?? 0);
 
   async function submitPurchase() {
@@ -100,6 +120,7 @@ function SilverPoolCard({
     try {
       await addPurchase.mutateAsync({
         store_id: storeId,
+        silver_type: grade,
         grams: g,
         total_cost: Number(totalPaid) || 0,
         note: note.trim() || undefined,
@@ -134,6 +155,7 @@ function SilverPoolCard({
     try {
       await updatePurchase.mutateAsync({
         id: editingId,
+        silver_type: purchases.find((p) => p.id === editingId)?.silver_type,
         grams: g,
         total_cost: Number(editTotalPaid) || 0,
         note: editNote.trim() || undefined,
@@ -167,9 +189,36 @@ function SilverPoolCard({
     <div className="print-hide space-y-4 rounded-xl border border-brand/30 bg-panel p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-lg text-ink">{t("posSilverPool")}</h3>
-        <span className="rounded bg-brand/10 px-2 py-0.5 text-[0.65rem] uppercase tracking-wide2 text-brand">
-          925
-        </span>
+        <div className="flex items-center gap-2">
+          {totalValueAll > 0 && (
+            <span className="text-[0.7rem] text-muted">
+              {t("posSilverValueAll")}: {formatPrice(Math.round(totalValueAll))}
+            </span>
+          )}
+          <span className="rounded bg-brand/10 px-2 py-0.5 text-[0.65rem] uppercase tracking-wide2 text-brand">
+            925
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {silverRows.map((row) => {
+          const isActive = row.silver_type === grade;
+          return (
+            <button
+              key={row.id}
+              type="button"
+              onClick={() => setGrade(row.silver_type as SilverType)}
+              className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                isActive
+                  ? "border-brand bg-brand/10 text-ink"
+                  : "border-line text-muted hover:border-brand/50"
+              }`}
+            >
+              {t(`silverType_${row.silver_type}` as "silverType_local")}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
@@ -236,7 +285,7 @@ function SilverPoolCard({
         </p>
       )}
 
-      {purchases.length > 0 ? (
+      {gradePurchases.length > 0 ? (
         <div className="overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-sm">
             <thead>
@@ -250,7 +299,7 @@ function SilverPoolCard({
               </tr>
             </thead>
             <tbody>
-              {purchases.slice(0, 8).map((p) =>
+              {gradePurchases.slice(0, 8).map((p) =>
                 editingId === p.id ? (
                   <tr key={p.id} className="border-b border-line last:border-0">
                     <td className="px-3 py-2 text-muted" dir="ltr">{p.purchased_at}</td>
@@ -361,7 +410,13 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
   const [search, setSearch] = useState("");
   const [labels, setLabels] = useState<LabelSpec[]>([]);
 
-  const silverRow = useMemo(() => products.find((p) => p.is_silver_pool), [products]);
+  const silverRows = useMemo(
+    () =>
+      SILVER_TYPES.map((st) =>
+        products.find((p) => p.is_silver_pool && p.silver_type === st),
+      ).filter((p): p is StoreProduct => Boolean(p)),
+    [products],
+  );
 
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -475,7 +530,7 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
     <div className="space-y-4">
       <BarcodeSheet labels={labels} />
 
-      <SilverPoolCard storeId={storeId} silverRow={silverRow} />
+      <SilverPoolCard storeId={storeId} silverRows={silverRows} />
 
       <div className="print-hide flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-display text-xl text-ink">{t("posCatalogue")}</h3>

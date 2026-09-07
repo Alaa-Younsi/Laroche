@@ -313,6 +313,11 @@ export type StoreProductKind = "product" | "service";
 /** 'unit' → flat price (watches, accessories); 'gram' → weighed (silver 925). */
 export type PricingMode = "unit" | "gram";
 
+/** The three grades of bulk silver the shop buys and sells, each its own pool
+ * and its own price per gram (0027). */
+export type SilverType = "rhodie" | "bataille" | "local";
+export const SILVER_TYPES: SilverType[] = ["rhodie", "bataille", "local"];
+
 export interface StoreProduct {
   id: string;
   name: string;
@@ -338,16 +343,19 @@ export interface StoreProduct {
    * website unless `price_custom` is on; the shop still owns its stock count. */
   product_id: string | null;
   price_custom: boolean;
-  /** The single "Argent 925 (vrac)" row: sells from store_silver_pool by weight
-   * instead of from a store_stock quantity. */
+  /** One of the three "Argent …" rows: sells from store_silver_pool by weight
+   * instead of from a store_stock quantity. `silver_type` says which pool. */
   is_silver_pool: boolean;
+  /** Set exactly when `is_silver_pool` is: the grade this row draws from. */
+  silver_type: SilverType | null;
   /** Joined per-shop quantities, when the query asked for them. */
   store_stock?: StoreStock[];
 }
 
-/** Weighted-average bulk-silver balance for one shop (0022). */
+/** Weighted-average bulk-silver balance for one shop and one grade (0022/0027). */
 export interface StoreSilverPool {
   store_id: string;
+  silver_type: SilverType;
   grams: number;
   avg_cost_per_gram: number;
   updated_at: string;
@@ -356,6 +364,7 @@ export interface StoreSilverPool {
 export interface StoreSilverPurchase {
   id: string;
   store_id: string;
+  silver_type: SilverType;
   grams: number;
   total_cost: number;
   cost_per_gram: number;
@@ -446,6 +455,12 @@ export interface StoreTransferItem {
   store_product_id: string;
   name: string;
   quantity: number;
+  /** Silver lines move a weight, not a unit count (0027). 0 for unit lines. */
+  weight_grams: number;
+  /** Sending shop's average cost/gram, snapshotted for the receiver's blend. */
+  unit_cost: number;
+  /** Set only on a silver line: which grade's pool the grams move between. */
+  silver_type: SilverType | null;
 }
 
 export interface StoreTransfer {

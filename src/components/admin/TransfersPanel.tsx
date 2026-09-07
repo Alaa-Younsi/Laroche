@@ -6,6 +6,7 @@ import {
   useStoreTransfers,
   useCreateStoreTransfer,
   useResolveStoreTransfer,
+  useSilverPools,
   storeErrorKey,
 } from "@/hooks/useStoreLedger";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,8 @@ interface DraftLine {
   key: string;
   productId: string;
   quantity: number;
+  /** Silver lines move a weight; unit lines ignore this. */
+  weightGrams: number;
 }
 
 let seq = 0;
@@ -33,6 +36,7 @@ export function TransfersPanel({
   const { t } = useLanguage();
   const toast = useAdminToast();
   const { data: transfers = [] } = useStoreTransfers();
+  const { data: silverPools = [] } = useSilverPools(store.id);
   const create = useCreateStoreTransfer();
   const resolve = useResolveStoreTransfer();
 
@@ -43,10 +47,15 @@ export function TransfersPanel({
 
   const others = stores.filter((s) => s.id !== store.id);
   const nameOf = (id: string) => stores.find((s) => s.id === id)?.name ?? "—";
-  const stockOf = (productId: string) =>
-    products
-      .find((p) => p.id === productId)
-      ?.store_stock?.find((s) => s.store_id === store.id)?.quantity ?? 0;
+  const productOf = (productId: string) => products.find((p) => p.id === productId);
+  /** How much is on hand at the sending shop — a unit count, or pool grams for silver. */
+  const availableOf = (productId: string) => {
+    const product = productOf(productId);
+    if (product?.is_silver_pool) {
+      return silverPools.find((pool) => pool.silver_type === product.silver_type)?.grams ?? 0;
+    }
+    return product?.store_stock?.find((s) => s.store_id === store.id)?.quantity ?? 0;
+  };
 
   function reset() {
     setOpen(false);
@@ -61,10 +70,30 @@ export function TransfersPanel({
       return;
     }
     const items = lines
-      .filter((line) => line.productId && line.quantity > 0)
-      .map((line) => ({ store_product_id: line.productId, quantity: line.quantity }));
+      .filter((line) => {
+        if (!line.productId) return false;
+        return productOf(line.productId)?.is_silver_pool
+          ? line.weightGrams > 0
+          : line.quantity > 0;
+      })
+      .map((line) =>
+        productOf(line.productId)?.is_silver_pool
+          ? { store_product_id: line.productId, quantity: 1, weight_grams: line.weightGrams }
+          : { store_product_id: line.productId, quantity: line.quantity },
+      );
     if (items.length === 0) {
       toast.error(t("storeErrEmptySale"));
+      return;
+    }
+    // Block a send the server would reject anyway (it still re-checks under a lock).
+    const short = lines.find(
+      (line) =>
+        line.productId &&
+        (productOf(line.productId)?.is_silver_pool ? line.weightGrams : line.quantity) >
+          availableOf(line.productId),
+    );
+    if (short) {
+      toast.error(`${t("posOnlyLeft")} ${availableOf(short.productId)}`);
       return;
     }
     try {
@@ -104,7 +133,7 @@ export function TransfersPanel({
       </div>
 
       <p className="rounded-lg border border-line bg-panel-2/40 px-4 py-3 text-xs text-muted">
-        {t("posTransferHint")}
+        {t("posTransferHint")} {t("posTransferSilverNote")}
       </p>
 
       {open && (
@@ -126,59 +155,76 @@ export function TransfersPanel({
           </div>
 
           <div className="space-y-2">
-            {lines.map((line) => (
-              <div key={line.key} className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
-                <Select
-                  value={line.productId}
-                  onChange={(e) =>
-                    setLines((prev) =>
-                      prev.map((l) =>
-                        l.key === line.key ? { ...l, productId: e.target.value } : l,
-                      ),
-                    )
-                  }
-                >
-                  <option value="">{t("posPickItem")}</option>
-                  {products
-                    .filter((product) => product.kind === "product")
-                    .map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} ({stockOf(product.id)})
-                      </option>
-                    ))}
-                </Select>
-                <Input
-                  type="number"
-                  min={1}
-                  value={line.quantity}
-                  onChange={(e) =>
-                    setLines((prev) =>
-                      prev.map((l) =>
-                        l.key === line.key ? { ...l, quantity: Number(e.target.value) } : l,
-                      ),
-                    )
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                  aria-label={t("delete")}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500"
-                >
-                  <Trash2 size={15} />
-                </button>
-                {line.productId && line.quantity > stockOf(line.productId) && (
-                  <span className="text-xs text-red-500 sm:col-span-3">
-                    {t("posOnlyLeft")} {stockOf(line.productId)}
-                  </span>
-                )}
-              </div>
-            ))}
+            {lines.map((line) => {
+              const picked = productOf(line.productId);
+              const isSilver = !!picked?.is_silver_pool;
+              const sent = isSilver ? line.weightGrams : line.quantity;
+              const patchLine = (changes: Partial<DraftLine>) =>
+                setLines((prev) =>
+                  prev.map((l) => (l.key === line.key ? { ...l, ...changes } : l)),
+                );
+              return (
+                <div key={line.key} className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
+                  <Select
+                    value={line.productId}
+                    onChange={(e) => patchLine({ productId: e.target.value })}
+                  >
+                    <option value="">{t("posPickItem")}</option>
+                    {products
+                      .filter((product) => product.kind === "product")
+                      .map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.name} (
+                          {product.is_silver_pool
+                            ? `${availableOf(product.id)} g`
+                            : availableOf(product.id)}
+                          )
+                        </option>
+                      ))}
+                  </Select>
+                  {isSilver ? (
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.001"
+                      dir="ltr"
+                      placeholder={t("posTransferWeightG")}
+                      value={line.weightGrams || ""}
+                      onChange={(e) => patchLine({ weightGrams: Number(e.target.value) })}
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      min={1}
+                      value={line.quantity}
+                      onChange={(e) => patchLine({ quantity: Number(e.target.value) })}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
+                    aria-label={t("delete")}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                  {line.productId && sent > availableOf(line.productId) && (
+                    <span className="text-xs text-red-500 sm:col-span-3">
+                      {t("posOnlyLeft")} {availableOf(line.productId)}
+                      {isSilver ? " g" : ""}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
             <Button
               size="sm"
               variant="outline"
               onClick={() =>
-                setLines((prev) => [...prev, { key: `tr${seq++}`, productId: "", quantity: 1 }])
+                setLines((prev) => [
+                  ...prev,
+                  { key: `tr${seq++}`, productId: "", quantity: 1, weightGrams: 0 },
+                ])
               }
             >
               <Plus size={14} /> {t("add")}
@@ -220,7 +266,11 @@ export function TransfersPanel({
                 <td className="px-4 py-2.5 text-ink">{nameOf(transfer.to_store_id)}</td>
                 <td className="px-4 py-2.5 text-muted">
                   {(transfer.store_transfer_items ?? [])
-                    .map((item) => `${item.name} ×${item.quantity}`)
+                    .map((item) =>
+                      item.silver_type
+                        ? `${item.name} · ${item.weight_grams} g`
+                        : `${item.name} ×${item.quantity}`,
+                    )
                     .join(", ") || "—"}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2.5">

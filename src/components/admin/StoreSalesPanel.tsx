@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
 import { formatPrice } from "@/lib/format";
-import type { Store, StorePaymentMethod, StoreProduct } from "@/types/db";
+import { scanCandidates } from "@/lib/barcode";
+import { SILVER_TYPES, type Store, type StorePaymentMethod, type StoreProduct } from "@/types/db";
 
 interface DraftLine {
   /** Local row key — a product can legitimately appear twice at different weights. */
@@ -54,9 +55,21 @@ export function StoreSalesPanel({
   const [pick, setPick] = useState("");
   const [weightSold, setWeightSold] = useState("");
   const [weightSalePrice, setWeightSalePrice] = useState("");
+  const [silverType, setSilverType] = useState<string>(SILVER_TYPES[0]);
 
   const active = useMemo(() => products.filter((p) => p.active), [products]);
-  const silverRow = useMemo(() => products.find((p) => p.is_silver_pool), [products]);
+  // One catalogue row per silver grade, in a stable order (rhodié, bataille, local).
+  const silverRows = useMemo(
+    () =>
+      SILVER_TYPES.map((st) => products.find((p) => p.is_silver_pool && p.silver_type === st)).filter(
+        (p): p is StoreProduct => Boolean(p),
+      ),
+    [products],
+  );
+  const silverRow = useMemo(
+    () => silverRows.find((p) => p.silver_type === silverType) ?? silverRows[0],
+    [silverRows, silverType],
+  );
 
   const stockOf = (product: StoreProduct) =>
     product.store_stock?.find((s) => s.store_id === store.id)?.quantity ?? 0;
@@ -112,6 +125,9 @@ export function StoreSalesPanel({
     const grams = Number(weightSold);
     const price = Number(weightSalePrice);
     if (!grams || grams <= 0) return;
+    // Blank sale price falls back to grade rate × weight — the till row stays
+    // editable and the server re-checks it either way.
+    const linePrice = price || Math.round(grams * silverRow.price_per_gram * 100) / 100;
     setLines((prev) => [
       ...prev,
       {
@@ -119,7 +135,7 @@ export function StoreSalesPanel({
         productId: silverRow.id,
         name: silverRow.name,
         quantity: 1,
-        unitPrice: price || 0,
+        unitPrice: linePrice,
         unitCost: silverRow.effective_cost,
         weightGrams: grams,
         pricingMode: "gram",
@@ -132,9 +148,18 @@ export function StoreSalesPanel({
   }
 
   function onScan(code: string) {
-    const product = active.find((p) => p.barcode === code || p.sku === code);
+    // A wedge scanner's output is mangled by the OS keyboard layout (AZERTY
+    // turns digits into letters) and by any prefix the scanner adds, so match
+    // against every plausible reading, and on the digits alone as a last resort.
+    const cands = scanCandidates(code);
+    const scanDigits = cands.map((c) => c.replace(/\D/g, "")).filter((d) => d.length >= 8);
+    const product = active.find((p) => {
+      if (cands.some((c) => c === p.barcode || c === p.sku)) return true;
+      const digits = (p.barcode ?? "").replace(/\D/g, "");
+      return digits.length >= 8 && scanDigits.includes(digits);
+    });
     if (!product) {
-      toast.error(t("posScanNotFound"));
+      toast.error(`${t("posScanNotFound")} : ${code}`);
       return;
     }
     addProduct(product);
@@ -239,10 +264,21 @@ export function StoreSalesPanel({
           </div>
         </div>
 
-        {silverRow && (
+        {silverRows.length > 0 && (
           <div className="space-y-2 rounded-xl border border-brand/30 bg-panel p-3">
             <h4 className="text-xs uppercase tracking-wide2 text-muted">{t("posSellByWeight")}</h4>
-            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+              <label className="space-y-1">
+                <span className="text-xs text-muted">{t("posSilverType")}</span>
+                <Select value={silverType} onChange={(e) => setSilverType(e.target.value)}>
+                  {silverRows.map((row) => (
+                    <option key={row.id} value={row.silver_type ?? ""}>
+                      {t(`silverType_${row.silver_type}` as "silverType_local")}
+                      {row.price_per_gram > 0 ? ` — ${formatPrice(row.price_per_gram)}/g` : ""}
+                    </option>
+                  ))}
+                </Select>
+              </label>
               <label className="space-y-1">
                 <span className="text-xs text-muted">{t("posWeightSold")}</span>
                 <Input
