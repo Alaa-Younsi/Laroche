@@ -89,6 +89,7 @@ export default function Checkout() {
           color: item.color,
           size: item.size,
           variants: item.variants.map((v) => ({ name_fr: v.name_fr, name_ar: v.name_ar, value: v.value })),
+          variant_id: item.variantId,
         })),
         customer: values,
         lang,

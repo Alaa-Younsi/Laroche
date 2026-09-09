@@ -83,6 +83,28 @@ export interface Product {
   updated_at: string;
   product_images?: ProductImage[];
   category?: Category;
+  /** Per-combination stock (0030), when the product has joined it. */
+  product_variants?: ProductVariant[];
+}
+
+/** One sellable combination of a product's colour/size/custom-variant axes,
+ * carrying its own stock (0030). `products.stock` becomes the auto-summed
+ * total the moment a product has any of these rows. */
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  color: string | null;
+  size: string | null;
+  options: VariantPick[];
+  options_key: string;
+  sku: string | null;
+  barcode: string | null;
+  stock: number;
+  price_override: number | null;
+  image_url: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export type DeliveryType = "home" | "office";
@@ -112,6 +134,9 @@ export interface OrderItem {
   color: string | null;
   size: string | null;
   variants: OrderItemVariantSnapshot[];
+  /** Set when the product had variant rows (0030) — the exact combination
+   * whose stock was decremented. */
+  variant_id?: string | null;
   image_url: string | null;
   /**
    * Buy price frozen at the moment of sale by a trigger (0019_business_suite).
@@ -306,6 +331,11 @@ export interface Store {
   activity_number: string | null;
   email: string | null;
   website: string | null;
+  /** Allowed % range of the total a Versement (deposit) sale may pay up front
+   * (0031). E.g. 20–80: a deposit under 20% or over 80% of the total is
+   * refused server-side. */
+  deposit_min_percent: number;
+  deposit_max_percent: number;
 }
 
 export interface StoreMember {
@@ -323,6 +353,19 @@ export type PricingMode = "unit" | "gram";
  * and its own price per gram (0027). */
 export type SilverType = "rhodie" | "bataille" | "local";
 export const SILVER_TYPES: SilverType[] = ["rhodie", "bataille", "local"];
+
+/** Common shapes sold by weight, offered as quick picks in the "Vente au
+ * poids" désignation field (0031) — free text either way, so this is just a
+ * shortlist, not an enum. */
+export const SILVER_DESIGNATIONS = [
+  "Bague",
+  "Collier",
+  "Gourmette",
+  "Bracelet",
+  "Chaîne",
+  "Boucle d'oreille",
+  "Pendentif",
+] as const;
 
 export interface StoreProduct {
   id: string;
@@ -401,6 +444,22 @@ export interface StoreSaleItem {
   unit_cost: number;
   quantity: number;
   line_total: number;
+  /** What a weighed-silver line actually was — Bague, Collier, … (0031). Null
+   * for anything that isn't a weighed silver-pool line. */
+  designation: string | null;
+}
+
+/** One payment event against a sale (0031): the initial full/partial payment
+ * `create_store_sale` posts, plus any later balance settlement via
+ * `record_sale_payment`. */
+export interface StoreSalePayment {
+  id: string;
+  sale_id: string;
+  amount: number;
+  method: StorePaymentMethod;
+  occurred_at: string;
+  created_by: string | null;
+  created_at: string;
 }
 
 export interface StoreSale {
@@ -418,6 +477,10 @@ export interface StoreSale {
   created_by: string | null;
   notes: string | null;
   created_at: string;
+  /** Versement (deposit) support (0031). `amount_paid` defaults to `total` for
+   * every ordinary sale — nothing changes unless a deposit was taken. */
+  amount_paid: number;
+  balance_due: number;
   store_sale_items?: StoreSaleItem[];
 }
 
@@ -518,13 +581,50 @@ export interface StoreProforma {
   store_proforma_items?: StoreProformaItem[];
 }
 
+/** One line of a Facture (0029). Snapshotted from the real store_sale_items at
+ * generation time — final, not editable, unlike a proforma line. */
+export interface StoreInvoiceItem {
+  id: string;
+  invoice_id: string;
+  line_no: number;
+  name: string;
+  material: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+/** A real invoice generated from a completed, paid store_sales row (0029).
+ * Unlike a StoreProforma (a pre-sale quote), this proves a transaction
+ * happened — one per sale, idempotent to regenerate (reprint). */
+export interface StoreInvoice {
+  id: string;
+  invoice_number: string;
+  sale_id: string;
+  store_id: string;
+  customer_name: string | null;
+  customer_address: string | null;
+  customer_city: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+  payment_method: string | null;
+  subtotal: number;
+  discount: number;
+  total: number;
+  amount_paid: number;
+  created_by: string | null;
+  created_at: string;
+  store_invoice_items?: StoreInvoiceItem[];
+}
+
 export type CashMovementKind =
   | "sale"
   | "return"
   | "expense"
   | "deposit"
   | "withdrawal"
-  | "adjustment";
+  | "adjustment"
+  | "debt_payment";
 
 export interface StoreCashMovement {
   id: string;
@@ -536,6 +636,35 @@ export interface StoreCashMovement {
   sale_id: string | null;
   return_id: string | null;
   expense_id: string | null;
+  /** Set when this movement is a debt repayment taken from the till (0032). */
+  debt_payment_id: string | null;
+  occurred_at: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+/** An informal debt NOT tied to a POS sale — goods taken on credit outside
+ * the structured Versement flow (0032). */
+export interface StoreDebt {
+  id: string;
+  store_id: string;
+  person_name: string;
+  phone: string | null;
+  description: string | null;
+  amount: number;
+  amount_paid: number;
+  balance_due: number;
+  due_date: string | null;
+  settled: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface StoreDebtPayment {
+  id: string;
+  debt_id: string;
+  amount: number;
+  paid_from_till: boolean;
   occurred_at: string;
   created_by: string | null;
   created_at: string;
@@ -558,6 +687,9 @@ export interface CartItem {
   color: string | null;
   size: string | null;
   variants: CartVariantPick[];
+  /** Set when the product has variant rows (0030) — the exact combination
+   * this cart line resolves to. Required by place_order in that case. */
+  variantId: string | null;
   quantity: number;
   stock: number;
   quantity_offers: QuantityOffer[];

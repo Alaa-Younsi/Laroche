@@ -9,6 +9,9 @@ export interface OrderLineInput {
   color: string | null;
   size: string | null;
   variants: { name_fr: string; name_ar: string; value: string }[];
+  /** Required when the product has per-variant stock (0030) — the exact
+   * combination whose stock place_order must decrement. */
+  variant_id?: string | null;
 }
 
 export function useSubmitOrder() {

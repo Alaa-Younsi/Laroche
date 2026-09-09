@@ -4,6 +4,7 @@ const ERROR_MAP: Record<string, TranslationKey> = {
   ERR_CART_EMPTY: "errorCartEmpty",
   ERR_PRODUCT_UNAVAILABLE: "errorProductUnavailable",
   ERR_STOCK: "errorStock",
+  ERR_VARIANT_REQUIRED: "errorStock",
   ERR_WILAYA_DISABLED: "errorWilayaDisabled",
   ERR_INVALID_INPUT: "errorInvalidInput",
   ERR_RATE_LIMIT: "errorRateLimit",

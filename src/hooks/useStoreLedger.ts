@@ -6,6 +6,9 @@ import type {
   SilverType,
   Store,
   StoreCashMovement,
+  StoreDebt,
+  StoreDebtPayment,
+  StoreInvoice,
   StoreMember,
   StorePaymentMethod,
   StoreProduct,
@@ -301,6 +304,8 @@ export interface SaleLinePayload {
   /** Ad-hoc lines only; ignored by the RPC for catalogue lines. */
   unit_cost?: number;
   weight_grams?: number;
+  /** Weighed-silver lines only — what was sold (Bague, Collier, …), 0031. */
+  designation?: string;
 }
 
 export interface CreateSalePayload {
@@ -311,6 +316,10 @@ export interface CreateSalePayload {
   discount: number;
   sold_at?: string;
   notes?: string;
+  /** Versement (0031): omit for a fully-paid sale (unchanged default
+   * behaviour); set below `total` for a deposit, validated server-side
+   * against the shop's deposit_min/max_percent range. */
+  amount_paid?: number;
 }
 
 export interface CreateSaleResult {
@@ -320,6 +329,7 @@ export interface CreateSaleResult {
   discount: number;
   total: number;
   cost_total: number;
+  amount_paid: number;
 }
 
 export function useCreateStoreSale() {
@@ -361,6 +371,31 @@ export function useDeleteStoreSale() {
       queryClient.invalidateQueries({ queryKey: ["store-stock"] });
       queryClient.invalidateQueries({ queryKey: ["store-cash"] });
       queryClient.invalidateQueries({ queryKey: ["store-silver-pool"] });
+    },
+  });
+}
+
+/** Settle (part of) the balance of a Versement sale (0031). Clamped
+ * server-side to what's actually still owed. */
+export function useRecordSalePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      sale_id: string;
+      amount: number;
+      method: StorePaymentMethod;
+    }): Promise<{ sale_id: string; amount_paid: number; balance_due: number }> => {
+      const { data, error } = await supabase.rpc("record_sale_payment", {
+        p_sale_id: input.sale_id,
+        p_amount: input.amount,
+        p_method: input.method,
+      });
+      if (error) throw error;
+      return data as { sale_id: string; amount_paid: number; balance_due: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["store-cash"] });
     },
   });
 }
@@ -554,6 +589,54 @@ export function useDeleteStoreProforma() {
   });
 }
 
+// Invoices (Factures, 0029) --------------------------------------------------
+
+export function useStoreInvoices() {
+  return useQuery({
+    queryKey: ["store-invoices"],
+    queryFn: async (): Promise<StoreInvoice[]> => {
+      const { data, error } = await supabase
+        .from("store_invoices")
+        .select("*, store_invoice_items(*)")
+        .order("created_at", { ascending: false })
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        ...row,
+        store_invoice_items: (row.store_invoice_items ?? []).sort(
+          (a, b) => a.line_no - b.line_no,
+        ),
+      }));
+    },
+  });
+}
+
+/** Idempotent: calling it again for an already-invoiced sale just returns the
+ * existing document (reprint), it never mints a second number. */
+export function useCreateStoreInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      sale_id: string;
+      doc?: {
+        customer_name?: string;
+        customer_address?: string;
+        customer_city?: string;
+        customer_phone?: string;
+        customer_email?: string;
+      };
+    }): Promise<{ id: string; invoice_number: string }> => {
+      const { data, error } = await supabase.rpc("create_store_invoice", {
+        p_sale_id: input.sale_id,
+        doc: input.doc ?? {},
+      });
+      if (error) throw error;
+      return data as { id: string; invoice_number: string };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["store-invoices"] }),
+  });
+}
+
 // The till (caisse) ----------------------------------------------------------
 
 export function useCashMovements() {
@@ -607,6 +690,84 @@ export function useDeleteCashMovement() {
   });
 }
 
+// Dettes (debts, 0032) — informal, manual debts not tied to a POS sale ------
+
+export function useStoreDebts() {
+  return useQuery({
+    queryKey: ["store-debts"],
+    queryFn: async (): Promise<StoreDebt[]> => {
+      const { data, error } = await supabase
+        .from("store_debts")
+        .select("*")
+        .order("settled", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export type StoreDebtDraft = Partial<StoreDebt> & { store_id: string; person_name: string; amount: number };
+
+export function useSaveStoreDebt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (draft: StoreDebtDraft) => {
+      const { id, created_at: _c, amount_paid: _ap, balance_due: _bd, ...values } = draft;
+      const { error } = id
+        ? await supabase.from("store_debts").update(values).eq("id", id)
+        : await supabase.from("store_debts").insert(values);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["store-debts"] }),
+  });
+}
+
+export function useDeleteStoreDebt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("store_debts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-debts"] });
+      queryClient.invalidateQueries({ queryKey: ["store-cash"] });
+    },
+  });
+}
+
+export function useDebtPayments(debtId: string | undefined) {
+  return useQuery({
+    queryKey: ["store-debt-payments", debtId],
+    enabled: !!debtId,
+    queryFn: async (): Promise<StoreDebtPayment[]> => {
+      const { data, error } = await supabase
+        .from("store_debt_payments")
+        .select("*")
+        .eq("debt_id", debtId as string)
+        .order("occurred_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAddDebtPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { debt_id: string; amount: number; paid_from_till: boolean }) => {
+      const { error } = await supabase.from("store_debt_payments").insert(input);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-debts"] });
+      queryClient.invalidateQueries({ queryKey: ["store-debt-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["store-cash"] });
+    },
+  });
+}
+
 /** Maps the RPCs' bare error codes onto translation keys. */
 export function storeErrorKey(err: unknown): TranslationKey {
   const message = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);
@@ -632,6 +793,8 @@ export function storeErrorKey(err: unknown): TranslationKey {
       return "storeErrNotPending";
     case "ERR_MISSING_TARGET":
       return "storeErrMissingTarget";
+    case "ERR_DEPOSIT_OUT_OF_RANGE":
+      return "storeErrDepositOutOfRange";
     default:
       return "storeErrGeneric";
   }

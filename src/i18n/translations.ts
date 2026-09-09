@@ -460,6 +460,24 @@ export const translations = {
     posConfirmSale: "Valider la vente",
     posSaleRecorded: "Vente enregistrée",
     posOnlyLeft: "Stock disponible :",
+    posDepositToggle: "Versement (acompte)",
+    posDepositRangeHint: "Fourchette autorisée :",
+    posDepositBalanceHint: "Reste à payer :",
+    posSettleBalance: "Encaisser",
+
+    // Dettes (0032)
+    posDebtsTab: "Dettes",
+    posDebtsAutoTitle: "Ventes avec solde restant (versements)",
+    posDebtsAutoHint:
+      "Générées automatiquement à partir des ventes avec versement dont le solde n'est pas encore réglé.",
+    posDebtsManualTitle: "Dettes manuelles",
+    posDebtsManualEmpty: "Aucune dette manuelle enregistrée.",
+    posDebtPerson: "Nom de la personne",
+    posDebtDescription: "Description",
+    posDebtAmount: "Montant dû (DA)",
+    posDebtInvalid: "Indiquez un nom et un montant valides.",
+    posDebtSettled: "Soldée",
+    posDebtPaidFromTill: "Encaissé en espèces (ajouter à la caisse)",
     posPayment: "Paiement",
     posPay_cash: "Espèces",
     posPay_card: "Carte",
@@ -467,6 +485,8 @@ export const translations = {
     posPay_other: "Autre",
 
     posSellByWeight: "Vente au poids (argent)",
+    posDesignation: "Désignation",
+    posDesignationOther: "Autre…",
     posWeightSold: "Poids vendu (g)",
     posSalePriceTotal: "Prix de vente (DA)",
     posAddWeightSale: "Ajouter à la vente",
@@ -550,6 +570,7 @@ export const translations = {
     posKind_deposit: "Dépôt",
     posKind_withdrawal: "Retrait",
     posKind_adjustment: "Ajustement",
+    posKind_debt_payment: "Remboursement de dette",
 
     posStores: "Magasins",
     posStoreName: "Nom du magasin",
@@ -573,6 +594,7 @@ export const translations = {
     storeErrSameStore: "Choisissez un magasin de destination différent.",
     storeErrNotPending: "Ce transfert a déjà été traité.",
     storeErrMissingTarget: "Sélectionnez un magasin et un article.",
+    storeErrDepositOutOfRange: "Le versement doit respecter la fourchette autorisée par le magasin.",
     storeErrGeneric: "L'opération a échoué. Réessayez.",
 
     // Catalogue magasin — lien site web + argent en vrac (0022)
@@ -650,6 +672,11 @@ export const translations = {
     posStoreActivity: "N° d'activité",
     posStoreIdentityHint:
       "Ces informations apparaissent sur les factures proforma de ce magasin.",
+    posDepositMinPercent: "Versement min. (%)",
+    posDepositMaxPercent: "Versement max. (%)",
+    posDepositRangeExplain:
+      "Fourchette du montant qu'un client peut verser comme acompte à la caisse, en % du total.",
+    posDepositRangeInvalid: "Le minimum doit être inférieur ou égal au maximum.",
 
     // Facture proforma (0028)
     posShipping: "Livraison (DA)",
@@ -688,6 +715,16 @@ export const translations = {
       "Document commercial proforma — ne constitue pas une preuve de paiement.",
     pfGenerate: "Générer la facture",
     pfCreated: "Facture proforma créée",
+
+    // Facture (0029) — générée depuis une vente réelle, distincte de la proforma
+    invHeading: "FACTURE",
+    invEditTitle: "Détails de la facture",
+    invGenerate: "Générer la facture",
+    invCreated: "Facture créée",
+    invAmountPaid: "Montant versé",
+    invBalanceDue: "Reste à payer",
+    invDisclaimer: "Facture acquittée — preuve de paiement.",
+    invDisclaimerPartial: "Facture avec versement — solde à régler en magasin.",
   },
   ar: {
     siteName: "لاروش بيجو",
@@ -1120,6 +1157,23 @@ export const translations = {
     posConfirmSale: "تأكيد البيع",
     posSaleRecorded: "تم تسجيل البيع",
     posOnlyLeft: "المتوفر في المخزون:",
+    posDepositToggle: "دفعة أولى (versement)",
+    posDepositRangeHint: "النطاق المسموح به:",
+    posDepositBalanceHint: "المبلغ المتبقي:",
+    posSettleBalance: "تحصيل",
+
+    // الديون (0032)
+    posDebtsTab: "الديون",
+    posDebtsAutoTitle: "مبيعات برصيد متبقٍ (دفعات أولى)",
+    posDebtsAutoHint: "تُنشأ تلقائياً من المبيعات ذات الدفعة الأولى التي لم تُسدَّد بالكامل بعد.",
+    posDebtsManualTitle: "ديون يدوية",
+    posDebtsManualEmpty: "لا توجد ديون يدوية مسجلة.",
+    posDebtPerson: "اسم الشخص",
+    posDebtDescription: "الوصف",
+    posDebtAmount: "المبلغ المستحق (دج)",
+    posDebtInvalid: "أدخل اسماً ومبلغاً صحيحين.",
+    posDebtSettled: "مسدّدة",
+    posDebtPaidFromTill: "تم تحصيلها نقداً (إضافة إلى الصندوق)",
     posPayment: "الدفع",
     posPay_cash: "نقداً",
     posPay_card: "بطاقة",
@@ -1127,6 +1181,8 @@ export const translations = {
     posPay_other: "أخرى",
 
     posSellByWeight: "بيع بالوزن (فضة)",
+    posDesignation: "التسمية",
+    posDesignationOther: "أخرى…",
     posWeightSold: "الوزن المباع (غ)",
     posSalePriceTotal: "سعر البيع (دج)",
     posAddWeightSale: "إضافة إلى البيع",
@@ -1210,6 +1266,7 @@ export const translations = {
     posKind_deposit: "إيداع",
     posKind_withdrawal: "سحب",
     posKind_adjustment: "تسوية",
+    posKind_debt_payment: "تسديد دين",
 
     posStores: "المحلات",
     posStoreName: "اسم المحل",
@@ -1233,6 +1290,7 @@ export const translations = {
     storeErrSameStore: "اختر محلاً مختلفاً للوجهة.",
     storeErrNotPending: "تمت معالجة هذا التحويل من قبل.",
     storeErrMissingTarget: "اختر محلاً ومنتجاً.",
+    storeErrDepositOutOfRange: "يجب أن تكون الدفعة الأولى ضمن النسبة المسموح بها من طرف المتجر.",
     storeErrGeneric: "فشلت العملية. حاول مرة أخرى.",
 
     // كتالوج المحل — الربط بالموقع + الفضة بالجملة (0022)
@@ -1309,6 +1367,10 @@ export const translations = {
     posStoreRc: "السجل التجاري (RC)",
     posStoreActivity: "رقم النشاط",
     posStoreIdentityHint: "تظهر هذه المعلومات على الفواتير الأولية لهذا المتجر.",
+    posDepositMinPercent: "الحد الأدنى للدفعة الأولى (%)",
+    posDepositMaxPercent: "الحد الأقصى للدفعة الأولى (%)",
+    posDepositRangeExplain: "نطاق المبلغ الذي يمكن للزبون دفعه كدفعة أولى عند الصندوق، كنسبة من المجموع.",
+    posDepositRangeInvalid: "يجب أن يكون الحد الأدنى أصغر من أو يساوي الحد الأقصى.",
 
     // الفاتورة الأولية (0028)
     posShipping: "التوصيل (دج)",
@@ -1346,6 +1408,16 @@ export const translations = {
     pfDisclaimer: "وثيقة تجارية أولية — لا تُعدّ إثباتاً للدفع.",
     pfGenerate: "إنشاء الفاتورة",
     pfCreated: "تمّ إنشاء الفاتورة الأولية",
+
+    // الفاتورة (0029) — تُنشأ من عملية بيع حقيقية، منفصلة عن الفاتورة الأولية
+    invHeading: "فاتورة",
+    invEditTitle: "تفاصيل الفاتورة",
+    invGenerate: "إنشاء الفاتورة",
+    invCreated: "تمّ إنشاء الفاتورة",
+    invAmountPaid: "المبلغ المدفوع",
+    invBalanceDue: "المبلغ المتبقي",
+    invDisclaimer: "فاتورة مسدّدة — إثبات الدفع.",
+    invDisclaimerPartial: "فاتورة بدفعة أولى — الباقي يُسدّد في المتجر.",
   },
 } as const;
 

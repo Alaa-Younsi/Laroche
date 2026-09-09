@@ -18,10 +18,11 @@ import { Select } from "@/components/ui/Select";
 import { ChipListEditor } from "@/components/admin/ChipListEditor";
 import { ColorsEditor } from "@/components/admin/ColorsEditor";
 import { CustomVariantsEditor } from "@/components/admin/CustomVariantsEditor";
+import { VariantsEditor, type VariantDraft } from "@/components/admin/VariantsEditor";
 import { OffersEditor } from "@/components/admin/OffersEditor";
 import { ImagesEditor } from "@/components/admin/ImagesEditor";
 import { useAdminToast } from "@/components/admin/AdminToast";
-import type { Product, ProductColor, ProductImage, VariantGroup, QuantityOffer } from "@/types/db";
+import type { Product, ProductColor, ProductImage, ProductVariant, VariantGroup, QuantityOffer } from "@/types/db";
 
 type ProductFormState = Omit<
   Product,
@@ -125,6 +126,46 @@ async function replaceProductCollections(
   return !error;
 }
 
+/** Full replace of a product's variant rows — the admin's local list already
+ * carries each existing row's current stock, so this never resets a count. */
+async function replaceProductVariants(productId: string, variants: VariantDraft[]): Promise<boolean> {
+  const { error: deleteError } = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("product_id", productId);
+  if (deleteError) return false;
+  if (variants.length === 0) return true;
+
+  const { error } = await supabase.from("product_variants").insert(
+    variants.map((v) => ({
+      product_id: productId,
+      color: v.color,
+      size: v.size,
+      options: v.options,
+      sku: v.sku.trim() || null,
+      barcode: v.barcode.trim() || null,
+      stock: v.stock,
+      price_override: v.price_override,
+      active: v.active,
+    })),
+  );
+  return !error;
+}
+
+function toVariantDraft(row: ProductVariant): VariantDraft {
+  return {
+    id: row.id,
+    color: row.color,
+    size: row.size,
+    options: row.options,
+    sku: row.sku ?? "",
+    barcode: row.barcode ?? "",
+    stock: row.stock,
+    price_override: row.price_override,
+    active: row.active,
+  };
+}
+
 export default function ProductForm() {
   const { id } = useParams();
   const isEdit = !!id;
@@ -138,6 +179,7 @@ export default function ProductForm() {
 
   const [form, setForm] = useState(EMPTY);
   const [images, setImages] = useState<ProductImage[]>([]);
+  const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [brandId, setBrandId] = useState("");
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -150,7 +192,7 @@ export default function ProductForm() {
     (async () => {
       const { data: product, error } = await supabase
         .from("products")
-        .select("*, product_images(*)")
+        .select("*, product_images(*), product_variants(*)")
         .eq("id", id)
         .single();
 
@@ -169,6 +211,7 @@ export default function ProductForm() {
           .slice()
           .sort((a, b) => a.sort_order - b.sort_order),
       );
+      setVariants(((product.product_variants ?? []) as ProductVariant[]).map(toVariantDraft));
       setBrandId(product.brand_id ?? "");
 
       const { data: pc, error: pcError } = await supabase
@@ -229,6 +272,10 @@ export default function ProductForm() {
       variants: (form.variants as VariantGroup[]).filter((g) => g.name_fr.trim() && g.values.length > 0),
       colors: (form.colors as ProductColor[]).filter((c) => c.label_fr.trim() || c.label_ar.trim()),
       compare_at_price: form.compare_at_price || null,
+      // The moment a product has variant rows, its total is their sum, not the
+      // manually-typed field (which is read-only in the UI in that case, but
+      // may still hold a stale value from before variants were introduced).
+      stock: variants.length > 0 ? variants.reduce((sum, v) => sum + v.stock, 0) : form.stock,
     };
 
     let productId: string;
@@ -250,12 +297,14 @@ export default function ProductForm() {
       productId = data.id;
     }
 
-    // Images and collections are stored as a full replace. The product row is
-    // saved by this point, so a failure here has to be reported and the form
-    // kept open — leaving would hide that the gallery is now out of sync.
+    // Images, collections and variants are stored as a full replace. The
+    // product row is saved by this point, so a failure here has to be
+    // reported and the form kept open — leaving would hide that the gallery
+    // or stock is now out of sync.
     const linksSaved =
       (await replaceProductImages(productId, images)) &&
-      (await replaceProductCollections(productId, collectionIds));
+      (await replaceProductCollections(productId, collectionIds)) &&
+      (await replaceProductVariants(productId, variants));
 
     if (!linksSaved) {
       toast.error(t("adminSaveError"));
@@ -345,6 +394,21 @@ export default function ProductForm() {
           </BentoPanel>
 
           <BentoPanel className="p-6">
+            <h3 className="mb-1 text-sm font-medium uppercase tracking-wide2 text-muted">Stock par variante</h3>
+            <p className="mb-4 text-xs text-muted">
+              Chaque combinaison couleur / taille / variante a son propre stock. Le stock total
+              du produit (ci-contre) devient la somme de ces lignes.
+            </p>
+            <VariantsEditor
+              colors={form.colors}
+              sizes={form.sizes}
+              groups={form.variants}
+              variants={variants}
+              onChange={setVariants}
+            />
+          </BentoPanel>
+
+          <BentoPanel className="p-6">
             <h3 className="mb-4 text-sm font-medium uppercase tracking-wide2 text-muted">Offres quantité</h3>
             <OffersEditor offers={form.quantity_offers} onChange={(v) => update("quantity_offers", v)} />
           </BentoPanel>
@@ -367,7 +431,22 @@ export default function ProductForm() {
             </div>
             <div>
               <label className="mb-1 block text-xs uppercase tracking-wide2 text-muted">{t("adminStock")}</label>
-              <Input type="number" min={0} value={form.stock} onChange={(e) => update("stock", Number(e.target.value))} required />
+              {variants.length > 0 ? (
+                <Input
+                  type="number"
+                  value={variants.reduce((sum, v) => sum + v.stock, 0)}
+                  disabled
+                  title="Somme des stocks par variante — modifiez-les dans le panneau ci-dessous."
+                />
+              ) : (
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.stock}
+                  onChange={(e) => update("stock", Number(e.target.value))}
+                  required
+                />
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs uppercase tracking-wide2 text-muted">{t("productStyleCode")}</label>

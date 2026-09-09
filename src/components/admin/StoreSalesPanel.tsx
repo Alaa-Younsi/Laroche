@@ -16,7 +16,13 @@ import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
 import { formatPrice } from "@/lib/format";
 import { scanCandidates } from "@/lib/barcode";
-import { SILVER_TYPES, type Store, type StorePaymentMethod, type StoreProduct } from "@/types/db";
+import {
+  SILVER_DESIGNATIONS,
+  SILVER_TYPES,
+  type Store,
+  type StorePaymentMethod,
+  type StoreProduct,
+} from "@/types/db";
 
 interface DraftLine {
   /** Local row key — a product can legitimately appear twice at different weights. */
@@ -30,9 +36,13 @@ interface DraftLine {
   weightGrams: number;
   pricingMode: "unit" | "gram";
   isService: boolean;
+  /** Weighed-silver lines only — what was sold (Bague, Collier, …), 0031. */
+  designation?: string;
   /** Snapshot from when the line was added — the server is still the authority. */
   availableStock: number;
 }
+
+const DESIGNATION_CUSTOM = "__custom__";
 
 let lineSeq = 0;
 
@@ -58,6 +68,10 @@ export function StoreSalesPanel({
   const [weightSold, setWeightSold] = useState("");
   const [weightSalePrice, setWeightSalePrice] = useState("");
   const [silverType, setSilverType] = useState<string>(SILVER_TYPES[0]);
+  const [designation, setDesignation] = useState<string>(SILVER_DESIGNATIONS[0]);
+  const [designationCustom, setDesignationCustom] = useState("");
+  const [isDeposit, setIsDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
 
   const active = useMemo(() => products.filter((p) => p.active), [products]);
   // One catalogue row per silver grade, in a stable order (rhodié, bataille, local).
@@ -130,18 +144,21 @@ export function StoreSalesPanel({
     // Blank sale price falls back to grade rate × weight — the till row stays
     // editable and the server re-checks it either way.
     const linePrice = price || Math.round(grams * silverRow.price_per_gram * 100) / 100;
+    const chosenDesignation =
+      designation === DESIGNATION_CUSTOM ? designationCustom.trim() : designation;
     setLines((prev) => [
       ...prev,
       {
         key: `l${lineSeq++}`,
         productId: silverRow.id,
-        name: silverRow.name,
+        name: chosenDesignation ? `${chosenDesignation} — ${silverRow.name}` : silverRow.name,
         quantity: 1,
         unitPrice: linePrice,
         unitCost: silverRow.effective_cost,
         weightGrams: grams,
         pricingMode: "gram",
         isService: false,
+        designation: chosenDesignation || undefined,
         availableStock: Number.POSITIVE_INFINITY,
       },
     ]);
@@ -193,13 +210,23 @@ export function StoreSalesPanel({
   const clampedDiscount = Math.min(Math.max(discount, 0), subtotal);
   const total = subtotal - clampedDiscount;
 
+  // Versement (0031): the store owner sets the allowed % range in "Magasins".
+  const depositMin = Math.round((total * store.deposit_min_percent) / 100);
+  const depositMax = Math.round((total * store.deposit_max_percent) / 100);
+  const depositValue = Math.min(Math.max(Number(depositAmount) || 0, 0), total);
+  const depositInRange = depositValue >= depositMin && depositValue <= depositMax;
+
   // Disable submit on anything the server would refuse anyway, but STILL handle
   // ERR_OUT_OF_STOCK from the RPC: availableStock is a snapshot from when the
   // line was added, and another till may have sold the same piece since.
   const overStock = lines.filter((line) => line.quantity > line.availableStock);
   const unnamed = lines.filter((line) => !line.productId && !line.name.trim());
   const canSubmit =
-    lines.length > 0 && overStock.length === 0 && unnamed.length === 0 && !create.isPending;
+    lines.length > 0 &&
+    overStock.length === 0 &&
+    unnamed.length === 0 &&
+    (!isDeposit || depositInRange) &&
+    !create.isPending;
 
   async function submit() {
     const payload: SaleLinePayload[] = lines.map((line) => ({
@@ -209,6 +236,7 @@ export function StoreSalesPanel({
       unit_price: line.unitPrice,
       unit_cost: line.productId ? undefined : line.unitCost,
       weight_grams: line.pricingMode === "gram" ? line.weightGrams : undefined,
+      designation: line.designation,
     }));
 
     try {
@@ -219,6 +247,7 @@ export function StoreSalesPanel({
           customer_phone: customerPhone.trim() || undefined,
           payment_method: payment,
           discount: clampedDiscount,
+          amount_paid: isDeposit ? depositValue : undefined,
         },
         items: payload,
       });
@@ -227,6 +256,8 @@ export function StoreSalesPanel({
       setCustomerName("");
       setCustomerPhone("");
       setDiscount(0);
+      setIsDeposit(false);
+      setDepositAmount("");
       onSold(result.id);
     } catch (err) {
       toast.error(t(storeErrorKey(err)));
@@ -269,6 +300,28 @@ export function StoreSalesPanel({
         {silverRows.length > 0 && (
           <div className="space-y-2 rounded-xl border border-brand/30 bg-panel p-3">
             <h4 className="text-xs uppercase tracking-wide2 text-muted">{t("posSellByWeight")}</h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-1">
+                <span className="text-xs text-muted">{t("posDesignation")}</span>
+                <Select value={designation} onChange={(e) => setDesignation(e.target.value)}>
+                  {SILVER_DESIGNATIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                  <option value={DESIGNATION_CUSTOM}>{t("posDesignationOther")}</option>
+                </Select>
+              </label>
+              {designation === DESIGNATION_CUSTOM && (
+                <label className="space-y-1">
+                  <span className="text-xs text-muted">{t("posDesignationOther")}</span>
+                  <Input
+                    value={designationCustom}
+                    onChange={(e) => setDesignationCustom(e.target.value)}
+                  />
+                </label>
+              )}
+            </div>
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
               <label className="space-y-1">
                 <span className="text-xs text-muted">{t("posSilverType")}</span>
@@ -471,6 +524,43 @@ export function StoreSalesPanel({
             <span>{t("cartTotal")}</span>
             <Price value={total} />
           </div>
+        </div>
+
+        <div className="space-y-2 rounded-xl border border-line bg-panel-2/40 p-3">
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-brand"
+              checked={isDeposit}
+              onChange={(e) => {
+                setIsDeposit(e.target.checked);
+                if (e.target.checked && !depositAmount) setDepositAmount(String(depositMin));
+              }}
+              disabled={total <= 0}
+            />
+            {t("posDepositToggle")}
+          </label>
+          {isDeposit && (
+            <div className="space-y-1">
+              <Input
+                type="number"
+                min={0}
+                max={total}
+                step="0.01"
+                dir="ltr"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+              />
+              <p className={`text-xs ${depositInRange ? "text-muted" : "text-red-500"}`}>
+                {t("posDepositRangeHint")} {formatPrice(depositMin)} – {formatPrice(depositMax)}
+              </p>
+              {depositInRange && depositValue < total && (
+                <p className="text-xs text-muted">
+                  {t("posDepositBalanceHint")} {formatPrice(total - depositValue)}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <Button className="w-full" disabled={!canSubmit} onClick={submit}>

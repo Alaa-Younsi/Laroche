@@ -17,6 +17,7 @@ import { Price } from "@/components/ui/Price";
 import { cn } from "@/lib/utils";
 import { isPlayableVideoUrl } from "@/lib/video";
 import { usePixel } from "@/components/MetaPixelProvider";
+import { comboKey } from "@/lib/variants";
 import type { ProductColor, VariantPick } from "@/types/db";
 
 // Sits under the gallery on desktop (left column) but under the checkout form
@@ -187,10 +188,27 @@ export default function Product() {
 
   const requiresColor = (product?.colors.length ?? 0) > 0;
   const requiresSize = (product?.sizes.length ?? 0) > 0;
-  const missingVariant =
-    (requiresColor && !color) ||
-    (requiresSize && !size) ||
-    (product?.variants.some((g) => !variantPicks[g.name_fr]) ?? false);
+  const allPicksMade =
+    (!requiresColor || !!color) &&
+    (!requiresSize || !!size) &&
+    !(product?.variants.some((g) => !variantPicks[g.name_fr]) ?? false);
+  const missingVariant = !allPicksMade;
+
+  // Once every color/size/custom-variant pick is made, resolve the exact
+  // product_variants row (0030) — that row's stock gates quantity/checkout
+  // instead of the product's aggregate stock, for any product that has them.
+  const hasVariantRows = (product?.product_variants?.length ?? 0) > 0;
+  const matchedVariant = useMemo(() => {
+    if (!product || !hasVariantRows || !allPicksMade) return null;
+    const key = comboKey(color, size, variants);
+    return product.product_variants?.find((v) => v.active && comboKey(v.color, v.size, v.options) === key) ?? null;
+  }, [product, hasVariantRows, allPicksMade, color, size, variants]);
+
+  const effectiveStock = hasVariantRows ? (matchedVariant?.stock ?? 0) : (product?.stock ?? 0);
+  const effectivePrice = matchedVariant?.price_override ?? unitPrice;
+  // A product with variant rows but no row matching the current picks (e.g. a
+  // combination never stocked) is unavailable, same as being out of stock.
+  const unavailableCombo = hasVariantRows && allPicksMade && !matchedVariant;
 
   useSeo({
     title: product ? `${name} — Laroche Bijoux` : "Laroche Bijoux",
@@ -235,24 +253,25 @@ export default function Product() {
   }
 
   function handleAddToCart() {
-    if (!product || missingVariant) return;
+    if (!product || missingVariant || unavailableCombo) return;
     addItem({
       productId: product.id,
       slug: product.slug,
       name_fr: product.name_fr,
       name_ar: product.name_ar,
-      price: unitPrice,
+      price: effectivePrice,
       compare_at_price: wasPrice,
       image: product.product_images?.[0]?.url ?? null,
       color,
       size,
       variants,
+      variantId: matchedVariant?.id ?? null,
       quantity,
-      stock: product.stock,
+      stock: effectiveStock,
       quantity_offers: product.quantity_offers,
     });
     pixel.track("add_to_cart", {
-      value: Number(unitPrice) * quantity,
+      value: Number(effectivePrice) * quantity,
       currency: "DZD",
       content_ids: [product.id],
     });
@@ -414,7 +433,7 @@ export default function Product() {
               </button>
               <span className="w-6 text-center text-sm">{quantity}</span>
               <button
-                onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                onClick={() => setQuantity((q) => Math.min(Math.max(effectiveStock, 1), q + 1))}
                 className="text-ink"
                 aria-label="+"
               >
@@ -426,21 +445,24 @@ export default function Product() {
           {missingVariant && (
             <p className="mt-3 text-xs text-red-500">{t("productSelectVariant")}</p>
           )}
+          {!missingVariant && unavailableCombo && (
+            <p className="mt-3 text-xs text-red-500">{t("productOutOfStock")}</p>
+          )}
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button
               size="lg"
               variant="outline"
               className="w-full sm:flex-1 hover:-translate-y-0.5 hover:shadow-panel"
-              disabled={product.stock <= 0 || missingVariant}
+              disabled={effectiveStock <= 0 || missingVariant || unavailableCombo}
               onClick={handleAddToCart}
             >
-              {product.stock <= 0 ? t("productOutOfStock") : t("productAddToCart")}
+              {effectiveStock <= 0 ? t("productOutOfStock") : t("productAddToCart")}
             </Button>
             <Button
               size="lg"
               className="w-full sm:flex-1 hover:-translate-y-0.5"
-              disabled={product.stock <= 0 || missingVariant}
+              disabled={effectiveStock <= 0 || missingVariant || unavailableCombo}
               onClick={scrollToCheckout}
             >
               {t("productBuyNow")}
@@ -451,10 +473,11 @@ export default function Product() {
             <h3 className="mb-4 font-display text-xl text-ink">{t("checkoutQuickBuy")}</h3>
             <InlineCheckout
               product={product}
-              unitPrice={unitPrice}
+              unitPrice={effectivePrice}
               color={color}
               size={size}
               variants={variants}
+              variantId={matchedVariant?.id ?? null}
               quantity={quantity}
             />
           </div>

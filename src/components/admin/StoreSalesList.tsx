@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
-import { Receipt as ReceiptIcon, Trash2 } from "lucide-react";
+import { FileText, Receipt as ReceiptIcon, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminToast } from "@/components/admin/AdminToast";
-import { useDeleteStoreSale } from "@/hooks/useStoreLedger";
+import { useDeleteStoreSale, useStoreInvoices } from "@/hooks/useStoreLedger";
 import { Receipt } from "@/components/admin/Receipt";
+import { Invoice } from "@/components/admin/Invoice";
+import { SalePaymentDialog } from "@/components/admin/SalePaymentDialog";
 import { Price } from "@/components/ui/Price";
+import { formatPrice } from "@/lib/format";
 import { inRange, toLocalDay, type DateRange } from "@/lib/finance";
 import type { Store, StoreSale } from "@/types/db";
 
@@ -20,8 +23,13 @@ export function StoreSalesList({
   const { t } = useLanguage();
   const toast = useAdminToast();
   const remove = useDeleteStoreSale();
+  const { data: invoices = [] } = useStoreInvoices();
   const [receipt, setReceipt] = useState<StoreSale | null>(null);
+  const [invoiceSale, setInvoiceSale] = useState<StoreSale | null>(null);
+  const [settleSale, setSettleSale] = useState<StoreSale | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+
+  const invoicedSaleIds = useMemo(() => new Set(invoices.map((i) => i.sale_id)), [invoices]);
 
   const rows = useMemo(
     () => sales.filter((sale) => inRange(toLocalDay(sale.sold_at), range)),
@@ -79,6 +87,15 @@ export function StoreSalesList({
                   <td className="px-4 py-2.5 text-end tabular-nums text-muted">{units}</td>
                   <td className="px-4 py-2.5 text-end tabular-nums text-ink">
                     <Price value={sale.total} />
+                    {sale.balance_due > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSettleSale(sale)}
+                        className="mt-0.5 block w-full text-end text-[0.65rem] font-medium text-amber-500 hover:underline"
+                      >
+                        {t("invBalanceDue")}: {formatPrice(sale.balance_due)}
+                      </button>
+                    )}
                   </td>
                   <td
                     className={`px-4 py-2.5 text-end tabular-nums ${
@@ -99,6 +116,16 @@ export function StoreSalesList({
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-2 hover:text-ink"
                       >
                         <ReceiptIcon size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInvoiceSale(sale)}
+                        aria-label={t("invGenerate")}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg hover:bg-panel-2 ${
+                          invoicedSaleIds.has(sale.id) ? "text-brand" : "text-muted hover:text-ink"
+                        }`}
+                      >
+                        <FileText size={14} />
                       </button>
                       {confirming === sale.id ? (
                         <button
@@ -139,6 +166,19 @@ export function StoreSalesList({
         sale={receipt}
         store={store}
         onClose={() => setReceipt(null)}
+      />
+
+      <Invoice
+        open={invoiceSale !== null}
+        sale={invoiceSale}
+        store={store}
+        onClose={() => setInvoiceSale(null)}
+      />
+
+      <SalePaymentDialog
+        open={settleSale !== null}
+        sale={settleSale}
+        onClose={() => setSettleSale(null)}
       />
     </div>
   );

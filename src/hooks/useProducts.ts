@@ -23,7 +23,7 @@ export interface ProductFilters {
   featured?: boolean;
 }
 
-const PRODUCT_SELECT = "*, product_images(*), category:categories(*)";
+const PRODUCT_SELECT = "*, product_images(*), category:categories(*), product_variants(*)";
 
 export function useProducts(filters: ProductFilters = {}) {
   return useQuery({

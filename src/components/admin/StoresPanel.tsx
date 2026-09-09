@@ -25,6 +25,8 @@ const EMPTY: StoreDraft = {
   activity_number: "",
   email: "",
   website: "",
+  deposit_min_percent: 20,
+  deposit_max_percent: 80,
 };
 
 /**
@@ -47,6 +49,12 @@ export function StoresPanel({ stores, isOwner }: { stores: Store[]; isOwner: boo
       toast.error(t("posStoreNameRequired"));
       return;
     }
+    const depositMin = Math.min(Math.max(draft.deposit_min_percent ?? 20, 0), 100);
+    const depositMax = Math.min(Math.max(draft.deposit_max_percent ?? 80, 0), 100);
+    if (depositMin > depositMax) {
+      toast.error(t("posDepositRangeInvalid"));
+      return;
+    }
     try {
       await save.mutateAsync({
         ...draft,
@@ -57,6 +65,8 @@ export function StoresPanel({ stores, isOwner }: { stores: Store[]; isOwner: boo
         activity_number: draft.activity_number?.trim() || null,
         email: draft.email?.trim() || null,
         website: draft.website?.trim() || null,
+        deposit_min_percent: depositMin,
+        deposit_max_percent: depositMax,
       });
       toast.success(t("adminSaved"));
       setDraft(null);
@@ -147,6 +157,32 @@ export function StoresPanel({ stores, isOwner }: { stores: Store[]; isOwner: boo
             />
           </div>
           <p className="text-xs text-muted">{t("posStoreIdentityHint")}</p>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1">
+              <span className="text-xs text-muted">{t("posDepositMinPercent")}</span>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                dir="ltr"
+                value={draft.deposit_min_percent ?? 20}
+                onChange={(e) => setDraft({ ...draft, deposit_min_percent: Number(e.target.value) })}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-muted">{t("posDepositMaxPercent")}</span>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                dir="ltr"
+                value={draft.deposit_max_percent ?? 80}
+                onChange={(e) => setDraft({ ...draft, deposit_max_percent: Number(e.target.value) })}
+              />
+            </label>
+          </div>
+          <p className="text-xs text-muted">{t("posDepositRangeExplain")}</p>
           <label className="flex items-center gap-2 text-sm text-ink">
             <input
               type="checkbox"

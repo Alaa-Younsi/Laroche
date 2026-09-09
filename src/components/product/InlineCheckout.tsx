@@ -23,6 +23,7 @@ interface InlineCheckoutProps {
   color: string | null;
   size: string | null;
   variants: VariantPick[];
+  variantId: string | null;
   quantity: number;
 }
 
@@ -32,6 +33,7 @@ export function InlineCheckout({
   color,
   size,
   variants,
+  variantId,
   quantity,
 }: InlineCheckoutProps) {
   const { t, lang } = useLanguage();
@@ -94,6 +96,7 @@ export function InlineCheckout({
             color,
             size,
             variants: variants.map((v) => ({ name_fr: v.name_fr, name_ar: v.name_ar, value: v.value })),
+            variant_id: variantId,
           },
         ],
         customer: values,

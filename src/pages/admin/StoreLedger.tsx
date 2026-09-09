@@ -20,6 +20,7 @@ import { StoreCatalogPanel } from "@/components/admin/StoreCatalogPanel";
 import { ReturnsPanel } from "@/components/admin/ReturnsPanel";
 import { TransfersPanel } from "@/components/admin/TransfersPanel";
 import { ProformasPanel } from "@/components/admin/ProformasPanel";
+import { DebtsPanel } from "@/components/admin/DebtsPanel";
 import { CashPanel } from "@/components/admin/CashPanel";
 import { StoresPanel } from "@/components/admin/StoresPanel";
 import { PurchasesPanel } from "@/components/admin/PurchasesPanel";
@@ -54,6 +55,7 @@ type Tab =
   | "catalogue"
   | "transfers"
   | "proformas"
+  | "debts"
   | "cash"
   | "products"
   | "clients"
@@ -235,6 +237,7 @@ export default function StoreLedger() {
     { key: "catalogue", label: t("posCatalogue") },
     { key: "transfers", label: t("posTransfers") },
     { key: "proformas", label: t("posProformaTab") },
+    { key: "debts", label: t("posDebtsTab") },
     { key: "cash", label: t("posTill") },
     { key: "products", label: t("finProducts") },
     { key: "clients", label: t("finClients") },
@@ -298,6 +301,7 @@ export default function StoreLedger() {
             <TransfersPanel store={store} stores={stores} products={products} />
           )}
           {tab === "proformas" && <ProformasPanel store={store} />}
+          {tab === "debts" && <DebtsPanel store={store} />}
           {tab === "cash" && <CashPanel store={store} range={range} />}
           {tab === "products" && <ProductBreakdown rows={productRows} />}
           {tab === "clients" && <CustomerBreakdown rows={customerRows} />}
