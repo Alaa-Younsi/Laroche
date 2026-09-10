@@ -48,17 +48,34 @@ const SUPABASE_RENDER_MARKER = "/storage/v1/render/image/public/";
 /** Widths capped at MAX_EDGE — the stored originals are never larger, and
  *  asking for more just re-encodes an upscale. */
 const STORAGE_SRCSET_WIDTHS = [200, 400, 600, 900, 1400];
-const STORAGE_QUALITY = 70;
+
+// Quality is tiered by width, not flat. The 200/400px variants are Shop-grid
+// cards and thumbnails: ~100 of them per page load (the bulk of egress volume)
+// and far too small to show facet/chain detail, so they stay aggressively
+// compressed. The 600px+ variants are the product gallery, its zoom, and the
+// parallax blocks — one per product-page view, not per visit, and the place a
+// jewellery photo has to hold up. Supabase's own default quality is 80.
+const STORAGE_QUALITY_SMALL = 72;
+const STORAGE_QUALITY_LARGE = 82;
+const STORAGE_QUALITY_BREAKPOINT = 500;
+
+function storageQuality(width: number): number {
+  return width <= STORAGE_QUALITY_BREAKPOINT ? STORAGE_QUALITY_SMALL : STORAGE_QUALITY_LARGE;
+}
 
 export function isSupabaseStorageUrl(src: string): boolean {
   return src.includes(SUPABASE_PUBLIC_MARKER);
 }
 
 /** One resized variant of a public Storage object. */
-export function supabaseRenderUrl(src: string, width: number): string {
+export function supabaseRenderUrl(
+  src: string,
+  width: number,
+  quality: number = storageQuality(width),
+): string {
   const base = src.replace(SUPABASE_PUBLIC_MARKER, SUPABASE_RENDER_MARKER);
   const separator = base.includes("?") ? "&" : "?";
-  return `${base}${separator}width=${width}&resize=contain&quality=${STORAGE_QUALITY}`;
+  return `${base}${separator}width=${width}&resize=contain&quality=${quality}`;
 }
 
 export function supabaseSrcSet(src: string): string | undefined {
