@@ -2,7 +2,7 @@ import { defineConfig, loadEnv, type Plugin, type Connect } from 'vite'
 import react from '@vitejs/plugin-react'
 import type { ServerResponse } from 'node:http'
 import path from 'node:path'
-import { proxyEcotrack, type EcotrackEnv } from './api/_lib/ecotrack.ts'
+import { proxyNoest, type NoestEnv } from './api/_lib/noest.ts'
 import {
   createCheckoutForOrder,
   handleWebhook,
@@ -16,19 +16,20 @@ import {
   type CreateWorkerBody,
 } from './api/_lib/adminTeam.ts'
 
-// Mirrors the Vercel Edge function at /api/ecotrack/* during `bun run dev`,
-// so the ECOTRACK integration is testable locally without `vercel dev`. The
-// token is read from .env server-side and never exposed to the client bundle.
-function ecotrackDevProxy(env: EcotrackEnv): Plugin {
+// Mirrors the Vercel Edge function at /api/noest/* during `bun run dev`, so
+// the NOEST integration is testable locally without `vercel dev`. The
+// credentials are read from .env server-side and never exposed to the client
+// bundle.
+function noestDevProxy(env: NoestEnv): Plugin {
   return {
-    name: 'ecotrack-dev-proxy',
+    name: 'noest-dev-proxy',
     configureServer(server) {
       server.middlewares.use(
-        '/api/ecotrack',
+        '/api/noest',
         async (req: Connect.IncomingMessage, res: ServerResponse) => {
-          // Mirrors api/ecotrack/proxy.ts: the endpoint arrives as ?path=…
+          // Mirrors api/noest/proxy.ts: the endpoint arrives as ?path=…
           // (connect strips the mount prefix, so req.url starts after
-          // /api/ecotrack). The pathname is still honoured as a fallback so an
+          // /api/noest). The pathname is still honoured as a fallback so an
           // old cached bundle keeps working against a fresh dev server.
           const parsed = new URL(req.url ?? '/', 'http://localhost')
           const search = new URLSearchParams(parsed.searchParams)
@@ -50,7 +51,7 @@ function ecotrackDevProxy(env: EcotrackEnv): Plugin {
             })
           }
 
-          const result = await proxyEcotrack(
+          const result = await proxyNoest(
             { method: req.method ?? 'GET', subpath, search, body, jwt },
             env,
           )
@@ -170,9 +171,10 @@ function adminDevProxy(env: AdminTeamEnv): Plugin {
 export default defineConfig(({ mode }) => {
   // load ALL env (no prefix filter) so server-only vars reach the dev proxy
   const env = loadEnv(mode, process.cwd(), '')
-  const ecotrackEnv: EcotrackEnv = {
-    apiToken: env.ECOTRACK_API_TOKEN ?? '',
-    apiUrl: env.ECOTRACK_API_URL ?? 'https://app.ecotrack.dz',
+  const noestEnv: NoestEnv = {
+    apiToken: env.NOEST_API_TOKEN ?? '',
+    userGuid: env.NOEST_USER_GUID ?? '',
+    apiUrl: env.NOEST_API_URL ?? 'https://app.noest-dz.com/api/public',
     supabaseUrl: env.SUPABASE_URL ?? env.VITE_SUPABASE_URL ?? '',
     supabaseAnonKey: env.SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_ANON_KEY ?? '',
   }
@@ -182,7 +184,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      ecotrackDevProxy(ecotrackEnv),
+      noestDevProxy(noestEnv),
       chargilyDevProxy(chargilyEnv),
       adminDevProxy(adminTeamEnv),
     ],

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
@@ -9,7 +8,6 @@ import { useCollections, useBrands } from "@/hooks/useCollectionsAndBrands";
 import { uniqueSlug } from "@/lib/utils";
 import { flattenCategoryTree } from "@/lib/categoryTree";
 import { sanitizeOffers } from "@/lib/sanitizeOffers";
-import { isPlayableVideoUrl } from "@/lib/video";
 import { invalidateProductCaches } from "@/lib/queryCache";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +19,7 @@ import { CustomVariantsEditor } from "@/components/admin/CustomVariantsEditor";
 import { VariantsEditor, type VariantDraft } from "@/components/admin/VariantsEditor";
 import { OffersEditor } from "@/components/admin/OffersEditor";
 import { ImagesEditor } from "@/components/admin/ImagesEditor";
+import { VideoEditor } from "@/components/admin/VideoEditor";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import type { Product, ProductColor, ProductImage, ProductVariant, VariantGroup, QuantityOffer } from "@/types/db";
 
@@ -182,7 +181,6 @@ export default function ProductForm() {
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [brandId, setBrandId] = useState("");
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(isEdit);
   const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -227,11 +225,6 @@ export default function ProductForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEdit]);
 
-  // Flagged, not blocked: the field is optional and a bad link only costs the
-  // player, so the save still goes through — the admin just gets told why the
-  // clip won't appear on the product page.
-  const videoUrlInvalid = !!form.video_url?.trim() && !isPlayableVideoUrl(form.video_url);
-
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -239,22 +232,6 @@ export default function ProductForm() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-
-    let videoUrl = form.video_url;
-    if (videoFile) {
-      const path = `${crypto.randomUUID()}-${videoFile.name}`;
-      const { data, error } = await supabase.storage
-        .from("product-videos")
-        .upload(path, videoFile, { cacheControl: "31536000" });
-      // Saving on regardless would quietly drop the clip the admin just picked
-      // — better to stop and let them retry than to "succeed" without it.
-      if (error || !data) {
-        toast.error(t("adminVideoUploadError"));
-        setSaving(false);
-        return;
-      }
-      videoUrl = supabase.storage.from("product-videos").getPublicUrl(data.path).data.publicUrl;
-    }
 
     const slug = isEdit
       ? form.slug
@@ -266,7 +243,6 @@ export default function ProductForm() {
     const payload = {
       ...form,
       slug,
-      video_url: videoUrl,
       brand_id: brandId || null,
       quantity_offers: sanitizeOffers(form.quantity_offers as QuantityOffer[]),
       variants: (form.variants as VariantGroup[]).filter((g) => g.name_fr.trim() && g.values.length > 0),
@@ -352,24 +328,7 @@ export default function ProductForm() {
           <BentoPanel className="p-6">
             <h3 className="mb-2 text-sm font-medium uppercase tracking-wide2 text-muted">{t("productVideo")}</h3>
             <p className="mb-3 text-xs text-muted">{t("productVideoHint")}</p>
-            <Input
-              placeholder="https://…/video.mp4"
-              value={form.video_url ?? ""}
-              onChange={(e) => update("video_url", e.target.value)}
-              className="mb-3"
-            />
-            {videoUrlInvalid && (
-              <p className="mb-3 flex items-start gap-2 text-xs text-red-500">
-                <AlertTriangle size={14} className="mt-px shrink-0" />
-                {t("productVideoInvalid")}
-              </p>
-            )}
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
-              className="text-sm text-muted"
-            />
+            <VideoEditor value={form.video_url} onChange={(url) => update("video_url", url)} />
           </BentoPanel>
 
           <BentoPanel className="space-y-4 p-6">

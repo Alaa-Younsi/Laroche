@@ -34,7 +34,7 @@ const COLUMNS: Col[] = [
   { column: "Adresse", value: (o) => excelSafe(o.address), width: 28 },
   { column: "Statut", value: (o) => STATUS_LABELS[o.status] ?? o.status, width: 12 },
   { column: "Source", value: (o) => SOURCE_LABELS[o.source ?? "website"] ?? "Site", width: 10 },
-  { column: "Suivi ECOTRACK", value: (o) => excelSafe(o.ecotrack_tracking), width: 18 },
+  { column: "Suivi NOEST", value: (o) => excelSafe(o.delivery_tracking), width: 18 },
   { column: "Livraison", value: (o) => (o.delivery_type === "home" ? "Domicile" : "Bureau"), width: 12 },
   { column: "Sous-total", value: (o) => formatPrice(o.subtotal), width: 14 },
   { column: "Frais livraison", value: (o) => formatPrice(o.shipping), width: 14 },

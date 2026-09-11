@@ -8,35 +8,38 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Ban,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
-  validateToken,
   getWilayas,
   resolveWilayaCode,
   orderToPayload,
   createOrder,
   dispatchOrder,
+  cancelOrder,
   getLabel,
   getTrackingInfo,
-  isEcotrackError,
-  type EcotrackError,
-} from "@/lib/ecotrack";
+  isNoestError,
+  type NoestError,
+} from "@/lib/noest";
 import type { Order } from "@/types/db";
 
-type Busy = null | "check" | "ship" | "dispatch" | "label" | "sync";
+type Busy = null | "check" | "ship" | "dispatch" | "label" | "sync" | "cancel";
 type Feedback = { kind: "ok" | "err"; text: string } | null;
 
 function errText(err: unknown): string {
-  if (isEcotrackError(err)) return err.message;
+  if (isNoestError(err)) return err.message;
   if (err instanceof Error) return err.message;
   return String(err);
 }
 
-/** Best-effort latest-status extraction from the tracking/info payload, whose
- *  exact shape varies per ECOTRACK deployment. Returns null if unrecognized. */
+/** Best-effort latest-status extraction from the trackings/info payload,
+ *  whose exact shape isn't documented anywhere public. Returns null if
+ *  unrecognized rather than guessing. */
 function latestStatus(info: unknown): string | null {
   const pickFrom = (entry: unknown): string | null => {
     if (entry && typeof entry === "object") {
@@ -49,7 +52,7 @@ function latestStatus(info: unknown): string | null {
   if (Array.isArray(info) && info.length > 0) return pickFrom(info[info.length - 1]);
   if (info && typeof info === "object") {
     const rec = info as Record<string, unknown>;
-    const activities = rec.activities ?? rec.OrderHistory ?? rec.history;
+    const activities = rec.activities ?? rec.history ?? rec.OrderHistory;
     if (Array.isArray(activities) && activities.length > 0) {
       return pickFrom(activities[activities.length - 1]);
     }
@@ -58,12 +61,15 @@ function latestStatus(info: unknown): string | null {
   return null;
 }
 
-export function EcotrackPanel({ order }: { order: Order }) {
+export function NoestPanel({ order }: { order: Order }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<Busy>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [stationCode, setStationCode] = useState("");
+  const [cancelArmed, setCancelArmed] = useState(false);
 
-  const tracking = order.ecotrack_tracking ?? null;
+  const tracking = order.delivery_tracking ?? null;
+  const isPointRelais = order.delivery_type === "office";
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["order", order.id] });
@@ -79,11 +85,10 @@ export function EcotrackPanel({ order }: { order: Order }) {
     setBusy("check");
     setFeedback(null);
     try {
-      const result = await validateToken();
-      const ok = result.success === true || /valid/i.test(result.message ?? "");
+      const wilayas = await getWilayas();
       setFeedback({
-        kind: ok ? "ok" : "err",
-        text: result.message || (ok ? "Connexion ECOTRACK OK" : "Token refusé"),
+        kind: "ok",
+        text: `Connexion NOEST OK — ${wilayas.length} wilayas actives.`,
       });
     } catch (err) {
       setFeedback({ kind: "err", text: errText(err) });
@@ -96,38 +101,47 @@ export function EcotrackPanel({ order }: { order: Order }) {
     setBusy("ship");
     setFeedback(null);
     try {
+      if (isPointRelais && !stationCode.trim()) {
+        throw {
+          status: 0,
+          message: "Indiquez le code du bureau NOEST (ex: 16A) avant d'expédier en point relais.",
+          raw: null,
+        } satisfies NoestError;
+      }
       const wilayas = await getWilayas();
       const code = resolveWilayaCode(wilayas, order.wilaya);
       if (code === null) {
         throw { status: 0, message: `Code wilaya introuvable pour « ${order.wilaya} »`, raw: null };
       }
-      const result = await createOrder(orderToPayload(order, code));
+      const result = await createOrder(orderToPayload(order, code, stationCode.trim() || null));
       const trackingNo = result.tracking;
       if (!trackingNo) {
         throw {
           status: 0,
-          message: result.message || "ECOTRACK n'a pas renvoyé de numéro de suivi",
+          message: result.message || "NOEST n'a pas renvoyé de numéro de suivi",
           raw: result,
         };
       }
-      // The parcel now exists at ECOTRACK. If persisting the tracking number
-      // fails we must NOT let the operator retry blind — a second click would
-      // create a duplicate parcel. Surface the number so it can be pasted back.
+      // The parcel now exists at NOEST — for real, immediately, with no draft
+      // step to catch a mistake first. If persisting the tracking number
+      // fails we must NOT let the operator retry blind — a second click
+      // would create a duplicate parcel. Surface the number so it can be
+      // pasted back (or the order cancelled with cancelOrder).
       try {
         await saveOrder({
-          ecotrack_tracking: trackingNo,
-          ecotrack_status: "created",
-          ecotrack_synced_at: new Date().toISOString(),
+          delivery_tracking: trackingNo,
+          delivery_status: "created",
+          delivery_synced_at: new Date().toISOString(),
           status: "shipped",
         });
       } catch (saveErr) {
         throw {
           status: 0,
           message:
-            `Colis créé chez ECOTRACK (suivi ${trackingNo}) mais l'enregistrement ` +
+            `Colis créé chez NOEST (suivi ${trackingNo}) mais l'enregistrement ` +
             `a échoué : ${errText(saveErr)}. Ne pas réexpédier — notez ce numéro.`,
           raw: saveErr,
-        } satisfies EcotrackError;
+        } satisfies NoestError;
       }
       setFeedback({ kind: "ok", text: `Expédié — suivi ${trackingNo}` });
       refresh();
@@ -147,14 +161,47 @@ export function EcotrackPanel({ order }: { order: Order }) {
       const ok = result.success === true;
       if (ok) {
         await saveOrder({
-          ecotrack_status: "dispatched",
-          ecotrack_synced_at: new Date().toISOString(),
+          delivery_status: "dispatched",
+          delivery_synced_at: new Date().toISOString(),
         });
         refresh();
       }
       setFeedback({
         kind: ok ? "ok" : "err",
         text: result.message || (ok ? "Remis au transporteur" : "Échec de la remise"),
+      });
+    } catch (err) {
+      setFeedback({ kind: "err", text: errText(err) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onCancel() {
+    if (!tracking) return;
+    if (!cancelArmed) {
+      setCancelArmed(true);
+      window.setTimeout(() => setCancelArmed(false), 4000);
+      return;
+    }
+    setCancelArmed(false);
+    setBusy("cancel");
+    setFeedback(null);
+    try {
+      const result = await cancelOrder(tracking);
+      const ok = result.success === true;
+      if (ok) {
+        await saveOrder({
+          delivery_tracking: null,
+          delivery_status: "cancelled",
+          delivery_synced_at: new Date().toISOString(),
+          status: "pending",
+        });
+        refresh();
+      }
+      setFeedback({
+        kind: ok ? "ok" : "err",
+        text: result.message || (ok ? "Colis annulé chez NOEST" : "Échec de l'annulation"),
       });
     } catch (err) {
       setFeedback({ kind: "err", text: errText(err) });
@@ -187,8 +234,8 @@ export function EcotrackPanel({ order }: { order: Order }) {
       const info = await getTrackingInfo(tracking);
       const status = latestStatus(info);
       await saveOrder({
-        ecotrack_status: status ?? order.ecotrack_status ?? "unknown",
-        ecotrack_synced_at: new Date().toISOString(),
+        delivery_status: status ?? order.delivery_status ?? "unknown",
+        delivery_synced_at: new Date().toISOString(),
       });
       setFeedback({ kind: "ok", text: status ? `Statut : ${status}` : "Suivi actualisé" });
       refresh();
@@ -206,7 +253,7 @@ export function EcotrackPanel({ order }: { order: Order }) {
     <BentoPanel className="p-6 md:col-span-3">
       <div className="mb-4 flex items-center gap-2">
         <Truck size={18} className="text-brand" />
-        <h3 className="font-display text-lg text-ink">Livraison — ECOTRACK</h3>
+        <h3 className="font-display text-lg text-ink">Livraison — NOEST</h3>
       </div>
 
       {tracking ? (
@@ -216,23 +263,43 @@ export function EcotrackPanel({ order }: { order: Order }) {
             <dd dir="ltr" className="font-mono text-sm text-ink">{tracking}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide2 text-muted">Statut ECOTRACK</dt>
-            <dd className="text-sm capitalize text-ink">{order.ecotrack_status ?? "—"}</dd>
+            <dt className="text-xs uppercase tracking-wide2 text-muted">Statut NOEST</dt>
+            <dd className="text-sm capitalize text-ink">{order.delivery_status ?? "—"}</dd>
           </div>
           <div>
             <dt className="text-xs uppercase tracking-wide2 text-muted">Dernière synchro</dt>
             <dd className="text-sm text-ink">
-              {order.ecotrack_synced_at
-                ? new Date(order.ecotrack_synced_at).toLocaleString("fr-DZ")
+              {order.delivery_synced_at
+                ? new Date(order.delivery_synced_at).toLocaleString("fr-DZ")
                 : "—"}
             </dd>
           </div>
         </dl>
       ) : (
-        <p className="mb-5 text-sm text-muted">
-          Cette commande n'a pas encore été expédiée via ECOTRACK. Vérifiez la connexion,
-          puis créez le colis — son numéro de suivi sera enregistré ici.
-        </p>
+        <div className="mb-5 space-y-3">
+          <p className="text-sm text-muted">
+            Cette commande n'a pas encore été expédiée via NOEST. NOEST crée le colis
+            immédiatement dès l'appel — vérifiez les informations avant de cliquer.
+          </p>
+          {isPointRelais && (
+            <div>
+              <label className="mb-1 block text-xs uppercase tracking-wide2 text-muted">
+                Code bureau NOEST (point relais)
+              </label>
+              <Input
+                placeholder="ex : 16A"
+                value={stationCode}
+                onChange={(e) => setStationCode(e.target.value)}
+                className="max-w-xs"
+              />
+              <p className="mt-1 text-xs text-muted">
+                NOEST n'expose pas la liste des bureaux par API — retrouvez le code du bureau
+                le plus proche de « {order.city || order.wilaya} » dans votre tableau de bord
+                NOEST (Bureaux) avant d'expédier.
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="flex flex-wrap gap-2">
@@ -253,7 +320,7 @@ export function EcotrackPanel({ order }: { order: Order }) {
             disabled={busy !== null}
             onClick={onShip}
           >
-            {spin("ship", <Truck size={14} />)} Expédier via ECOTRACK
+            {spin("ship", <Truck size={14} />)} Expédier via NOEST
           </Button>
         )}
 
@@ -284,6 +351,15 @@ export function EcotrackPanel({ order }: { order: Order }) {
               onClick={onLabel}
             >
               {spin("label", <FileDown size={14} />)} Étiquette
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-red-500/40 text-red-500 hover:bg-red-500/5 sm:w-auto"
+              disabled={busy !== null}
+              onClick={onCancel}
+            >
+              {spin("cancel", <Ban size={14} />)} {cancelArmed ? "Confirmer l'annulation ?" : "Annuler le colis"}
             </Button>
           </>
         )}

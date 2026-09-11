@@ -12,6 +12,8 @@
     "prebuild": "node scripts/generate-sitemap.mjs"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@fontsource/almarai": "^5.3.0",
     "@fontsource/amiri": "^5.3.0",
     "@fontsource/cormorant-garamond": "^5.3.0",

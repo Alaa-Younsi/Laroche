@@ -198,9 +198,9 @@ export default function Orders() {
                     <PaymentBadge method={order.payment_method} status={order.payment_status} />
                   </td>
                   <td className="whitespace-nowrap px-5 py-3">
-                    {order.ecotrack_tracking ? (
+                    {order.delivery_tracking ? (
                       <span dir="ltr" className="font-mono text-xs text-brand">
-                        {order.ecotrack_tracking}
+                        {order.delivery_tracking}
                       </span>
                     ) : (
                       <span className="text-muted">—</span>

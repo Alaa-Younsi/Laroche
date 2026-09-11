@@ -84,7 +84,7 @@ export const translations = {
     productQuantity: "Quantité",
     productVideo: "Vidéo produit",
     productVideoHint:
-      "Importez le fichier vidéo ci-dessous, ou collez le lien direct vers un fichier (.mp4, .webm, .mov).",
+      "Importez un fichier vidéo (compressé automatiquement) ou collez un lien direct vers un fichier (.mp4, .webm, .mov) — Dropbox fonctionne aussi. Un lien vers une page Facebook, Instagram ou YouTube ne fonctionnera jamais : importez le fichier dans ce cas.",
     productVideoInvalid:
       "Ce lien pointe vers une page (Facebook, Instagram, YouTube…), pas vers un fichier vidéo : la vidéo ne s'affichera pas sur la fiche produit. Importez le fichier avec le bouton ci-dessous.",
     productRelated: "Vous aimerez aussi",
@@ -163,7 +163,10 @@ export const translations = {
     adminLoadError: "Chargement impossible. Vérifiez votre connexion et réessayez.",
     adminUploadError: "L'envoi de l'image a échoué. Réessayez.",
     adminExportError: "L'export a échoué. Réessayez.",
-    adminVideoUploadError: "L'envoi de la vidéo a échoué. Le reste n'a pas été enregistré.",
+    adminVideoUploadError: "L'envoi de la vidéo a échoué. Réessayez.",
+    adminVideoCompressing: "Compression…",
+    adminVideoChooseFile: "Choisir un fichier",
+    adminVideoRemove: "Retirer la vidéo",
     adminCategoryNotSaved:
       "Cette catégorie de démonstration n'existe pas encore dans la base de données — créez-la d'abord avec le formulaire ci-dessus.",
 
@@ -803,7 +806,8 @@ export const translations = {
     productColor: "اللون",
     productQuantity: "الكمية",
     productVideo: "فيديو المنتج",
-    productVideoHint: "حمّل ملف الفيديو أدناه، أو الصق الرابط المباشر للملف (.mp4، .webm، .mov).",
+    productVideoHint:
+      "حمّل ملف فيديو (يُضغط تلقائياً) أو الصق رابطاً مباشراً لملف (.mp4، .webm، .mov) — روابط Dropbox تعمل أيضاً. رابط صفحة فيسبوك أو إنستغرام أو يوتيوب لن يعمل أبداً: في هذه الحالة، حمّل الملف مباشرة.",
     productVideoInvalid:
       "هذا الرابط يشير إلى صفحة (فيسبوك، إنستغرام، يوتيوب…) وليس إلى ملف فيديو: لن يظهر الفيديو في صفحة المنتج. حمّل الملف عبر الزر أدناه.",
     productRelated: "قد يعجبك أيضاً",
@@ -874,7 +878,10 @@ export const translations = {
     adminLoadError: "تعذّر التحميل. تحقق من اتصالك وحاول مرة أخرى.",
     adminUploadError: "فشل رفع الصورة. حاول مرة أخرى.",
     adminExportError: "فشل التصدير. حاول مرة أخرى.",
-    adminVideoUploadError: "فشل رفع الفيديو. لم يتم حفظ باقي التعديلات.",
+    adminVideoUploadError: "فشل رفع الفيديو. حاول مرة أخرى.",
+    adminVideoCompressing: "جارٍ الضغط…",
+    adminVideoChooseFile: "اختر ملفاً",
+    adminVideoRemove: "إزالة الفيديو",
     adminCategoryNotSaved:
       "هذه فئة تجريبية غير موجودة في قاعدة البيانات — أنشئها أولاً من النموذج أعلاه.",
 

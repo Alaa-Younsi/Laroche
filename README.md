@@ -16,7 +16,7 @@ Live site: <https://www.larochebijoux.com>
 | Data       | React Query, Zustand                                             |
 | Forms      | react-hook-form + Zod                                            |
 | Backend    | Supabase (Postgres, Auth, Storage, RLS)                          |
-| Serverless | Vercel Functions (`/api`) — Chargily payments, ECOTRACK shipping |
+| Serverless | Vercel Functions (`/api`) — Chargily payments, NOEST shipping    |
 | Hosting    | Vercel                                                           |
 | Tooling    | Bun (runtime + package manager), ESLint                          |
 
@@ -24,7 +24,7 @@ Live site: <https://www.larochebijoux.com>
 
 - **Storefront** — catalogue, product pages, cart, COD checkout, newsletter, store locator
 - **Payments** — cash on delivery + Chargily Pay (card / EDAHABIA / CIB)
-- **Shipping** — ECOTRACK integration for parcel creation and tracking, 58-wilaya delivery grid
+- **Shipping** — NOEST Express integration for parcel creation and tracking, 58-wilaya delivery grid
 - **Admin dashboard** — orders, products, categories, timed category-wide promotions,
   manual order entry, per-section staff permissions, configurable GA4 / Meta pixels
 - **Magasin POS** — multi-shop point of sale, thermal (58 mm) receipts, EAN-13 barcodes,
@@ -48,8 +48,9 @@ VITE_GA_MEASUREMENT_ID=
 VITE_META_PIXEL_ID=
 
 # server-only (Vercel env, never exposed to the client)
-ECOTRACK_API_TOKEN=
-ECOTRACK_API_URL=
+NOEST_API_TOKEN=
+NOEST_USER_GUID=
+NOEST_API_URL=
 CHARGILY_SECRET_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 PUBLIC_SITE_URL=

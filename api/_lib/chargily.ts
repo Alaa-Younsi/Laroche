@@ -1,6 +1,6 @@
 // Server-only Chargily Pay v2 core. Runs in the Vercel Edge functions AND the
 // Vite dev middleware (see vite.config.ts) so `bun run dev` and production
-// share one code path — the same design as api/_lib/ecotrack.ts.
+// share one code path — the same design as api/_lib/noest.ts.
 //
 // The Chargily SECRET key and the Supabase SERVICE-ROLE key live ONLY here
 // (server env); neither is ever sent to the browser. The checkout amount is

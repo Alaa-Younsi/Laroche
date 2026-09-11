@@ -171,10 +171,12 @@ export interface Order {
   payment_status?: PaymentStatus;
   chargily_checkout_id?: string | null;
   paid_at?: string | null;
-  // ECOTRACK delivery (0013_ecotrack_tracking.sql) — null until shipped.
-  ecotrack_tracking?: string | null;
-  ecotrack_status?: string | null;
-  ecotrack_synced_at?: string | null;
+  // Delivery courier tracking (0013_ecotrack_tracking.sql, renamed off the
+  // courier name by 0033_noest_delivery.sql so a future agency swap never
+  // needs another rename) — null until shipped.
+  delivery_tracking?: string | null;
+  delivery_status?: string | null;
+  delivery_synced_at?: string | null;
   order_items?: OrderItem[];
 }
 

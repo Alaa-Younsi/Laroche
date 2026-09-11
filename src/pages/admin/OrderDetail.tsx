@@ -8,7 +8,7 @@ import { useAdminToast } from "@/components/admin/AdminToast";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Select } from "@/components/ui/Select";
 import { Price } from "@/components/ui/Price";
-import { EcotrackPanel } from "@/components/admin/EcotrackPanel";
+import { NoestPanel } from "@/components/admin/NoestPanel";
 import { PaymentBadge } from "@/components/admin/PaymentBadge";
 import { formatDate, formatPrice } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/db";
@@ -194,7 +194,7 @@ export default function OrderDetail() {
           </dl>
         </BentoPanel>
 
-        <EcotrackPanel order={order} />
+        <NoestPanel order={order} />
       </div>
     </div>
   );

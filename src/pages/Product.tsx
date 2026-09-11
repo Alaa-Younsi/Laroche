@@ -75,6 +75,9 @@ function ProductVideo({
         controlsList="nodownload nofullscreen noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
         className="pointer-events-none w-full"
+        // Older iOS Safari only honours the vendor-prefixed attribute, not
+        // `playsinline` — spread so TS doesn't reject an unlisted DOM attr.
+        {...{ "webkit-playsinline": "true" }}
       >
         <source src={src} />
       </video>
@@ -482,14 +485,6 @@ export default function Product() {
             />
           </div>
 
-          {videoUrl && (
-            <ProductVideo
-              src={videoUrl}
-              poster={product.product_images?.[0]?.url}
-              className="mt-6 md:hidden"
-            />
-          )}
-
           <div className="mt-8 flex items-center gap-6 text-xs text-muted">
             <span className="flex items-center gap-1.5">
               <Truck size={14} className="text-brand" /> {t("trustDelivery")}
@@ -537,6 +532,14 @@ export default function Product() {
               </div>
             ))}
           </div>
+
+          {videoUrl && (
+            <ProductVideo
+              src={videoUrl}
+              poster={product.product_images?.[0]?.url}
+              className="mt-8 md:hidden"
+            />
+          )}
         </motion.div>
       </div>
 
