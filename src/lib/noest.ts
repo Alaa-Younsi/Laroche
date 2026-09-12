@@ -52,16 +52,22 @@ async function raw(subpath: string, opts: CallOptions = {}): Promise<Response> {
 }
 
 function messageOf(raw: unknown, fallback: string): string {
-  if (raw && typeof raw === "object" && "message" in raw) {
-    const m = (raw as { message?: unknown }).message;
-    if (typeof m === "string" && m.length > 0) return m;
-  }
+  // NOEST's validation failures are `{"message":"The given data was
+  // invalid.","errors":{"field":["…"]}}` — that top-level message is always
+  // the same generic sentence, useless on its own ("The given data was
+  // invalid." told the admin nothing about which field). The per-field
+  // message under `errors` is the one worth surfacing, so it must be checked
+  // BEFORE falling back to the generic top-level one, not after.
   if (raw && typeof raw === "object" && "errors" in raw) {
     const errors = (raw as { errors?: unknown }).errors;
     if (errors && typeof errors === "object") {
       const firstField = Object.values(errors as Record<string, unknown>)[0];
       if (Array.isArray(firstField) && typeof firstField[0] === "string") return firstField[0];
     }
+  }
+  if (raw && typeof raw === "object" && "message" in raw) {
+    const m = (raw as { message?: unknown }).message;
+    if (typeof m === "string" && m.length > 0) return m;
   }
   return fallback;
 }
@@ -136,7 +142,10 @@ export interface CreateOrderPayload {
   montant: number;
   remarque?: string;
   produit: string;
-  quantite?: number;
+  // NOEST rejects a numeric JSON value here ("le champ quantite doit être
+  // une chaîne de caractères", confirmed live) — it wants the count AS TEXT,
+  // unlike every other numeric field in this payload.
+  quantite?: string;
   poids?: number;
   can_open?: 0 | 1;
   type_id: number;
@@ -170,6 +179,23 @@ export function cancelOrder(tracking: string): Promise<{ success?: boolean; mess
 }
 
 // ---- Order → NOEST mapping ------------------------------------------
+
+/**
+ * Normalize a phone number to the plain local form NOEST's `phone`/`phone_2`
+ * validation requires (confirmed live: exactly 9-10 digits, no `+`, no
+ * country code — a "+213…" or "213…" prefixed number is rejected outright).
+ * Checkout itself only ever produces a bare 10-digit local number, but a
+ * manually-entered order (ManualOrderModal) isn't bound by that regex.
+ */
+function toLocalPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  // "213554177107" (12 digits: country code + 9-digit local number without
+  // its leading 0) → "0554177107". Only strip the prefix when the remainder
+  // is a plausible mobile number length, so a real 12-digit local number
+  // (were one ever to exist) isn't mangled.
+  if (digits.startsWith("213") && digits.length === 12) return "0" + digits.slice(3);
+  return digits;
+}
 
 /** Strip accents + lowercase for tolerant wilaya-name matching. */
 function normalize(value: string): string {
@@ -257,6 +283,14 @@ export function orderToPayload(
       .join(", ") || order.order_number;
   const quantite = (order.order_items ?? []).reduce((sum, item) => sum + item.quantity, 0) || 1;
 
+  // Checkout enforces a plain local 10-digit number (0-5/6/7 + 8 digits,
+  // src/lib/checkoutSchema.ts), but a manually-entered order
+  // (ManualOrderModal) isn't bound by that regex — an admin can type a
+  // leading "+213", spaces or dashes. NOEST's `phone` rejects anything that
+  // isn't exactly 9-10 digits, so normalize a country code back to the local
+  // form rather than only stripping punctuation.
+  const phone = toLocalPhone(order.customer_phone);
+
   // When the order's wilaya was carved out in the 2026 reorg the parcel ships
   // through its parent wilaya, so name the real destination in the remark —
   // otherwise the courier only ever sees the parent and the commune.
@@ -279,14 +313,14 @@ export function orderToPayload(
   return {
     reference,
     client: order.customer_name,
-    phone: order.customer_phone.replace(/[^\d+]/g, ""),
+    phone,
     adresse,
     wilaya_id: wilayaId,
     commune,
     montant: order.total,
     remarque,
     produit,
-    quantite,
+    quantite: String(quantite),
     poids: 1,
     can_open: 0,
     type_id: 1,
