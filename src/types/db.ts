@@ -87,6 +87,26 @@ export interface Product {
   product_variants?: ProductVariant[];
 }
 
+/**
+ * What a grid/list query actually returns. The list queries in `useProducts`
+ * select these columns only, so typing them as `Product` would promise callers
+ * a `description_fr` that is `undefined` at runtime. A full `Product` is
+ * assignable to this, so a card can still be handed one from a detail query.
+ */
+export type ProductListItem = Pick<
+  Product,
+  | "id"
+  | "slug"
+  | "name_fr"
+  | "name_ar"
+  | "price"
+  | "compare_at_price"
+  | "category_id"
+  | "stock"
+  | "featured"
+  | "product_images"
+>;
+
 /** One sellable combination of a product's colour/size/custom-variant axes,
  * carrying its own stock (0030). `products.stock` becomes the auto-summed
  * total the moment a product has any of these rows. */

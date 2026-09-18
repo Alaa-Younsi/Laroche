@@ -164,8 +164,10 @@ export default function Landing() {
   const glowSpringX = useSpring(glowX, { stiffness: 60, damping: 20, mass: 0.8 });
   const glowSpringY = useSpring(glowY, { stiffness: 60, damping: 20, mass: 0.8 });
   const { data: groups = [] } = useCategoryGroups();
-  const { data: featured = [] } = useProducts({ featured: true });
-  const { data: newArrivals = [] } = useProducts({ sort: "newest" });
+  // Both sections render a fixed slice below — ask the server for exactly that
+  // many rather than the whole catalogue.
+  const { data: featured = [] } = useProducts({ featured: true, limit: 8 });
+  const { data: newArrivals = [] } = useProducts({ sort: "newest", limit: 4 });
   const { data: reviews = [] } = useReviews();
   const { data: brands = [] } = useBrands();
 

@@ -1,0 +1,5 @@
+# The PNGs under public/ are the editable sources that scripts/optimize-images.py
+# turns into the .webp files the site actually loads (28 MB of PNG vs 1.5 MB of
+# WebP). Nothing references a .png at runtime, so they only need to exist in git,
+# never in a deployment. Keep this in sync if a new image folder is added.
+public/**/*.png

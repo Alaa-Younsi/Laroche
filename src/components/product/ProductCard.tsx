@@ -5,9 +5,9 @@ import { TiltCard } from "@/components/effects/TiltCard";
 import { SmartImage } from "@/components/ui/SmartImage";
 import { useCategoryPromoResolver } from "@/hooks/useCategoryPromotions";
 import { promoPrice } from "@/lib/promo";
-import type { Product } from "@/types/db";
+import type { ProductListItem } from "@/types/db";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product }: { product: ProductListItem }) {
   const { t, lang } = useLanguage();
   const { resolve } = useCategoryPromoResolver();
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Product } from "@/types/db";
+import type { Product, ProductListItem } from "@/types/db";
 
 function sanitizeSearchTerm(term: string): string {
   return term
@@ -21,15 +21,28 @@ export interface ProductFilters {
   search?: string;
   sort?: "newest" | "price_asc" | "price_desc";
   featured?: boolean;
+  /** Cap the rows fetched. Pass this whenever the caller renders a fixed number
+   *  of cards — without it the query returns the entire active catalogue. */
+  limit?: number;
 }
 
+/** Everything a product page needs — descriptions, variant rows, the lot. */
 const PRODUCT_SELECT = "*, product_images(*), category:categories(*), product_variants(*)";
+
+// A grid card renders a thumbnail, a name and a price, so a list query has no
+// reason to carry description_fr/_ar, details, warranty text, colors, sizes,
+// quantity_offers or a per-combination product_variants row. Measured against
+// the live catalogue (309 active products): PRODUCT_SELECT returns 487 KB,
+// which was the storefront's largest single source of Supabase egress because
+// every /boutique load paid it in full.
+const LIST_SELECT =
+  "id, slug, name_fr, name_ar, price, compare_at_price, category_id, stock, featured, product_images(url, alt)";
 
 export function useProducts(filters: ProductFilters = {}) {
   return useQuery({
     queryKey: ["products", filters],
-    queryFn: async (): Promise<Product[]> => {
-      let query = supabase.from("products").select(PRODUCT_SELECT).eq("status", "active");
+    queryFn: async (): Promise<ProductListItem[]> => {
+      let query = supabase.from("products").select(LIST_SELECT).eq("status", "active");
 
       if (filters.categoryIds && filters.categoryIds.length > 0) {
         query = query.in("category_id", filters.categoryIds);
@@ -73,9 +86,11 @@ export function useProducts(filters: ProductFilters = {}) {
         query = query.in("id", ids);
       }
 
+      if (filters.limit) query = query.limit(filters.limit);
+
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []) as unknown as Product[];
+      return (data ?? []) as unknown as ProductListItem[];
     },
   });
 }
@@ -101,10 +116,10 @@ export function useRelatedProducts(categoryId: string | undefined, excludeId: st
   return useQuery({
     queryKey: ["related-products", categoryId, excludeId],
     enabled: !!categoryId,
-    queryFn: async (): Promise<Product[]> => {
+    queryFn: async (): Promise<ProductListItem[]> => {
       let query = supabase
         .from("products")
-        .select(PRODUCT_SELECT)
+        .select(LIST_SELECT)
         .eq("status", "active")
         .eq("category_id", categoryId)
         .limit(4);
@@ -113,7 +128,7 @@ export function useRelatedProducts(categoryId: string | undefined, excludeId: st
       if (excludeId) query = query.neq("id", excludeId);
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []) as unknown as Product[];
+      return (data ?? []) as unknown as ProductListItem[];
     },
   });
 }
