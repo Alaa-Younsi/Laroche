@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCategoryGroups } from "@/hooks/useCategories";
-import { useProducts, type ProductFilters } from "@/hooks/useProducts";
+import { useInfiniteProducts, type ProductFilters } from "@/hooks/useProducts";
 import { useSeo } from "@/hooks/useSeo";
 import { Select } from "@/components/ui/Select";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -77,7 +77,11 @@ export default function Shop() {
     sort,
   };
 
-  const { data: products = [], isLoading } = useProducts(filters);
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteProducts(filters);
+  const products = data?.pages.flatMap((page) => page.items) ?? [];
+  // the count of everything matching the filters, not of what is loaded
+  const totalCount = data?.pages[0]?.total ?? 0;
 
   useSeo({
     title: `${t("shopTitle")} — Laroche Bijoux`,
@@ -112,7 +116,7 @@ export default function Shop() {
               : t("shopTitle")}
           </h1>
           <p className="text-xs uppercase tracking-wide2 text-muted">
-            {products.length} {t("resultsCount")}
+            {totalCount} {t("resultsCount")}
           </p>
         </motion.div>
 
@@ -189,13 +193,30 @@ export default function Shop() {
           ) : products.length === 0 ? (
             <p className="py-20 text-center text-muted">{t("noResults")}</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
-              {products.map((product, i) => (
-                <Reveal key={product.id} delay={(i % 2) * 0.07}>
-                  <ProductCard product={product} />
-                </Reveal>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+                {products.map((product, i) => (
+                  <Reveal key={product.id} delay={(i % 2) * 0.07}>
+                    <ProductCard product={product} />
+                  </Reveal>
+                ))}
+              </div>
+
+              {hasNextPage && (
+                <div className="mt-12 flex flex-col items-center gap-3">
+                  <span className="text-[0.62rem] uppercase tracking-wide3 text-muted">
+                    {products.length} / {totalCount} {t("shopShownCount")}
+                  </span>
+                  <button
+                    onClick={() => void fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="border border-brand px-8 py-3 text-[0.62rem] uppercase tracking-wide4 text-brand transition-colors hover:bg-brand hover:text-brand-ink disabled:opacity-60"
+                  >
+                    {isFetchingNextPage ? t("loading") : t("shopLoadMore")}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -209,13 +209,22 @@ function SilverPoolCard({
               key={row.id}
               type="button"
               onClick={() => setGrade(row.silver_type as SilverType)}
-              className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+              className={`rounded-lg border px-3 py-1.5 text-start text-sm transition ${
                 isActive
                   ? "border-brand bg-brand/10 text-ink"
                   : "border-line text-muted hover:border-brand/50"
               }`}
             >
-              {t(`silverType_${row.silver_type}` as "silverType_local")}
+              <span className="block leading-tight">
+                {t(`silverType_${row.silver_type}` as "silverType_local")}
+              </span>
+              {/* Each grade's own rate, on the button. Previously you had to
+                  select a grade to read its rate in the field below, so the
+                  three could never be compared — which is why the per-gram
+                  pricing read as missing. */}
+              <span dir="ltr" className="block text-[0.7rem] tabular-nums text-brand">
+                {formatPrice(row.price_per_gram)}/g
+              </span>
             </button>
           );
         })}
@@ -806,11 +815,26 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
                     )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5 text-muted">
-                    {product.kind === "service"
-                      ? t("posKindService")
-                      : product.pricing_mode === "gram"
-                        ? `${product.weight_grams} g`
-                        : t("posModeUnit")}
+                    {product.kind === "service" ? (
+                      t("posKindService")
+                    ) : product.pricing_mode === "gram" ? (
+                      // The rate, not just the weight. Showing only "12.5 g" made
+                      // per-gram pricing look absent from the one screen the
+                      // client actually reads, so he asked for a feature that
+                      // already existed in the silver panel.
+                      <span className="flex flex-col leading-tight">
+                        <span dir="ltr" className="tabular-nums text-ink">
+                          {formatPrice(product.price_per_gram)}/g
+                        </span>
+                        {product.weight_grams > 0 && (
+                          <span dir="ltr" className="tabular-nums text-[0.7rem]">
+                            × {product.weight_grams} g
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      t("posModeUnit")
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-end tabular-nums text-muted">
                     <Price value={product.effective_cost} />

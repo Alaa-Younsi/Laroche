@@ -103,6 +103,8 @@ export const translations = {
     filterClear: "Réinitialiser",
     noResults: "Aucun produit trouvé",
     resultsCount: "produits",
+    shopLoadMore: "Voir plus de produits",
+    shopShownCount: "affichés",
 
     // Cart
     cartTitle: "Panier",
@@ -825,6 +827,8 @@ export const translations = {
     filterClear: "إعادة تعيين",
     noResults: "لم يتم العثور على منتجات",
     resultsCount: "منتج",
+    shopLoadMore: "عرض المزيد من المنتجات",
+    shopShownCount: "معروض",
 
     cartTitle: "السلة",
     cartEmpty: "سلتك فارغة",

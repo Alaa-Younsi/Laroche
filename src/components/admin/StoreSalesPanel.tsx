@@ -266,10 +266,16 @@ export function StoreSalesPanel({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="space-y-4">
+      {/* min-w-0 on both grid children: a grid item defaults to
+          min-width:auto, so it refuses to shrink under its widest content and
+          drags the whole single-column phone layout out to that width. */}
+      <div className="min-w-0 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <ScannerInput onScan={onScan} />
-          <div className="flex gap-2">
+          {/* min-w-0 so the longest <option> ("Gourmette argent — 4 800 DA")
+              cannot set this grid item's floor width. Without it the column
+              measured 450px inside a 390px phone and the till was clipped. */}
+          <div className="flex min-w-0 gap-2">
             <Select
               value={pick}
               onChange={(e) => {
@@ -474,7 +480,7 @@ export function StoreSalesPanel({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-line bg-panel p-4">
+      <div className="min-w-0 space-y-3 rounded-xl border border-line bg-panel p-4">
         <h3 className="font-display text-lg text-ink">{t("posCheckout")}</h3>
 
         <Input

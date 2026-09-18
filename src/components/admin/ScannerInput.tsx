@@ -42,7 +42,10 @@ export function ScannerInput({
   }
 
   return (
-    <div className="relative">
+    // min-w-0: this sits in a grid parent, whose items default to
+    // min-width:auto and so refuse to shrink below the input's intrinsic
+    // width — which pushed the whole till past the phone viewport.
+    <div className="relative min-w-0">
       <ScanLine
         size={16}
         className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-brand"
