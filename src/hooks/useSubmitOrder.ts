@@ -26,7 +26,17 @@ export function useSubmitOrder() {
         customer: { ...params.customer, language: params.lang },
       });
       if (error) throw error;
-      return data as string;
+      const orderNumber = data as string;
+
+      // Best-effort, deliberately not awaited and never read. A notification
+      // failure (bad key, Resend rate limit, function cold-start timeout) must
+      // NEVER surface to the shopper or roll back an order that is already on
+      // disk — this is presentation, not part of the transaction.
+      void supabase.functions.invoke("notify", {
+        body: { kind: "order", order_number: orderNumber },
+      });
+
+      return orderNumber;
     },
   });
 }

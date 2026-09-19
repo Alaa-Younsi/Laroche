@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { BentoPanel } from "@/components/ui/BentoPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { NotificationPrefsPanel } from "@/components/admin/NotificationPrefsPanel";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -124,6 +125,8 @@ export default function Account() {
           </Button>
         </form>
       </BentoPanel>
+
+      <NotificationPrefsPanel />
     </div>
   );
 }

@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Trash2, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useOrders } from "@/hooks/useOrders";
+import { useOrders, useOrderStatusBoard, useUpdateOrderStatus } from "@/hooks/useOrders";
+import {
+  ORDER_STATUSES,
+  ORDER_STATUS_TONE,
+  orderStatusKey,
+} from "@/lib/orderStatus";
 import { exportOrdersToExcel } from "@/lib/exportOrders";
 import { DeleteOrdersModal, type DeleteScope } from "@/components/admin/DeleteOrdersModal";
 import { ManualOrderModal } from "@/components/admin/ManualOrderModal";
@@ -15,8 +20,6 @@ import { Price } from "@/components/ui/Price";
 import { formatDate } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/db";
 
-const STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
-
 export default function Orders() {
   const { t } = useLanguage();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
@@ -25,6 +28,8 @@ export default function Orders() {
   const [pending, setPending] = useState<{ scope: DeleteScope; orders: Order[] } | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { data: board = {} } = useOrderStatusBoard();
+  const updateStatus = useUpdateOrderStatus();
 
   // Rows can leave the list when the status filter changes, so intersect rather
   // than trusting the stored ids — otherwise "delete selected" could act on
@@ -76,9 +81,9 @@ export default function Orders() {
             className="w-full sm:w-auto"
           >
             <option value="">{t("viewAll")}</option>
-            {STATUSES.map((s) => (
+            {ORDER_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {t(orderStatusKey(s))}
               </option>
             ))}
           </Select>
@@ -132,6 +137,36 @@ export default function Orders() {
           {t("adminOrdersCapped").replace("{n}", "300")}
         </p>
       )}
+
+      {/* Board rail — one tile per pipeline stage, tapping it filters the list.
+          Rendered in ORDER_STATUSES order, never Object.keys(board). */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {ORDER_STATUSES.map((s) => {
+          const bucket = board[s];
+          const isActive = statusFilter === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setStatusFilter(isActive ? "" : s);
+                clearSelection();
+              }}
+              className={`min-w-0 rounded-xl border p-3 text-start transition ${
+                isActive ? ORDER_STATUS_TONE[s] : "border-line bg-panel hover:border-brand/40"
+              }`}
+            >
+              <span className="block truncate text-[0.62rem] uppercase tracking-wide2 text-muted">
+                {t(orderStatusKey(s))}
+              </span>
+              <span dir="ltr" className="mt-1 block text-xl font-medium tabular-nums text-ink">
+                {bucket?.count ?? 0}
+              </span>
+              <Price value={bucket?.total ?? 0} className="mt-0.5 block text-[0.7rem] text-muted" />
+            </button>
+          );
+        })}
+      </div>
 
       <BentoPanel className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -193,7 +228,27 @@ export default function Orders() {
                   </td>
                   <td className="whitespace-nowrap px-5 py-3">{order.customer_name}</td>
                   <td className="whitespace-nowrap px-5 py-3">{order.wilaya}</td>
-                  <td className="whitespace-nowrap px-5 py-3 capitalize">{order.status}</td>
+                  <td className="whitespace-nowrap px-5 py-3">
+                    {/* advance an order without opening it */}
+                    <Select
+                      value={order.status}
+                      disabled={updateStatus.isPending}
+                      onChange={(e) =>
+                        updateStatus.mutate({
+                          id: order.id,
+                          status: e.target.value as OrderStatus,
+                        })
+                      }
+                      className="px-3 py-1.5 text-xs"
+                      aria-label={`${t("adminStatus")} ${order.order_number}`}
+                    >
+                      {ORDER_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {t(orderStatusKey(s))}
+                        </option>
+                      ))}
+                    </Select>
+                  </td>
                   <td className="whitespace-nowrap px-5 py-3">
                     <PaymentBadge method={order.payment_method} status={order.payment_status} />
                   </td>

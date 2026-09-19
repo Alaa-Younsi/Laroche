@@ -20,6 +20,7 @@ import { VariantsEditor, type VariantDraft } from "@/components/admin/VariantsEd
 import { OffersEditor } from "@/components/admin/OffersEditor";
 import { ImagesEditor } from "@/components/admin/ImagesEditor";
 import { VideoEditor } from "@/components/admin/VideoEditor";
+import { SilverPriceCalculator } from "@/components/admin/SilverPriceCalculator";
 import { useAdminToast } from "@/components/admin/AdminToast";
 import type { Product, ProductColor, ProductImage, ProductVariant, VariantGroup, QuantityOffer } from "@/types/db";
 
@@ -42,6 +43,8 @@ const EMPTY: ProductFormState = {
   stock: 0,
   style_code: null,
   material: null,
+  weight_grams: null,
+  silver_type: null,
   warranty_fr: null,
   warranty_ar: null,
   colors: [],
@@ -75,6 +78,8 @@ function toFormState(row: Product): ProductFormState {
     stock: row.stock,
     style_code: row.style_code,
     material: row.material,
+    weight_grams: row.weight_grams,
+    silver_type: row.silver_type,
     warranty_fr: row.warranty_fr,
     warranty_ar: row.warranty_ar,
     colors: row.colors ?? [],
@@ -375,6 +380,22 @@ export default function ProductForm() {
 
         <div className="space-y-6">
           <BentoPanel className="space-y-4 p-6">
+            <SilverPriceCalculator
+              weightGrams={form.weight_grams}
+              silverType={form.silver_type}
+              onChange={(next) =>
+                setForm((prev) => ({
+                  ...prev,
+                  weight_grams: next.weight_grams,
+                  silver_type: next.silver_type,
+                  // Only ever overwrite the price when the calculator could
+                  // actually derive one — clearing the weight must not wipe a
+                  // price the owner typed by hand.
+                  price: next.price ?? prev.price,
+                }))
+              }
+            />
+
             <div>
               <label className="mb-1 block text-xs uppercase tracking-wide2 text-muted">Prix (DA)</label>
               <Input type="number" min={0} value={form.price} onChange={(e) => update("price", Number(e.target.value))} required />

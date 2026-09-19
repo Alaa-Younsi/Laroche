@@ -1,0 +1,4 @@
+{
+  "//": "The Deno extension type-checks supabase/functions (Edge Functions). Without it the editor checks that Deno code with the browser TS server and reports errors on correct code.",
+  "recommendations": ["denoland.vscode-deno"]
+}

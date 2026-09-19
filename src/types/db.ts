@@ -70,6 +70,11 @@ export interface Product {
   stock: number;
   style_code: string | null;
   material: string | null;
+  /** Optional (0035). The inputs the owner priced this piece from, when he used
+   * the silver calculator instead of typing a price. Derivation only — `price`
+   * stays authoritative for the storefront and `place_order`. */
+  weight_grams: number | null;
+  silver_type: SilverType | null;
   warranty_fr: string | null;
   warranty_ar: string | null;
   colors: ProductColor[];

@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { ORDER_STATUSES, orderStatusKey } from "@/lib/orderStatus";
 import { useOrder } from "@/hooks/useOrders";
 import { supabase } from "@/lib/supabase";
 import { useAdminToast } from "@/components/admin/AdminToast";
@@ -14,7 +15,6 @@ import { formatDate, formatPrice } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/db";
 import { responsiveSrcSet } from "@/lib/image";
 
-const STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
 const STATUS_FR: Record<OrderStatus, string> = {
   pending: "en attente de confirmation",
@@ -78,9 +78,9 @@ export default function OrderDetail() {
           onChange={(e) => updateStatus(e.target.value as OrderStatus)}
           className="w-full sm:w-auto"
         >
-          {STATUSES.map((s) => (
+          {ORDER_STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {t(orderStatusKey(s))}
             </option>
           ))}
         </Select>

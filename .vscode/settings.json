@@ -1,0 +1,7 @@
+{
+  "//": "supabase/functions is Deno, the rest of the repo is a Vite browser app. Scoping the Deno language server to that one folder stops it fighting the normal TS server over src/, and stops the TS server reporting phantom errors on Deno code.",
+  "deno.enable": false,
+  "deno.enablePaths": ["supabase/functions"],
+  "deno.lint": true,
+  "deno.importMap": "supabase/functions/deno.json"
+}

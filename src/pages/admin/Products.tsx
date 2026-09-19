@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Loader2, Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -92,6 +92,26 @@ export default function Products() {
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  // The whole catalogue is already in memory here, so filtering stays client
+  // side — no refetch, and it matches on both languages at once so the owner
+  // finds a piece whether he remembers its French or Arabic name.
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) =>
+      [
+        p.name_fr,
+        p.name_ar,
+        p.slug,
+        p.style_code ?? "",
+        p.material ?? "",
+        p.category?.name_fr ?? "",
+        p.category?.name_ar ?? "",
+      ].some((field) => field.toLowerCase().includes(q)),
+    );
+  }, [products, search]);
 
   async function confirmDelete() {
     if (!pendingDelete) return;
@@ -126,6 +146,27 @@ export default function Products() {
         </Button>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-0 flex-1 sm:max-w-md">
+          <Search
+            size={15}
+            className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("adminProductSearch")}
+            className="w-full min-w-0 rounded-lg border border-line bg-panel py-2.5 pe-4 ps-9 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-brand"
+          />
+        </div>
+        {search.trim() !== "" && (
+          <span className="text-xs uppercase tracking-wide2 text-muted">
+            {visible.length} / {products.length}
+          </span>
+        )}
+      </div>
+
       <BentoPanel className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -141,7 +182,7 @@ export default function Products() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
+              {visible.map((product) => (
                 <tr key={product.id} className="border-b border-line last:border-0 hover:bg-panel-2/40">
                   <td className="px-5 py-2.5">
                     {product.product_images?.[0] && (
@@ -219,6 +260,9 @@ export default function Products() {
               )}
             </tbody>
           </table>
+          {!isLoading && visible.length === 0 && products.length > 0 && (
+            <p className="px-5 py-12 text-center text-sm text-muted">{t("adminNoMatch")}</p>
+          )}
         </div>
       </BentoPanel>
 

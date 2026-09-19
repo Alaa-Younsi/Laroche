@@ -6,7 +6,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
 export default [
-  { ignores: ["dist", "node_modules"] },
+  // supabase/functions is Deno, not the Vite app: it imports from URLs and
+  // uses the Deno global, neither of which this browser-targeted config knows.
+  { ignores: ["dist", "node_modules", "supabase/functions"] },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
