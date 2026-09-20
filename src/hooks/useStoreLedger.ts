@@ -105,7 +105,12 @@ export function useStoreProducts() {
     queryFn: async (): Promise<StoreProduct[]> => {
       const { data, error } = await supabase
         .from("store_products")
-        .select("*, store_stock(*)")
+        // The embedded website row carries the silver grade + weight this piece
+        // was priced from (0035). store_products cannot hold silver_type itself
+        // — store_products_silver_type_ck (0027) reserves that column for the
+        // three bulk-silver pool rows — so the catalogue reads it through the
+        // FK instead of duplicating it.
+        .select("*, store_stock(*), product:products(weight_grams, silver_type)")
         .order("name", { ascending: true });
       if (error) throw error;
       return (data ?? []).map((row) => ({ ...row, store_stock: row.store_stock ?? [] }));

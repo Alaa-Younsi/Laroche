@@ -426,6 +426,10 @@ export interface StoreProduct {
   silver_type: SilverType | null;
   /** Joined per-shop quantities, when the query asked for them. */
   store_stock?: StoreStock[];
+  /** The linked WEBSITE product's weight-pricing inputs (0035), when the query
+   * embedded them. Lets the shop catalogue derive a cost for a piece the owner
+   * priced with the silver calculator, instead of showing 0 DA / 100 % margin. */
+  product?: { weight_grams: number | null; silver_type: SilverType | null } | null;
 }
 
 /** Weighted-average bulk-silver balance for one shop and one grade (0022/0027). */

@@ -39,10 +39,28 @@ const RESEND_ENDPOINT = "https://api.resend.com/emails";
 // redeploy; no code changes.
 const DEFAULT_FROM = "Laroche Bijoux <onboarding@resend.dev>";
 
+// The shopper's browser calls this cross-origin (larochebijoux.com ->
+// *.supabase.co) and supabase-js sends `content-type: application/json` plus an
+// Authorization header, which makes it a NON-simple request: Chrome fires an
+// OPTIONS preflight first and refuses to send the POST unless that preflight
+// answers with these headers. Without them the invoke dies in the browser and
+// nothing ever reaches this function.
+//
+// `*` is safe here specifically because this endpoint reveals nothing: the
+// atomic claim means an unknown or already-notified order returns the same
+// empty result as a probe, so there is no data to protect behind an origin
+// check.
+const CORS_HEADERS: Record<string, string> = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-max-age": "86400",
+};
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { ...CORS_HEADERS, "content-type": "application/json" },
   });
 }
 
@@ -129,6 +147,8 @@ async function sendEmail(
 }
 
 Deno.serve(async (req: Request) => {
+  // Preflight must be answered before the browser will send the real POST.
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
   if (req.method !== "POST") return json({ code: "method_not_allowed" }, 405);
 
   let body: { kind?: string; order_number?: string };

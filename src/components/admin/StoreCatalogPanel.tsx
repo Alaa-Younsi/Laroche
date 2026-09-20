@@ -411,7 +411,30 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
   const { t } = useLanguage();
   const toast = useAdminToast();
   const { data: products = [], isLoading } = useStoreProducts();
+  const { data: catalogPools = [] } = useSilverPools(storeId);
   const { data: suppliers = [] } = useSuppliers();
+
+  // Cost basis per grade for THIS shop. store_products.cost_price is shared
+  // across shops, but silver costs differ per shop (rhodié is 840.86/g in one
+  // and 800/g in the other), so the buy price is derived per shop here rather
+  // than stored — matching how the silver card already computes its margin.
+  const costPerGramByGrade = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const pool of catalogPools) m.set(pool.silver_type, pool.avg_cost_per_gram);
+    return m;
+  }, [catalogPools]);
+
+  /** Buy price for a piece the owner priced with the silver calculator, or the
+   *  stored cost when there is nothing to derive from. */
+  function costOf(product: StoreProduct): { value: number; derived: boolean } {
+    if (product.effective_cost > 0) return { value: product.effective_cost, derived: false };
+    const grams = product.product?.weight_grams ?? null;
+    const grade = product.product?.silver_type ?? null;
+    if (!grams || !grade) return { value: product.effective_cost, derived: false };
+    const rate = costPerGramByGrade.get(grade) ?? 0;
+    if (rate <= 0) return { value: product.effective_cost, derived: false };
+    return { value: Math.round(grams * rate * 100) / 100, derived: true };
+  }
   const save = useSaveStoreProduct();
   const remove = useDeleteStoreProduct();
   const setStock = useSetStoreStock();
@@ -779,9 +802,10 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
           </thead>
           <tbody>
             {rows.map((product) => {
+              const cost = costOf(product);
               const margin =
                 product.effective_price > 0
-                  ? (product.effective_price - product.effective_cost) / product.effective_price
+                  ? (product.effective_price - cost.value) / product.effective_price
                   : 0;
               return (
                 <tr key={product.id} className="border-b border-line last:border-0">
@@ -837,7 +861,19 @@ export function StoreCatalogPanel({ stores, storeId }: { stores: Store[]; storeI
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-end tabular-nums text-muted">
-                    <Price value={product.effective_cost} />
+                    <Price value={cost.value} />
+                    {cost.derived && (
+                      // marked so a derived buy price is never mistaken for one
+                      // the owner actually entered
+                      <span
+                        className="ms-1 text-[0.6rem] text-brand"
+                        title={`${product.product?.weight_grams} g × ${formatPrice(
+                          costPerGramByGrade.get(product.product?.silver_type ?? "") ?? 0,
+                        )}/g`}
+                      >
+                        ~
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-end tabular-nums text-ink">
                     <Price value={product.effective_price} />
