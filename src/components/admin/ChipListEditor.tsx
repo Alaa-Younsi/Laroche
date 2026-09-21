@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/Input";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export function ChipListEditor({
   values,
@@ -13,6 +14,7 @@ export function ChipListEditor({
   placeholder: string;
   dir?: "rtl" | "ltr";
 }) {
+  const { t } = useLanguage();
   const [draft, setDraft] = useState("");
 
   function commit() {
@@ -42,6 +44,7 @@ export function ChipListEditor({
             <button
               type="button"
               onClick={() => onChange(values.filter((v) => v !== value))}
+              aria-label={`${t("adminChipRemove")} ${value}`}
               className="text-muted hover:text-red-500"
             >
               <X size={11} />
@@ -60,6 +63,7 @@ export function ChipListEditor({
         <button
           type="button"
           onClick={commit}
+          aria-label={t("adminChipAdd")}
           className="shrink-0 rounded-lg border border-line px-3 text-ink hover:border-brand hover:text-brand"
         >
           <Plus size={15} />

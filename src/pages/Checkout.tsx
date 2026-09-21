@@ -11,7 +11,7 @@ import { useDeliveryPrices } from "@/hooks/useDeliveryPrices";
 import { useSubmitOrder } from "@/hooks/useSubmitOrder";
 import { useHoneypot } from "@/hooks/useHoneypot";
 import { useSeo } from "@/hooks/useSeo";
-import { checkoutSchema, type CheckoutFormValues } from "@/lib/checkoutSchema";
+import { checkoutSchema, type CheckoutFormInput, type CheckoutFormValues } from "@/lib/checkoutSchema";
 import { CheckoutFields } from "@/components/product/CheckoutFields";
 import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
@@ -42,7 +42,7 @@ export default function Checkout() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<CheckoutFormValues>({
+  } = useForm<CheckoutFormInput, unknown, CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: { delivery_type: "home", payment_method: "cod" },
   });

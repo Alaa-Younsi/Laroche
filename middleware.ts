@@ -28,7 +28,12 @@ export default async function middleware(request: Request) {
     if (!supabaseUrl || !anonKey || !slug) return next();
 
     const res = await fetch(
-      `${supabaseUrl}/rest/v1/products?select=name_fr,description_fr,price,stock,product_images(url)&slug=eq.${encodeURIComponent(slug)}&status=eq.active`,
+      // product_images.order: PostgREST returns an embedded table unordered, so
+      // without this the share preview picked an arbitrary photo instead of the
+      // cover the admin chose in ImagesEditor. limit=1 — only rows[0] is read.
+      `${supabaseUrl}/rest/v1/products?select=name_fr,description_fr,price,stock,product_images(url)` +
+        `&slug=eq.${encodeURIComponent(slug)}&status=eq.active` +
+        `&product_images.order=sort_order&limit=1`,
       { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } },
     );
     if (!res.ok) return next();

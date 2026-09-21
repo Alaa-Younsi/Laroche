@@ -115,10 +115,6 @@ export function initPixels(pixels: MetaPixel[]): void {
   }
 }
 
-export function isInitialised(pixelId: string): boolean {
-  return initialised.has(pixelId);
-}
-
 // --- targeting ------------------------------------------------------------
 
 /**

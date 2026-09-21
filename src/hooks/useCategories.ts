@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { buildCategoryTree, type CategoryNode } from "@/lib/categoryTree";
+import { buildCategoryTree } from "@/lib/categoryTree";
 import type { Category } from "@/types/db";
 
 async function fetchCategories(): Promise<Category[]> {
@@ -78,9 +78,6 @@ const FALLBACK_CATEGORIES: Category[] = FALLBACK_DEFS.map((c) => ({
 }));
 
 const FALLBACK_TREE = buildCategoryTree(FALLBACK_CATEGORIES);
-
-/** @deprecated kept as an alias — a "group" is just a top-level CategoryNode now. */
-export type CategoryGroup = CategoryNode;
 
 export function useCategoryGroups() {
   const { data, ...rest } = useCategories();

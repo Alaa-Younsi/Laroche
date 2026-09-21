@@ -7,9 +7,11 @@ import type { TranslationKey } from "@/i18n/translations";
 // asking (see api/_lib/adminTeam.ts).
 
 export class CreateWorkerError extends Error {
-  constructor(public code: string) {
+  readonly code: string;
+  constructor(code: string) {
     super(code);
     this.name = "CreateWorkerError";
+    this.code = code;
   }
 }
 

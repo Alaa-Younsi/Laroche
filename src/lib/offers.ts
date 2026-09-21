@@ -36,11 +36,3 @@ export function lineTotal(
   }
   return Math.max(0, best);
 }
-
-export function lineDiscount(
-  price: number,
-  qty: number,
-  offers: QuantityOffer[] | undefined,
-): number {
-  return price * qty - lineTotal(price, qty, offers);
-}

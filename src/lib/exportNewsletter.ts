@@ -11,16 +11,26 @@ function excelSafe(value: string): string {
 export async function exportNewsletterToExcel(
   subscribers: NewsletterSubscriber[],
 ): Promise<void> {
-  const schema = [
-    { column: "Email", type: String, value: (s: NewsletterSubscriber) => excelSafe(s.email), width: 32 },
-    { column: "Statut", type: String, value: (s: NewsletterSubscriber) => (s.active ? "Actif" : "Inactif"), width: 12 },
+  const columns = [
     {
-      column: "Date",
-      type: String,
-      value: (s: NewsletterSubscriber) => new Date(s.created_at).toLocaleDateString("fr-DZ"),
+      header: "Email",
+      width: 32,
+      cell: (s: NewsletterSubscriber) => ({ type: String, value: excelSafe(s.email) }) as const,
+    },
+    {
+      header: "Statut",
+      width: 12,
+      cell: (s: NewsletterSubscriber) => ({ type: String, value: s.active ? "Actif" : "Inactif" }) as const,
+    },
+    {
+      header: "Date",
       width: 14,
+      cell: (s: NewsletterSubscriber) => ({
+        type: String,
+        value: new Date(s.created_at).toLocaleDateString("fr-DZ"),
+      }) as const,
     },
   ];
   const today = new Date().toISOString().slice(0, 10);
-  await writeXlsxFile(subscribers, { schema, fileName: `newsletter-${today}.xlsx` });
+  await writeXlsxFile(subscribers, { columns }).toFile(`newsletter-${today}.xlsx`);
 }

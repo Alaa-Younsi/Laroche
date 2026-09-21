@@ -4,13 +4,13 @@ import { useDeliveryPrices } from "@/hooks/useDeliveryPrices";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
-import type { CheckoutFormValues } from "@/lib/checkoutSchema";
+import type { CheckoutFormInput } from "@/lib/checkoutSchema";
 
 interface CheckoutFieldsProps {
-  register: UseFormRegister<CheckoutFormValues>;
-  errors: FieldErrors<CheckoutFormValues>;
-  watch: UseFormWatch<CheckoutFormValues>;
-  setValue: UseFormSetValue<CheckoutFormValues>;
+  register: UseFormRegister<CheckoutFormInput>;
+  errors: FieldErrors<CheckoutFormInput>;
+  watch: UseFormWatch<CheckoutFormInput>;
+  setValue: UseFormSetValue<CheckoutFormInput>;
 }
 
 export function CheckoutFields({ register, errors, watch, setValue }: CheckoutFieldsProps) {

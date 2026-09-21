@@ -7,17 +7,17 @@ import type {
   Store,
   StoreCashMovement,
   StoreDebt,
-  StoreDebtPayment,
   StoreInvoice,
+  StoreInvoiceItem,
   StoreMember,
   StorePaymentMethod,
   StoreProduct,
   StoreProforma,
+  StoreProformaItem,
   StoreReturn,
   StoreSale,
   StoreSilverPool,
   StoreSilverPurchase,
-  StoreStock,
   StoreTransfer,
 } from "@/types/db";
 
@@ -153,17 +153,6 @@ export function useDeleteStoreProduct() {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["store-products"] }),
-  });
-}
-
-export function useStoreStock() {
-  return useQuery({
-    queryKey: ["store-stock"],
-    queryFn: async (): Promise<StoreStock[]> => {
-      const { data, error } = await supabase.from("store_stock").select("*");
-      if (error) throw error;
-      return data ?? [];
-    },
   });
 }
 
@@ -539,7 +528,7 @@ export function useStoreProformas() {
       if (error) throw error;
       return (data ?? []).map((row) => ({
         ...row,
-        store_proforma_items: (row.store_proforma_items ?? []).sort(
+        store_proforma_items: ((row.store_proforma_items ?? []) as StoreProformaItem[]).sort(
           (a, b) => a.line_no - b.line_no,
         ),
       }));
@@ -608,7 +597,7 @@ export function useStoreInvoices() {
       if (error) throw error;
       return (data ?? []).map((row) => ({
         ...row,
-        store_invoice_items: (row.store_invoice_items ?? []).sort(
+        store_invoice_items: ((row.store_invoice_items ?? []) as StoreInvoiceItem[]).sort(
           (a, b) => a.line_no - b.line_no,
         ),
       }));
@@ -738,22 +727,6 @@ export function useDeleteStoreDebt() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["store-debts"] });
       queryClient.invalidateQueries({ queryKey: ["store-cash"] });
-    },
-  });
-}
-
-export function useDebtPayments(debtId: string | undefined) {
-  return useQuery({
-    queryKey: ["store-debt-payments", debtId],
-    enabled: !!debtId,
-    queryFn: async (): Promise<StoreDebtPayment[]> => {
-      const { data, error } = await supabase
-        .from("store_debt_payments")
-        .select("*")
-        .eq("debt_id", debtId as string)
-        .order("occurred_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
     },
   });
 }

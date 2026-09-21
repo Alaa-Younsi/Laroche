@@ -480,19 +480,6 @@ export interface StoreSaleItem {
   designation: string | null;
 }
 
-/** One payment event against a sale (0031): the initial full/partial payment
- * `create_store_sale` posts, plus any later balance settlement via
- * `record_sale_payment`. */
-export interface StoreSalePayment {
-  id: string;
-  sale_id: string;
-  amount: number;
-  method: StorePaymentMethod;
-  occurred_at: string;
-  created_by: string | null;
-  created_at: string;
-}
-
 export interface StoreSale {
   id: string;
   sale_number: string;

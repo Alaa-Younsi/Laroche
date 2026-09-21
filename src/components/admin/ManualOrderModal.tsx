@@ -35,7 +35,9 @@ export function ManualOrderModal({
 }) {
   const { t, lang } = useLanguage();
   const toast = useAdminToast();
-  const { data: products = [] } = useProducts();
+  // Only while the modal is open — this component stays mounted on the Orders
+  // page, and the picker needs the full catalogue.
+  const { data: products = [] } = useProducts({}, { enabled: open });
   const { data: wilayas = [] } = useDeliveryPrices(true);
   const { resolve } = useCategoryPromoResolver();
   const create = useCreateManualOrder();

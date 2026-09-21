@@ -50,7 +50,12 @@ function listQuery(withCount: boolean) {
   return supabase
     .from("products")
     .select(LIST_SELECT, withCount ? { count: "exact" } : undefined)
-    .eq("status", "active");
+    .eq("status", "active")
+    // The admin drags images into order in ImagesEditor and that order decides
+    // the cover photo (every card and the OG/structured-data image read
+    // product_images[0]). PostgREST returns an embedded table in no guaranteed
+    // order, so without this the cover was effectively arbitrary.
+    .order("sort_order", { referencedTable: "product_images", ascending: true });
 }
 
 type ProductQuery = ReturnType<typeof listQuery>;
@@ -115,9 +120,15 @@ async function applyProductFilters(
   return { query };
 }
 
-export function useProducts(filters: ProductFilters = {}) {
+/**
+ * @param options.enabled Gate the fetch. A modal that early-returns `null` when
+ * closed still runs its hooks, so an always-mounted picker would fetch the whole
+ * catalogue on every page view without this.
+ */
+export function useProducts(filters: ProductFilters = {}, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ["products", filters],
+    enabled: options.enabled ?? true,
     queryFn: async (): Promise<ProductListItem[]> => {
       const built = await applyProductFilters(listQuery(false), filters);
       if (!built) return [];
@@ -167,6 +178,7 @@ export function useProduct(slug: string | undefined) {
         .select(PRODUCT_SELECT)
         .eq("slug", slug)
         .eq("status", "active")
+        .order("sort_order", { referencedTable: "product_images", ascending: true })
         .maybeSingle();
       if (error) throw error;
       return data as unknown as Product | null;
@@ -184,6 +196,7 @@ export function useRelatedProducts(categoryId: string | undefined, excludeId: st
         .select(LIST_SELECT)
         .eq("status", "active")
         .eq("category_id", categoryId)
+        .order("sort_order", { referencedTable: "product_images", ascending: true })
         .limit(4);
       // `id` is a uuid column — passing "" would be a 400. Only filter when we
       // actually have a product to exclude.

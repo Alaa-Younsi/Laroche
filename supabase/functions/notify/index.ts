@@ -201,9 +201,15 @@ Deno.serve(async (req: Request) => {
     return json({ code: "lookup_failed" }, 500);
   }
 
-  const addresses = ((recipients ?? []) as { notify_email: string | null }[])
-    .map((r: { notify_email: string | null }) => (r.notify_email ?? "").trim())
-    .filter((email: string) => email.includes("@"));
+  // Set: two staff members may well type the same shared inbox, and Resend
+  // would happily send that address one copy per row.
+  const addresses = [
+    ...new Set(
+      ((recipients ?? []) as { notify_email: string | null }[])
+        .map((r: { notify_email: string | null }) => (r.notify_email ?? "").trim().toLowerCase())
+        .filter((email: string) => email.includes("@")),
+    ),
+  ];
   if (addresses.length === 0) return json({ ok: true, claimed: true, sent: 0 });
 
   const from = Deno.env.get("RESEND_FROM") || DEFAULT_FROM;

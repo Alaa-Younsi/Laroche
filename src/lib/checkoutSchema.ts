@@ -13,4 +13,9 @@ export const checkoutSchema = z.object({
   honeypot: z.string().optional(),
 });
 
-export type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+// Two faces of the same schema. `payment_method` has a .default(), so what the
+// form holds before validation (input) has it optional while the validated
+// payload (output) always has it. Mixing the two is what made zodResolver and
+// useForm disagree — the form-facing props use Input, the submit path Values.
+export type CheckoutFormInput = z.input<typeof checkoutSchema>;
+export type CheckoutFormValues = z.output<typeof checkoutSchema>;
