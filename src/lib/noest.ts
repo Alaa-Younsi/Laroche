@@ -295,7 +295,17 @@ export function orderToPayload(
   // through its parent wilaya, so name the real destination in the remark —
   // otherwise the courier only ever sees the parent and the commune.
   const parent = parentWilayaFor(order.wilaya);
-  const remarque = [parent ? `Wilaya : ${order.wilaya}` : "", order.notes ?? ""]
+  // An order already settled through Chargily must never be handed to NOEST
+  // as a cash-collect parcel — that would have the courier charge the
+  // customer a second time. payment_status is the one field the webhook sets
+  // unconditionally on a real payment, so it's the authoritative check here
+  // (not payment_method, which a customer/admin could set without paying).
+  const alreadyPaid = order.payment_status === "paid";
+  const remarque = [
+    parent ? `Wilaya : ${order.wilaya}` : "",
+    alreadyPaid ? "PAYÉ EN LIGNE — NE PAS ENCAISSER" : "",
+    order.notes ?? "",
+  ]
     .filter(Boolean)
     .join(" — ");
 
@@ -317,7 +327,7 @@ export function orderToPayload(
     adresse,
     wilaya_id: wilayaId,
     commune,
-    montant: order.total,
+    montant: alreadyPaid ? 0 : order.total,
     remarque,
     produit,
     quantite: String(quantite),

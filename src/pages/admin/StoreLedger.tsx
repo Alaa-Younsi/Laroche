@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, Maximize2, Minimize2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useExpenses, usePurchases } from "@/hooks/useFinance";
@@ -45,6 +45,7 @@ import {
   type PurchaseFact,
   type SaleFact,
 } from "@/lib/finance";
+import { cn } from "@/lib/utils";
 import type { StoreReturn, StoreSale } from "@/types/db";
 
 type Tab =
@@ -118,6 +119,28 @@ export default function StoreLedger() {
   // refetch the RPC triggered, so hold its id and open on arrival.
   const [pendingReceiptId, setPendingReceiptId] = useState<string | null>(null);
   const [receiptSale, setReceiptSale] = useState<StoreSale | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreens this page (not just the till) so any POS tab — returns, cash,
+  // proformas — benefits from a tablet at the counter with no admin chrome
+  // around it. The Fullscreen API paints the requested element over
+  // everything else on its own, so no sidebar-hiding logic is needed here.
+  useEffect(() => {
+    function onChange() {
+      setIsFullscreen(document.fullscreenElement === pageRef.current);
+    }
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      pageRef.current?.requestFullscreen();
+    }
+  }
 
   const { data: stores = [], isLoading: storesLoading } = useStores();
   const { data: products = [] } = useStoreProducts();
@@ -259,7 +282,13 @@ export default function StoreLedger() {
   }
 
   return (
-    <div className="space-y-6">
+    <div
+      ref={pageRef}
+      className={cn(
+        "space-y-6",
+        isFullscreen && "h-screen overflow-y-auto bg-bg p-4 md:p-8",
+      )}
+    >
       <div className="print-hide flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl text-ink">{t("adminStore")}</h1>
         <div className="flex flex-wrap items-center gap-3">
@@ -276,6 +305,10 @@ export default function StoreLedger() {
           </Select>
           <Button variant="outline" size="sm" onClick={exportCsv}>
             <Download size={14} /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            {isFullscreen ? t("posExitFullscreen") : t("posFullscreen")}
           </Button>
         </div>
       </div>

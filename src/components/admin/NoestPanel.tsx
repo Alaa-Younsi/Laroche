@@ -281,6 +281,15 @@ export function NoestPanel({ order }: { order: Order }) {
             Cette commande n'a pas encore été expédiée via NOEST. NOEST crée le colis
             immédiatement dès l'appel — vérifiez les informations avant de cliquer.
           </p>
+          {order.payment_status === "paid" && (
+            <div className="flex items-start gap-2 rounded-lg border border-green-500/40 bg-green-500/5 px-4 py-3 text-sm text-green-700">
+              <CheckCircle2 size={16} className="mt-px shrink-0" />
+              <span>
+                Commande déjà payée en ligne — le montant à encaisser envoyé à NOEST sera
+                automatiquement 0 DA.
+              </span>
+            </div>
+          )}
           {isPointRelais && (
             <div>
               <label className="mb-1 block text-xs uppercase tracking-wide2 text-muted">

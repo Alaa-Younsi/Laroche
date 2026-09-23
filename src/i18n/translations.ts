@@ -473,6 +473,8 @@ export const translations = {
     finTill: "Caisse",
 
     posTillTab: "Caisse (vente)",
+    posFullscreen: "Plein écran",
+    posExitFullscreen: "Quitter le plein écran",
     posCheckout: "Encaisser",
     posEmptyTill: "Scannez ou choisissez un article pour commencer",
     posScanPlaceholder: "Scanner un code-barres…",
@@ -1196,6 +1198,8 @@ export const translations = {
     finTill: "الصندوق",
 
     posTillTab: "الصندوق (بيع)",
+    posFullscreen: "ملء الشاشة",
+    posExitFullscreen: "الخروج من ملء الشاشة",
     posCheckout: "إتمام البيع",
     posEmptyTill: "امسح باركود أو اختر منتجاً للبدء",
     posScanPlaceholder: "امسح الباركود…",

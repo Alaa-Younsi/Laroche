@@ -35,3 +35,6 @@ dist-ssr
 # specific scratch, never part of the project.
 supabase/.temp/
 supabase/.branches/
+
+.vercel
+.env*
