@@ -2,6 +2,8 @@
   "name": "laroche-bijoux",
   "private": true,
   "version": "0.0.0",
+  "license": "UNLICENSED",
+  "author": "Alaa Younsi (https://alaayounsi.vercel.app/)",
   "type": "module",
   "scripts": {
     "dev": "vite",
