@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Product, ProductListItem } from "@/types/db";
 
@@ -31,8 +32,21 @@ export interface ProductFilters {
  * so a visitor who scrolled to the bottom pulled one thumbnail per product —
  * 309 images / 2.7 MB of Supabase egress on a single visit, growing with every
  * product the client adds. Paging makes that cost independent of catalogue size.
+ *
+ * Phones get half a page: lazy images start loading well before they scroll
+ * into view, so every card on a page is downloaded on arrival — and on a
+ * 2-column phone grid 12 cards is still 6 rows. Both sizes divide evenly into
+ * the 2- and 3-column grids, so the last row before "load more" is full.
  */
-export const SHOP_PAGE_SIZE = 48;
+export const SHOP_PAGE_SIZE = 24;
+export const SHOP_PAGE_SIZE_MOBILE = 12;
+
+// Read once per mount rather than tracked live: the size is part of the query
+// key, so following a resize would throw away the pages already loaded.
+function shopPageSize(): number {
+  if (typeof window === "undefined") return SHOP_PAGE_SIZE;
+  return window.matchMedia("(max-width: 639px)").matches ? SHOP_PAGE_SIZE_MOBILE : SHOP_PAGE_SIZE;
+}
 
 /** Everything a product page needs — descriptions, variant rows, the lot. */
 const PRODUCT_SELECT = "*, product_images(*), category:categories(*), product_variants(*)";
@@ -148,16 +162,17 @@ export interface ProductPage {
   total: number;
 }
 
-/** Shop grid: one `SHOP_PAGE_SIZE` page at a time behind a "load more". */
+/** Shop grid: one page at a time behind a "load more" — see `shopPageSize`. */
 export function useInfiniteProducts(filters: ProductFilters = {}) {
+  const [pageSize] = useState(shopPageSize);
   return useInfiniteQuery({
-    queryKey: ["products-paged", filters],
+    queryKey: ["products-paged", pageSize, filters],
     initialPageParam: 0,
     queryFn: async ({ pageParam }): Promise<ProductPage> => {
       const built = await applyProductFilters(listQuery(true), filters);
       if (!built) return { items: [], total: 0 };
-      const from = pageParam * SHOP_PAGE_SIZE;
-      const { data, error, count } = await built.query.range(from, from + SHOP_PAGE_SIZE - 1);
+      const from = pageParam * pageSize;
+      const { data, error, count } = await built.query.range(from, from + pageSize - 1);
       if (error) throw error;
       return { items: (data ?? []) as unknown as ProductListItem[], total: count ?? 0 };
     },
